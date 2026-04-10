@@ -2,9 +2,9 @@
 name = "tonet"
 version = "0.1.0"
 edition = "2021"
-description = "Tonet — navegador minimalista (MVP). https://usetonet.com"
+description = "Tonet — minimal from-scratch browser (MVP). https://usetonet.com"
 authors = ["Tonet Contributors"]
-license = "MIT"
+license = "PolyForm-Noncommercial-1.0.0"
 repository = "https://github.com/usetonet/tonet-browser"
 
 [dependencies]
@@ -19,3 +19,4 @@ dirs = "5.0"
 semver = "1.0"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 webbrowser = "1.0"
+sys-locale = "0.3"

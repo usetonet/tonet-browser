@@ -1,4 +1,4 @@
-//! Comprobación de versiones frente a GitHub Releases (sin auto-instalar binarios).
+//! Version check against GitHub Releases (does not auto-install binaries).
 
 use anyhow::Context;
 use semver::Version;
@@ -11,9 +11,9 @@ struct GitHubRelease {
     tag_name: String,
 }
 
-/// Si hay una release en GitHub con semver **estrictamente mayor** que la del binario, devuelve esa versión.
+/// If GitHub has a release with semver **strictly greater** than this binary, returns that version.
 pub fn check_for_newer_release() -> anyhow::Result<Option<Version>> {
-    let current = Version::parse(env!("CARGO_PKG_VERSION")).context("versión local inválida")?;
+    let current = Version::parse(env!("CARGO_PKG_VERSION")).context("invalid local version")?;
 
     let client = reqwest::blocking::Client::builder()
         .user_agent(format!(
@@ -21,23 +21,23 @@ pub fn check_for_newer_release() -> anyhow::Result<Option<Version>> {
             env!("CARGO_PKG_VERSION")
         ))
         .build()
-        .context("cliente HTTP")?;
+        .context("HTTP client")?;
 
     let resp = client
         .get(RELEASES_LATEST)
         .send()
-        .context("solicitar última release")?;
+        .context("request latest release")?;
 
     if !resp.status().is_success() {
         anyhow::bail!(
-            "GitHub respondió {} al consultar actualizaciones.",
+            "GitHub returned {} while checking for updates.",
             resp.status()
         );
     }
 
-    let body: GitHubRelease = resp.json().context("parsear JSON de GitHub")?;
+    let body: GitHubRelease = resp.json().context("parse GitHub JSON")?;
     let tag = body.tag_name.trim().trim_start_matches('v');
-    let remote = Version::parse(tag).with_context(|| format!("versión remota inválida: {tag}"))?;
+    let remote = Version::parse(tag).with_context(|| format!("invalid remote version: {tag}"))?;
 
     if remote > current {
         Ok(Some(remote))
@@ -46,7 +46,7 @@ pub fn check_for_newer_release() -> anyhow::Result<Option<Version>> {
     }
 }
 
-/// Abre la página de descargas en el navegador predeterminado del SO.
+/// Opens the downloads page in the system default browser.
 pub fn open_downloads_page() {
     let _ = webbrowser::open("https://github.com/usetonet/tonet-browser/releases/latest");
 }

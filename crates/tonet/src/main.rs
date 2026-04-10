@@ -1,9 +1,10 @@
-//! Punto de entrada de Tonet — navegador minimalista (MVP).
+//! Tonet desktop entry point — minimal from-scratch browser (MVP).
 //! https://usetonet.com
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+mod i18n;
 mod network;
 mod parser;
 mod renderer;
