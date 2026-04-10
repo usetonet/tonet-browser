@@ -1,16 +1,13 @@
 import "./styles/global.css";
-
-export type DetectedOS = "windows" | "linux" | "macos" | "unknown";
-
-export function detectOS(): DetectedOS {
-  const ua = navigator.userAgent.toLowerCase();
-  const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform?.toLowerCase() ?? "";
-
-  if (/win/.test(ua) || platform.includes("win")) return "windows";
-  if (/mac|iphone|ipad|ipod/.test(ua) || platform.includes("mac")) return "macos";
-  if (/linux|android/.test(ua) || platform.includes("linux")) return "linux";
-  return "unknown";
-}
+import { detectOS, type DetectedOS } from "./detect-os";
+import {
+  applyLandingLocale,
+  detectedOsLine,
+  resolveSiteLang,
+  versionPillPrefix,
+  wireCopyButtons,
+  wireLanguageSwitcher,
+} from "./site-i18n";
 
 async function loadVersion(): Promise<{ version: string } | null> {
   try {
@@ -46,42 +43,15 @@ function setActiveOS(os: DetectedOS): void {
   });
 }
 
-function wireCopyButtons(): void {
-  document.querySelectorAll<HTMLButtonElement>(".copy-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.dataset.copy;
-      if (!id) return;
-      const el = document.getElementById(id);
-      if (!el || !(el instanceof HTMLElement)) return;
-      const text = el.innerText;
-      try {
-        await navigator.clipboard.writeText(text);
-        const prev = btn.textContent;
-        btn.textContent = "¡Copiado!";
-        setTimeout(() => {
-          btn.textContent = prev;
-        }, 1600);
-      } catch {
-        btn.textContent = "Error";
-        setTimeout(() => {
-          btn.textContent = "Copiar";
-        }, 1600);
-      }
-    });
-  });
-}
-
 async function main(): Promise<void> {
+  const lang = resolveSiteLang();
+  applyLandingLocale(lang);
+  wireLanguageSwitcher(lang);
+
   const os = detectOS();
   const detectedEl = document.getElementById("os-detected");
   if (detectedEl) {
-    const labels: Record<DetectedOS, string> = {
-      windows: "Detectado: Windows — te mostramos los instaladores MSI/EXE.",
-      linux: "Detectado: Linux — te mostramos .deb y comandos de compilación.",
-      macos: "Detectado: macOS — te mostramos la ruta de compilación local.",
-      unknown: "No pudimos detectar el SO — mostrando Windows por defecto.",
-    };
-    detectedEl.textContent = labels[os];
+    detectedEl.textContent = detectedOsLine(lang, os);
     detectedEl.hidden = false;
   }
 
@@ -97,7 +67,7 @@ async function main(): Promise<void> {
   const meta = await loadVersion();
   const ver = meta?.version ?? "…";
   const pill = document.getElementById("version-pill");
-  if (pill) pill.textContent = `Versión actual del proyecto: ${ver}`;
+  if (pill) pill.textContent = `${versionPillPrefix(lang)} ${ver}`;
 
   const tag = `v${ver}`;
   const base = `https://github.com/usetonet/tonet-browser/releases/download/${tag}`;
@@ -110,7 +80,7 @@ async function main(): Promise<void> {
     linuxDeb.href = `${base}/tonet_${ver}_amd64.deb`;
   }
 
-  wireCopyButtons();
+  wireCopyButtons(lang);
 }
 
 main();

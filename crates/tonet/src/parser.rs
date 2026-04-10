@@ -1,10 +1,9 @@
-//! Parser HTML mínimo y hecho a mano (sin motor HTML completo).
+//! Minimal hand-rolled HTML parser (no full HTML engine).
 //!
-//! Solo extrae, en orden de aparición en el documento, el contenido textual de
-//! `<title>`, `<h1>`, `<h2>` y `<p>`. El resto de etiquetas se ignora salvo para
-//! eliminar marcas internas al texto extraído.
+//! Extracts, in document order, the text content of `<title>`, `<h1>`, `<h2>`, and `<p>`.
+//! Other tags are ignored except to strip nested markup from extracted text.
 
-/// Tipo semántico de un nodo extraído del documento.
+/// Semantic kind of a node extracted from the document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DomNodeType {
     Title,
@@ -14,7 +13,7 @@ pub enum DomNodeType {
 }
 
 impl DomNodeType {
-    /// Nombre de etiqueta HTML en minúsculas asociado a este tipo.
+    /// Lowercase HTML tag name for this kind.
     fn tag_name(self) -> &'static str {
         match self {
             DomNodeType::Title => "title",
@@ -24,7 +23,7 @@ impl DomNodeType {
         }
     }
 
-    /// Todos los tipos que Tonet reconoce en el orden preferido de detección.
+    /// All kinds Tonet recognizes, in preferred detection order.
     fn all() -> [DomNodeType; 4] {
         [
             DomNodeType::Title,
@@ -35,27 +34,27 @@ impl DomNodeType {
     }
 }
 
-/// Nodo del DOM simplificado de Tonet.
+/// Simplified DOM node for Tonet.
 #[derive(Debug, Clone)]
 pub struct DomNode {
     pub kind: DomNodeType,
     pub text: String,
 }
 
-/// Parsea HTML de forma muy limitada y devuelve los nodos detectados en orden.
+/// Very limited HTML parse: returns detected nodes in order.
 pub fn parse_html(html: &str) -> Vec<DomNode> {
     let mut out = Vec::new();
     let mut pos = 0usize;
 
     while pos < html.len() {
-        // Buscar la siguiente etiqueta de apertura que nos interese.
+        // Next opening tag we care about.
         let Some((idx, kind)) = find_next_target_open_tag(html, pos) else {
             break;
         };
 
         let tag = kind.tag_name();
         let Some((raw_inner, end_after_close)) = extract_inner_until_close(html, idx, tag) else {
-            // Si no hay cierre bien formado, avanzamos un byte para no bloquear el bucle.
+            // No well-formed close: advance one byte to avoid stalling.
             pos = idx.saturating_add(1);
             continue;
         };
@@ -74,7 +73,7 @@ pub fn parse_html(html: &str) -> Vec<DomNode> {
     out
 }
 
-/// Elimina etiquetas HTML del fragmento, conservando el texto visible aproximado.
+/// Strips HTML tags from a fragment, keeping approximate visible text.
 fn strip_html_tags(fragment: &str) -> String {
     let mut out = String::with_capacity(fragment.len());
     let mut in_tag = false;
@@ -89,12 +88,12 @@ fn strip_html_tags(fragment: &str) -> String {
     out
 }
 
-/// Colapsa espacios en blanco consecutivos y recorta extremos.
+/// Collapses consecutive whitespace and trims ends.
 fn normalize_whitespace(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Encuentra la próxima apertura `<title`, `<h1`, `<h2` o `<p` desde `pos`, sin distinguir mayúsculas.
+/// Finds the next `<title`, `<h1`, `<h2`, or `<p` open from `pos` (ASCII case-insensitive).
 fn find_next_target_open_tag(html: &str, pos: usize) -> Option<(usize, DomNodeType)> {
     let bytes = html.as_bytes();
     let mut i = pos;
@@ -111,7 +110,7 @@ fn find_next_target_open_tag(html: &str, pos: usize) -> Option<(usize, DomNodeTy
     None
 }
 
-/// Comprueba si en `idx` comienza `<tag` seguido de fin de nombre de etiqueta (`>`, espacio, `/`).
+/// True if `idx` starts `<tag` followed by end of tag name (`>`, space, `/`).
 fn open_tag_matches(html: &str, idx: usize, tag: &str) -> bool {
     let Some(rest) = html.get(idx..) else {
         return false;
@@ -138,8 +137,8 @@ fn eq_ignore_ascii_case_prefix(a: &str, b: &str) -> bool {
     a[..b.len()].eq_ignore_ascii_case(b)
 }
 
-/// Extrae el interior entre la etiqueta de apertura en `open_idx` y el cierre `</tag>`.
-/// Devuelve (interior sin procesar, índice tras el `>` del cierre).
+/// Extracts inner HTML between the open tag at `open_idx` and `</tag>`.
+/// Returns (raw inner, index after the closing `>`).
 fn extract_inner_until_close<'a>(html: &'a str, open_idx: usize, tag: &str) -> Option<(&'a str, usize)> {
     let bytes = html.as_bytes();
     let gt = find_byte(bytes, b'>', open_idx)?;
@@ -155,7 +154,7 @@ fn find_byte(bytes: &[u8], needle: u8, from: usize) -> Option<usize> {
     bytes[from..].iter().position(|&b| b == needle).map(|p| from + p)
 }
 
-/// Localiza `</tag>` ignorando mayúsculas, empezando en `from`.
+/// Finds `</tag>` (ASCII case-insensitive) starting at `from`.
 fn find_closing_tag(html: &str, from: usize, tag: &str) -> Option<usize> {
     let needle = format!("</{tag}>");
     let bytes = html.as_bytes();

@@ -1,15 +1,15 @@
-//! Renderizado del DOM simplificado a controles egui.
-//!
-//! Cada tipo de nodo usa tamaño y peso distintos para una lectura clara.
+//! Renders the simplified DOM into egui widgets.
 
+use crate::i18n::Locale;
+use crate::i18n;
 use crate::parser::{DomNode, DomNodeType};
 use egui::{Color32, RichText, Ui};
 
-/// Dibuja los nodos en el área de contenido (scroll la envuelve la capa superior).
-pub fn render_nodes(ui: &mut Ui, nodes: &[DomNode]) {
+/// Draws parsed nodes in the scrollable page area.
+pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode]) {
     if nodes.is_empty() {
         ui.label(
-            RichText::new("No se encontró contenido reconocible (<title>, <h1>, <h2>, <p>).")
+            RichText::new(i18n::empty_page_hint(loc))
                 .italics()
                 .color(Color32::GRAY),
         );

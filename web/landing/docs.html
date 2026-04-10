@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Documentación de Tonet: instalación, actualizaciones, firma de código y empaquetado." />
-    <title>Documentación — Tonet</title>
+    <meta name="description" content="Tonet documentation: install, updates, code signing, and packaging." />
+    <title>Documentation — Tonet</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f8cff'/></svg>" />
     <script type="module" src="/src/docs.ts"></script>
   </head>
@@ -15,96 +15,108 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <span>Tonet</span>
         </a>
-        <nav class="nav-links">
-          <a href="/">Inicio</a>
-          <a href="/#descargar">Descargar</a>
+        <nav class="nav-links" id="site-nav-links">
+          <a id="docs-nav-home" href="/">Home</a>
+          <a id="docs-nav-download" href="/#download">Download</a>
           <a href="https://github.com/usetonet/tonet-browser" target="_blank" rel="noopener">GitHub</a>
         </nav>
       </div>
     </header>
 
     <main class="section" style="padding-top: 40px">
-      <h1>Documentación</h1>
-      <p class="lead">Guías breves para usuarios y mantenedores del proyecto.</p>
+      <h1 id="docs-h1">Documentation</h1>
+      <p class="lead" id="docs-lead">Short guides for users and maintainers.</p>
 
       <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">Instalación</h2>
-        <p>
-          Consulta la <a href="/#descargar">sección de descargas</a>. Windows ofrece MSI y EXE; Linux admite <code>.deb</code> y script de
-          usuario; macOS, compilación local hasta que haya bundle firmado.
+        <h2 style="margin-top: 0" id="docs-install-h">Installation</h2>
+        <p id="docs-install-p">
+          See the <a href="/#download">downloads section</a>. Windows offers MSI and EXE; Linux supports <code>.deb</code> and a user install
+          script; macOS is local builds until a signed bundle ships.
         </p>
       </article>
 
       <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">Actualizaciones en el navegador</h2>
-        <p>
-          Tonet consulta la API de GitHub Releases (sin instalar binarios por ti). Por defecto comprueba al iniciar. En
-          <strong>Ajustes (⚙)</strong> puedes elegir:
+        <h2 style="margin-top: 0" id="docs-updates-h">In-browser updates</h2>
+        <p id="docs-updates-p">
+          Tonet checks the GitHub Releases API (it does not install binaries for you). By default it checks on startup. In
+          <strong>Settings (⚙)</strong> you can choose:
         </p>
         <ul style="color: var(--muted); line-height: 1.7">
-          <li><strong>Solo al iniciar</strong> — una comprobación al abrir la app.</li>
-          <li><strong>Automático (24 h)</strong> — repite mientras Tonet está abierto.</li>
-          <li><strong>Solo manual</strong> — únicamente con «Comprobar ahora».</li>
+          <li id="docs-updates-li1"><strong>On startup only</strong> — one check when the app opens.</li>
+          <li id="docs-updates-li2"><strong>Automatic (24 h)</strong> — repeats while Tonet is running.</li>
+          <li id="docs-updates-li3"><strong>Manual only</strong> — only with “Check now”.</li>
         </ul>
-        <p>Los ajustes se guardan en el directorio de configuración del sistema (por ejemplo <code>%APPDATA%\tonet</code> en Windows).</p>
+        <p id="docs-updates-p2">
+          Settings are stored in the system config directory (for example <code>%APPDATA%\tonet</code> on Windows).
+        </p>
       </article>
 
       <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">Firma Authenticode (Windows)</h2>
-        <p>
-          Para que SmartScreen confíe en los instaladores, firma el MSI y el EXE con un certificado de publicador de código (SHA-256)
-          en una máquina Windows con <code>signtool</code> del Windows SDK.
+        <h2 style="margin-top: 0" id="docs-sign-h">Authenticode signing (Windows)</h2>
+        <p id="docs-sign-p">
+          For SmartScreen trust, sign MSI and EXE with a code-signing certificate (SHA-256) on Windows using <code>signtool</code> from the
+          Windows SDK.
         </p>
         <div class="code-block" style="padding-top: 44px">
-          <button type="button" class="copy-btn" data-copy="sign-msi">Copiar</button>
+          <button type="button" class="copy-btn" data-copy="sign-msi">Copy</button>
           <pre id="sign-msi">signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-x.x.x-x64.msi
 signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-Setup-x.x.x-x64.exe</pre>
         </div>
-        <p style="color: var(--muted); font-size: 0.9rem">
-          En CI, guarda el PFX en un secreto cifrado y usa un runner auto-hospedado o una acción que invoque <code>signtool</code>. No subas
-          certificados al repositorio.
+        <p style="color: var(--muted); font-size: 0.9rem" id="docs-sign-foot">
+          In CI, store the PFX in an encrypted secret and use a self-hosted runner or an action that invokes <code>signtool</code>. Never commit
+          certificates to the repository.
         </p>
       </article>
 
       <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">Paquete Debian (.deb)</h2>
-        <p>
-          El script <code>packaging/debian/build-deb.sh</code> genera un <code>.deb</code> desde <code>cargo build --release -p tonet</code>.
-          Requiere <code>dpkg-deb</code> (Linux).
+        <h2 style="margin-top: 0" id="docs-deb-h">Debian package (.deb)</h2>
+        <p id="docs-deb-p">
+          The script <code>packaging/debian/build-deb.sh</code> builds a <code>.deb</code> from <code>cargo build --release -p tonet</code>.
+          Requires <code>dpkg-deb</code> (Linux).
         </p>
         <div class="code-block" style="padding-top: 44px">
-          <button type="button" class="copy-btn" data-copy="deb-build">Copiar</button>
+          <button type="button" class="copy-btn" data-copy="deb-build">Copy</button>
           <pre id="deb-build">cargo build --release -p tonet
 ./packaging/debian/build-deb.sh</pre>
         </div>
       </article>
 
       <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">AppImage (Linux)</h2>
-        <p>
-          Para distribuir un AppImage universal necesitas empaquetar dependencias de GTK/GL — recomendamos evaluar
-          <a href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + plugin GTK cuando el
-          binario esté estabilizado. El repositorio puede añadir un workflow dedicado en una release futura.
+        <h2 style="margin-top: 0" id="docs-app-h">AppImage (Linux)</h2>
+        <p id="docs-app-p">
+          Shipping a universal AppImage requires bundling GTK/GL dependencies — consider
+          <a href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + the GTK plugin once the binary
+          stabilizes. A dedicated workflow may land in a future release.
         </p>
       </article>
 
       <article class="card">
-        <h2 style="margin-top: 0">Desplegar esta landing (Cloudflare Workers)</h2>
-        <p>En el directorio <code>web/landing</code>:</p>
+        <h2 style="margin-top: 0" id="docs-cf-h">Deploy this landing (Cloudflare Workers)</h2>
+        <p id="docs-cf-p1">From the <code>web/landing</code> directory:</p>
         <div class="code-block" style="padding-top: 44px">
-          <button type="button" class="copy-btn" data-copy="cf-deploy">Copiar</button>
+          <button type="button" class="copy-btn" data-copy="cf-deploy">Copy</button>
           <pre id="cf-deploy">npm ci
 npm run deploy</pre>
         </div>
-        <p style="color: var(--muted)">
-          Configura <code>CLOUDFLARE_API_TOKEN</code> y <code>CLOUDFLARE_ACCOUNT_ID</code> en GitHub Actions o ejecuta
-          <code>wrangler login</code> en local.
+        <p style="color: var(--muted)" id="docs-cf-p2">
+          Set <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code> in GitHub Actions, or run <code>wrangler login</code>
+          locally.
         </p>
       </article>
     </main>
 
     <footer class="footer">
-      <p><a href="/">← Volver al inicio</a></p>
+      <p class="footer-lang-row">
+        <label id="lang-switcher-label" class="lang-label" for="site-lang">Site language</label>
+        <select id="site-lang" name="site-lang" class="lang-select" aria-describedby="lang-switcher-label">
+          <option value="auto">Auto (browser)</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+        </select>
+      </p>
+      <p><a id="docs-footer-back" href="/">← Back to home</a></p>
     </footer>
   </body>
 </html>

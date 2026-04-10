@@ -1,4 +1,4 @@
-# Workspace Tonet: escritorio (`crates/tonet`) + web (`web/landing`) por separado.
+# Tonet workspace: desktop (`crates/tonet`) and marketing site (`web/landing`) are separate.
 [workspace]
 members = ["crates/tonet"]
 resolver = "2"
