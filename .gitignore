@@ -1,6 +1,9 @@
 # Artefactos de compilación de Rust
 /target
 
+# Paquetes de instalación generados localmente o en CI
+/dist
+
 # Entorno local (opcional)
 .env
 .env.*

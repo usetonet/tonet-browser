@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Instalador MSI de Tonet (WiX Toolset 3.11+).
+  Genera un paquete per-machine x64 con acceso directo en el menú Inicio
+  y entrada en «Agregar o quitar programas», similar a otros navegadores.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="Tonet"
+           Language="1033"
+           Version="$(var.ProductVersion)"
+           Manufacturer="usetonet.com"
+           UpgradeCode="E7C8F9A0-1234-5678-9ABC-DEF012345678">
+    <Package InstallerVersion="300"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="Tonet — navegador web minimalista"
+             Comments="https://usetonet.com"
+             Platform="x64" />
+
+    <MajorUpgrade Schedule="afterInstallInitialize"
+                  DowngradeErrorMessage="Una versión más nueva de Tonet ya está instalada." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="MainFeature" Title="Tonet" Level="1" Absent="disallow"
+             Description="Navegador Tonet y accesos directos">
+      <ComponentGroupRef Id="TonetComponents" />
+      <ComponentGroupRef Id="StartMenuCleanup" />
+    </Feature>
+
+    <!-- Interfaz gráfica: solo elegir carpeta (sin EULA obligatoria). -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <UIRef Id="WixUI_InstallDir" />
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="Tonet" />
+      </Directory>
+      <!-- Menú Inicio «Todos los usuarios» (coherente con InstallScope perMachine). -->
+      <Directory Id="CommonProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Tonet" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="TonetComponents" Directory="INSTALLFOLDER">
+      <Component Id="CmpTonetExe" Guid="B8C591D2-3456-7890-ABCD-EF1234567891" Win64="yes">
+        <File Id="TonetEXE"
+              Source="$(var.SourceDir)\tonet.exe"
+              KeyPath="yes">
+          <Shortcut Id="TonetStartMenuShortcut"
+                    Name="Tonet"
+                    Directory="ApplicationProgramsFolder"
+                    WorkingDirectory="INSTALLFOLDER"
+                    Description="Abrir el navegador Tonet"
+                    Advertise="yes" />
+        </File>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <!-- Elimina la carpeta del menú Inicio al desinstalar (patrón WiX habitual). -->
+    <ComponentGroup Id="StartMenuCleanup" Directory="ApplicationProgramsFolder">
+      <Component Id="CmpStartMenuCleanup" Guid="C9D602E3-4567-8901-BCDE-F12345678902" Win64="yes">
+        <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\usetonet\Tonet"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

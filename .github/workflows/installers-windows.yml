@@ -1,0 +1,78 @@
+# Compila Tonet en release y genera instaladores Windows (MSI WiX + EXE Inno Setup).
+name: Windows installers
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-installers:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Caché de cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compilar release
+        run: cargo build --release
+
+      - name: Obtener versión del crate
+        id: crate
+        shell: pwsh
+        run: |
+          $meta = cargo metadata --no-deps --format-version 1 | ConvertFrom-Json
+          $v = ($meta.packages | Where-Object { $_.name -eq "tonet" } | Select-Object -First 1).version
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Instalar WiX Toolset 3.14 (binarios)
+        shell: pwsh
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP "wix314"
+          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip" -OutFile wix.zip
+          Expand-Archive wix.zip -DestinationPath $dest
+          "$dest" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Generar MSI (WiX)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.crate.outputs.version }}"
+          $dist = Join-Path (Get-Location) "dist"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          $src = Join-Path (Get-Location) "target\release"
+          candle.exe -nologo -arch x64 "-dProductVersion=$v" "-dSourceDir=$src" -out "$($dist)\" -ext WixUIExtension "wix\Main.wxs"
+          $msi = Join-Path $dist "Tonet-$v-x64.msi"
+          light.exe -nologo -out $msi -ext WixUIExtension -cultures:en-us (Join-Path $dist "Main.wixobj")
+
+      - name: Instalar Inno Setup (Chocolatey)
+        run: choco install innosetup -y
+
+      - name: Sincronizar versión en tonet.iss
+        shell: pwsh
+        run: |
+          $v = "${{ steps.crate.outputs.version }}"
+          (Get-Content "installer\tonet.iss") | ForEach-Object {
+            if ($_ -match '^\#define MyAppVersion ') { '#define MyAppVersion "' + $v + '"' } else { $_ }
+          } | Set-Content "installer\tonet.iss" -Encoding utf8
+
+      - name: Generar EXE (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
+          & $iscc (Join-Path (Get-Location) "installer\tonet.iss")
+
+      - name: Subir artefactos (MSI y EXE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tonet-windows-installers
+          path: dist/*
