@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 description = "Tonet — navegador minimalista (MVP). https://usetonet.com"
 authors = ["Tonet Contributors"]
+license = "MIT"
+repository = "https://github.com/usetonet/tonet-browser"
 
 [dependencies]
 eframe = "0.29"
