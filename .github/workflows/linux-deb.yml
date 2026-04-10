@@ -1,0 +1,40 @@
+# Genera tonet_<versión>_amd64.deb en cada push a main (artefacto descargable).
+name: Linux .deb
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Dependencias de escritorio (eframe / winit / gtk)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev \
+            libspeechd-dev patchelf
+
+      - name: Compilar release
+        run: cargo build --release -p tonet
+
+      - name: Empaquetar .deb
+        run: |
+          chmod +x packaging/debian/build-deb.sh
+          ./packaging/debian/build-deb.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tonet-deb-amd64
+          path: dist/*.deb

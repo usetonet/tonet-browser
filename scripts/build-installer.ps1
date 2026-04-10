@@ -32,7 +32,7 @@ if (-not $WixBin) {
 }
 
 Write-Host "Compilando tonet en release..." -ForegroundColor Cyan
-cargo build --release
+cargo build --release -p tonet
 
 $Exe = Join-Path $Root "target\release\tonet.exe"
 if (-not (Test-Path $Exe)) {

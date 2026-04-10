@@ -1,7 +1,5 @@
 //! Punto de entrada de Tonet — navegador minimalista (MVP).
-//!
-//! Arranca el runtime nativo de eframe y delega la lógica en `TonetApp`.
-//! Más información: https://usetonet.com
+//! https://usetonet.com
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -9,7 +7,9 @@ mod app;
 mod network;
 mod parser;
 mod renderer;
+mod settings;
 mod ui;
+mod update;
 
 use eframe::egui;
 
