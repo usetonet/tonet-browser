@@ -1,0 +1,11 @@
+# Despliegue en Cloudflare Workers con activos estáticos (landing + documentación).
+# Uso: cd web/landing && npm ci && npm run deploy
+# Secretos en GitHub: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+
+name = "tonet-landing"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"

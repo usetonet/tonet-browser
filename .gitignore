@@ -4,6 +4,11 @@
 # Paquetes de instalación generados localmente o en CI
 /dist
 
+# Landing (Node / Vite / Wrangler)
+web/landing/node_modules
+web/landing/dist
+web/landing/.wrangler
+
 # Entorno local (opcional)
 .env
 .env.*

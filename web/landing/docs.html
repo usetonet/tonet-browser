@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Documentación de Tonet: instalación, actualizaciones, firma de código y empaquetado." />
+    <title>Documentación — Tonet</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f8cff'/></svg>" />
+    <script type="module" src="/src/docs.ts"></script>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="nav-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Tonet</span>
+        </a>
+        <nav class="nav-links">
+          <a href="/">Inicio</a>
+          <a href="/#descargar">Descargar</a>
+          <a href="https://github.com/usetonet/tonet-browser" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section" style="padding-top: 40px">
+      <h1>Documentación</h1>
+      <p class="lead">Guías breves para usuarios y mantenedores del proyecto.</p>
+
+      <article class="card" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">Instalación</h2>
+        <p>
+          Consulta la <a href="/#descargar">sección de descargas</a>. Windows ofrece MSI y EXE; Linux admite <code>.deb</code> y script de
+          usuario; macOS, compilación local hasta que haya bundle firmado.
+        </p>
+      </article>
+
+      <article class="card" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">Actualizaciones en el navegador</h2>
+        <p>
+          Tonet consulta la API de GitHub Releases (sin instalar binarios por ti). Por defecto comprueba al iniciar. En
+          <strong>Ajustes (⚙)</strong> puedes elegir:
+        </p>
+        <ul style="color: var(--muted); line-height: 1.7">
+          <li><strong>Solo al iniciar</strong> — una comprobación al abrir la app.</li>
+          <li><strong>Automático (24 h)</strong> — repite mientras Tonet está abierto.</li>
+          <li><strong>Solo manual</strong> — únicamente con «Comprobar ahora».</li>
+        </ul>
+        <p>Los ajustes se guardan en el directorio de configuración del sistema (por ejemplo <code>%APPDATA%\tonet</code> en Windows).</p>
+      </article>
+
+      <article class="card" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">Firma Authenticode (Windows)</h2>
+        <p>
+          Para que SmartScreen confíe en los instaladores, firma el MSI y el EXE con un certificado de publicador de código (SHA-256)
+          en una máquina Windows con <code>signtool</code> del Windows SDK.
+        </p>
+        <div class="code-block" style="padding-top: 44px">
+          <button type="button" class="copy-btn" data-copy="sign-msi">Copiar</button>
+          <pre id="sign-msi">signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-x.x.x-x64.msi
+signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-Setup-x.x.x-x64.exe</pre>
+        </div>
+        <p style="color: var(--muted); font-size: 0.9rem">
+          En CI, guarda el PFX en un secreto cifrado y usa un runner auto-hospedado o una acción que invoque <code>signtool</code>. No subas
+          certificados al repositorio.
+        </p>
+      </article>
+
+      <article class="card" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">Paquete Debian (.deb)</h2>
+        <p>
+          El script <code>packaging/debian/build-deb.sh</code> genera un <code>.deb</code> desde <code>cargo build --release -p tonet</code>.
+          Requiere <code>dpkg-deb</code> (Linux).
+        </p>
+        <div class="code-block" style="padding-top: 44px">
+          <button type="button" class="copy-btn" data-copy="deb-build">Copiar</button>
+          <pre id="deb-build">cargo build --release -p tonet
+./packaging/debian/build-deb.sh</pre>
+        </div>
+      </article>
+
+      <article class="card" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">AppImage (Linux)</h2>
+        <p>
+          Para distribuir un AppImage universal necesitas empaquetar dependencias de GTK/GL — recomendamos evaluar
+          <a href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + plugin GTK cuando el
+          binario esté estabilizado. El repositorio puede añadir un workflow dedicado en una release futura.
+        </p>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top: 0">Desplegar esta landing (Cloudflare Workers)</h2>
+        <p>En el directorio <code>web/landing</code>:</p>
+        <div class="code-block" style="padding-top: 44px">
+          <button type="button" class="copy-btn" data-copy="cf-deploy">Copiar</button>
+          <pre id="cf-deploy">npm ci
+npm run deploy</pre>
+        </div>
+        <p style="color: var(--muted)">
+          Configura <code>CLOUDFLARE_API_TOKEN</code> y <code>CLOUDFLARE_ACCOUNT_ID</code> en GitHub Actions o ejecuta
+          <code>wrangler login</code> en local.
+        </p>
+      </article>
+    </main>
+
+    <footer class="footer">
+      <p><a href="/">← Volver al inicio</a></p>
+    </footer>
+  </body>
+</html>

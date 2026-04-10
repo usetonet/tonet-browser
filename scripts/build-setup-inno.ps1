@@ -10,7 +10,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 
 Write-Host "Compilando tonet en release..." -ForegroundColor Cyan
-cargo build --release
+cargo build --release -p tonet
 
 $Exe = Join-Path $Root "target\release\tonet.exe"
 if (-not (Test-Path $Exe)) {

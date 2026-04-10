@@ -25,7 +25,10 @@ pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
     }
 
     let client = reqwest::blocking::Client::builder()
-        .user_agent("Tonet/0.1 (Minimalist Browser)")
+        .user_agent(format!(
+            "Tonet/{} (Minimalist Browser)",
+            env!("CARGO_PKG_VERSION")
+        ))
         .build()
         .context("No se pudo crear el cliente HTTP")?;
 

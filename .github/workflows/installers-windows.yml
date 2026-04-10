@@ -24,7 +24,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Compilar release
-        run: cargo build --release
+        run: cargo build --release -p tonet
 
       - name: Obtener versión del crate
         id: crate
