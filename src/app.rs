@@ -132,15 +132,18 @@ impl eframe::App for TonetApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            // Errores de red o del Filtro de Pureza: panel destacado encima del scroll.
             if let Some(err) = &self.error_message {
                 show_error_panel(ui, err);
                 ui.add_space(8.0);
             }
 
+            // Mientras llega la respuesta HTTP, mostramos un estado claro sin bloquear el bucle.
             if self.loading {
                 show_loading(ui);
             }
 
+            // Contenido principal: siempre en ScrollArea para páginas largas.
             egui::ScrollArea::vertical()
                 .auto_shrink([false, false])
                 .show(ui, |ui| {
