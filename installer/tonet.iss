@@ -3,7 +3,7 @@
 ; Compilar: ISCC.exe installer\tonet.iss (desde la raíz del repo o ajustar rutas)
 
 #define MyAppName "Tonet"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.1.1"
 #define MyAppPublisher "usetonet.com"
 #define MyAppURL "https://usetonet.com"
 #define MyAppExeName "tonet.exe"
