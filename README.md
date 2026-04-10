@@ -19,6 +19,10 @@ cargo build --release -p tonet
 
 The binary is at `target/release/tonet` (or `tonet.exe` on Windows).
 
+## GitHub Releases
+
+When a commit lands on **`main`** and the version in [`crates/tonet/Cargo.toml`](crates/tonet/Cargo.toml) is **strictly greater** than on the merge’s **first parent** (`HEAD^1`), the workflow [`.github/workflows/release-on-version-bump.yml`](.github/workflows/release-on-version-bump.yml) builds Windows (MSI + EXE) and Linux (`.deb`), then publishes a **GitHub Release** tagged `vX.Y.Z` with those assets. Pushes that do **not** bump the crate version do **not** create a release. If tag `vX.Y.Z` already exists, the workflow skips publishing to avoid duplicates.
+
 ## Repository layout
 
 | Path | Purpose |
