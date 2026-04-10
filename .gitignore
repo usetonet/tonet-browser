@@ -1,0 +1,6 @@
+# Artefactos de compilación de Rust
+/target
+
+# Entorno local (opcional)
+.env
+.env.*
