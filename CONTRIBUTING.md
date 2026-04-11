@@ -1,102 +1,102 @@
-# Contribuyendo a Tonet
+# Contributing to Tonet
 
-¡Gracias por tu interés en contribuir a Tonet! Este navegador web disruptivo está construido con Rust y sigue una filosofía minimalista radical: **nunca cargar páginas web que pesen más de 1MB**.
+Thank you for your interest in contributing to Tonet! This disruptive web browser is built with Rust and follows a radical minimalist philosophy: **never load web pages that exceed 1MB**.
 
-## Filosofía del Proyecto
+## Project Philosophy
 
-Tonet desafía la tendencia moderna de webs sobrecargadas:
-- **Rendimiento extremo**: Escrito en Rust para máxima velocidad y eficiencia de memoria
-- **Minimalismo radical**: Rechaza automáticamente cualquier página que supere 1MB
-- **Experiencia limpia**: Sin anuncios, trackers, o bloatware
-- **Soberanía del usuario**: Tú controlas qué contenido se carga
+Tonet challenges the modern trend of overloaded websites:
+- **Extreme performance**: Written in Rust for maximum speed and memory efficiency
+- **Radical minimalism**: Automatically rejects any page exceeding 1MB
+- **Clean experience**: No ads, trackers, or bloatware
+- **User sovereignty**: You control what content loads
 
-## Primeros Pasos
+## Getting Started
 
-### Compilación Local
+### Local Compilation
 
-1. **Requisitos**: Rust 1.70+ instalado
-2. **Clona el repositorio**:
+1. **Requirements**: Rust 1.70+ installed
+2. **Clone the repository**:
    ```bash
    git clone https://github.com/usetonet/tonet-browser.git
    cd tonet-browser
    ```
-3. **Compila el proyecto**:
+3. **Build the project**:
    ```bash
    cargo build --release
    ```
-4. **Ejecuta Tonet**:
+4. **Run Tonet**:
    ```bash
    ./target/release/tonet
    ```
 
-### Estructura del Proyecto
+### Project Structure
 
-- `crates/tonet/`: Núcleo del navegador en Rust
-- `web/landing/`: Sitio web de documentación
-- `installer/`, `packaging/`, `wix/`: Scripts de empaquetado
-- `.github/workflows/`: CI/CD y releases automáticos
+- `crates/tonet/`: Core browser in Rust
+- `web/landing/`: Documentation website
+- `installer/`, `packaging/`, `wix/`: Packaging scripts
+- `.github/workflows/`: CI/CD and automatic releases
 
 ## Contributor License Agreement (CLA)
 
-### ¿Por qué necesitamos un CLA?
+### Why Do We Need a CLA?
 
-Para mantener la integridad legal del proyecto y permitir futuras opciones de licenciamiento comercial, requerimos que todos los contribuidores acepten nuestro CLA.
+To maintain the project's legal integrity and enable future commercial licensing options, we require all contributors to accept our CLA.
 
-### Proceso del CLA
+### CLA Process
 
-1. **Primer Pull Request**: Cuando envías tu primer PR, el bot de CLA Assistant te notificará
-2. **Firma digital**: Deberás firmar el acuerdo haciendo clic en el enlace proporcionado
-3. **Verificación automática**: Una vez firmado, el bot verificará automáticamente futuras contribuciones
+1. **First Pull Request**: When you submit your first PR, the CLA Assistant bot will notify you
+2. **Digital Signature**: You must sign the agreement by clicking the provided link
+3. **Automatic Verification**: Once signed, the bot will automatically verify future contributions
 
-### ¿Qué establece el CLA?
+### What Does the CLA Establish?
 
-Al contribuir, otorgas a Usetonet:
-- Licencia perpetua para usar tu código de forma comercial y no comercial
-- Derechos para modificar, distribuir y sublicenciar tus contribuciones
-- Mantienes la propiedad de tu código, pero nos das permiso para incluirlo en Tonet
+By contributing, you grant Usetonet:
+- Perpetual license to use your code for commercial and non-commercial purposes
+- Rights to modify, distribute, and sublicense your contributions
+- You maintain ownership of your code, but grant permission to include it in Tonet
 
-**El CLA es obligatorio** para que podamos aceptar tus contribuciones.
+**The CLA is mandatory** for us to accept your contributions.
 
-## Guías de Contribución
+## Contribution Guidelines
 
-### Reportar Bugs
+### Reporting Bugs
 
-1. Verifica que no esté ya reportado
-2. Incluye versión de Tonet, sistema operativo y pasos para reproducir
-3. Describe el comportamiento esperado vs. el actual
+1. Verify the bug hasn't already been reported
+2. Include Tonet version, operating system, and reproduction steps
+3. Describe expected vs. actual behavior
 
-### Sugerir Mejoras
+### Suggesting Improvements
 
-1. Explica el problema que resuelve tu sugerencia
-2. Propón una solución clara y concisa
-3. Considera el impacto en la filosofía minimalista del proyecto
+1. Explain the problem your suggestion solves
+2. Propose a clear and concise solution
+3. Consider the impact on the project's minimalist philosophy
 
-### Enviar Pull Requests
+### Submitting Pull Requests
 
-1. Fork del repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/amazing-feature`)
-3. Commit de cambios (`git commit -m 'Add amazing feature'`)
-4. Push a la rama (`git push origin feature/amazing-feature`)
-5. Abre un Pull Request
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Código de Conducta
+## Code of Conduct
 
-Este proyecto sigue un código de conducta profesional. Esperamos que todos los contribuidores:
-- Sean respetuosos y constructivos
-- Mantengan discusiones técnicas centradas en el código
-- Respeten las decisiones de los mantenedores
+This project follows a professional code of conduct. We expect all contributors to:
+- Be respectful and constructive
+- Keep technical discussions focused on code
+- Respect maintainers' decisions
 
-## Preguntas Frecuentes
+## Frequently Asked Questions
 
-**¿Puedo usar Tonet para proyectos comerciales?**
-Consulta la licencia PolyForm Noncommercial en el archivo LICENSE.
+**Can I use Tonet for commercial projects?**
+Consult the PolyForm Noncommercial license in the LICENSE file.
 
-**¿Qué pasa si mi página web supera 1MB?**
-Tonet mostrará un mensaje claro explicando el límite y sugerirá optimizaciones.
+**What happens if my website exceeds 1MB?**
+Tonet will display a clear message explaining the limit and suggesting optimizations.
 
-**¿Cómo reporto vulnerabilidades de seguridad?**
-Contacta directamente a los mantenedores mediante security@usetonet.com.
+**How do I report security vulnerabilities?**
+Contact the maintainers directly at security@usetonet.com.
 
 ---
 
-¡Gracias por ayudar a construir un internet más rápido y eficiente!
+Thank you for helping build a faster and more efficient internet!
