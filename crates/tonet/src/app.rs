@@ -465,9 +465,9 @@ impl eframe::App for TonetApp {
 
         egui::TopBottomPanel::top("tonet_top").show(ctx, |ui| {
             ui.add_space(if self.integrated_title_chrome {
-                2.0
-            } else {
                 6.0
+            } else {
+                8.0
             });
             ui.vertical(|ui| {
                 if let Some(ver) = &self.update_banner {
@@ -504,38 +504,45 @@ impl eframe::App for TonetApp {
                 if let Some(i) = tb_tabs.close_tab {
                     self.close_tab_at(i, ctx);
                 }
-                ui.add_space(2.0);
-                ui.separator();
-                ui.add_space(6.0);
+                ui.add_space(10.0);
 
-                ui.horizontal(|ui| {
-                    ui.add(
-                        egui::Image::from_uri(branding::TONET_LOGO_URI)
-                            .max_height(22.0)
-                            .rounding(6.0),
-                    );
-                    ui.label(
-                        egui::RichText::new(i18n::app_name(loc))
-                            .strong()
-                            .size(15.0)
-                            .color(theme::ACCENT),
-                    );
-                    ui.separator();
-                });
+                let chrome = egui::Frame::default()
+                    .fill(theme::CHROME_CARD)
+                    .stroke(egui::Stroke::new(1.0, theme::CHROME_CARD_STROKE))
+                    .rounding(18.0)
+                    .inner_margin(egui::Margin::symmetric(14.0, 12.0))
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 12.0;
+                            ui.add(
+                                egui::Image::from_uri(branding::TONET_LOGO_URI)
+                                    .max_height(26.0)
+                                    .rounding(8.0),
+                            );
+                            ui.label(
+                                egui::RichText::new(i18n::app_name(loc))
+                                    .strong()
+                                    .size(16.0)
+                                    .color(theme::ACCENT),
+                            );
+                        });
+                        ui.add_space(12.0);
 
-                let omnibox_focus = std::mem::take(&mut self.omnibox_focus_select_all);
-                let active = self.active_tab_mut();
-                let chip_preview = active.url_input.trim().to_string();
-                let tb = show_chrome_toolbar(
-                    ui,
-                    loc,
-                    &mut active.url_input,
-                    &chip_preview,
-                    active.loading,
-                    can_back,
-                    can_forward,
-                    omnibox_focus,
-                );
+                        let omnibox_focus = std::mem::take(&mut self.omnibox_focus_select_all);
+                        let active = self.active_tab_mut();
+                        let chip_preview = active.url_input.trim().to_string();
+                        show_chrome_toolbar(
+                            ui,
+                            loc,
+                            &mut active.url_input,
+                            &chip_preview,
+                            active.loading,
+                            can_back,
+                            can_forward,
+                            omnibox_focus,
+                        )
+                    });
+                let tb = chrome.inner;
                 if tb.go_back {
                     self.go_back(ctx);
                 }
@@ -555,7 +562,7 @@ impl eframe::App for TonetApp {
                     self.settings_open = true;
                 }
             });
-            ui.add_space(4.0);
+            ui.add_space(10.0);
         });
 
         let tab = self.active_tab_mut();

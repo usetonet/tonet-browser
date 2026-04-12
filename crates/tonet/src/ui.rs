@@ -108,7 +108,7 @@ pub fn show_tab_bar(
 ) -> TabBarResult {
     let mut out = TabBarResult::default();
     let strip_bg = theme::STRIP_BG;
-    let row_h = 30.0;
+    let row_h = 34.0;
     // Caption column + dedicated drag gap + inner padding on the right (avoids clipped ✕).
     const DRAG_GAP: f32 = 28.0;
     let caption_block = CAPTION_BTN.x * 3.0 + 3.0 * 2.0 + 6.0;
@@ -126,7 +126,7 @@ pub fn show_tab_bar(
             bottom: 5.0,
         }
     } else {
-        egui::Margin::symmetric(6.0, 5.0)
+        egui::Margin::symmetric(8.0, 7.0)
     };
 
     egui::Frame::default()
@@ -145,7 +145,8 @@ pub fn show_tab_bar(
                             .auto_shrink([false, true])
                             .show(ui, |ui| {
                                 ui.horizontal(|ui| {
-                                    ui.spacing_mut().item_spacing.x = 4.0;
+                                    ui.spacing_mut().item_spacing.x = 6.0;
+                                    let pill_r = 10.0;
                                     for (i, title) in tab_titles.iter().enumerate() {
                                         let selected = i == active_index;
                                         let tab_bg = if selected {
@@ -153,22 +154,16 @@ pub fn show_tab_bar(
                                         } else {
                                             theme::TAB_IDLE
                                         };
-                                        let rounding = egui::Rounding {
-                                            nw: 6.0,
-                                            ne: 6.0,
-                                            sw: 0.0,
-                                            se: 0.0,
-                                        };
                                         ui.push_id(i as i32, |ui| {
                                             egui::Frame::default()
                                                 .fill(tab_bg)
                                                 .stroke(if selected {
                                                     Stroke::new(1.0, theme::TAB_SELECTED_STROKE)
                                                 } else {
-                                                    Stroke::NONE
+                                                    Stroke::new(1.0, theme::TAB_PILL_STROKE_IDLE)
                                                 })
-                                                .inner_margin(egui::Margin::symmetric(10.0, 5.0))
-                                                .rounding(rounding)
+                                                .inner_margin(egui::Margin::symmetric(12.0, 6.0))
+                                                .rounding(egui::Rounding::same(pill_r))
                                                 .show(ui, |ui| {
                                                     ui.horizontal(|ui| {
                                                         ui.spacing_mut().item_spacing.x = 4.0;
@@ -209,10 +204,11 @@ pub fn show_tab_bar(
                                     }
                                     if ui
                                         .add_sized(
-                                            Vec2::new(30.0, 28.0),
-                                            egui::Button::new(RichText::new("+").strong().size(15.0))
-                                                .rounding(7.0)
-                                                .fill(theme::NAV_BTN_FILL),
+                                            Vec2::new(34.0, 32.0),
+                                            egui::Button::new(RichText::new("+").strong().size(16.0))
+                                                .rounding(10.0)
+                                                .fill(theme::TAB_IDLE)
+                                                .stroke(Stroke::new(1.0, theme::TAB_PILL_STROKE_IDLE)),
                                         )
                                         .on_hover_text(i18n::tab_new_tooltip(loc))
                                         .clicked()
@@ -272,26 +268,20 @@ pub fn show_chrome_toolbar(
     let mut go_back = false;
     let mut go_forward = false;
 
-    let bar_bg = theme::TOOLBAR_BG;
-    let nav_size = Vec2::new(32.0, 28.0);
+    let nav_size = Vec2::new(34.0, 30.0);
     let nav_btn = |ui: &mut Ui, enabled: bool, label: RichText, tip: &'static str| -> bool {
         ui.add_enabled(
             enabled,
             egui::Button::new(label)
                 .min_size(nav_size)
-                .rounding(7.0)
+                .rounding(8.0)
                 .fill(theme::NAV_BTN_FILL),
         )
         .on_hover_text(tip)
         .clicked()
     };
 
-    egui::Frame::default()
-        .fill(bar_bg)
-        .inner_margin(egui::Margin::symmetric(10.0, 6.0))
-        .rounding(12.0)
-        .show(ui, |ui| {
-            ui.horizontal(|ui| {
+    ui.horizontal(|ui| {
                 if nav_btn(
                     ui,
                     can_back,
@@ -315,7 +305,7 @@ pub fn show_chrome_toolbar(
                         .add(
                             egui::Button::new(RichText::new("⏹").size(13.0))
                                 .min_size(nav_size)
-                                .rounding(7.0)
+                                .rounding(8.0)
                                 .fill(theme::NAV_BTN_FILL),
                         )
                         .on_hover_text(i18n::stop_loading_tooltip(loc));
@@ -326,7 +316,7 @@ pub fn show_chrome_toolbar(
                     .add(
                         egui::Button::new(RichText::new("↻").size(17.0))
                             .min_size(nav_size)
-                            .rounding(7.0)
+                            .rounding(8.0)
                             .fill(theme::NAV_BTN_FILL),
                     )
                     .on_hover_text(format!(
@@ -359,17 +349,17 @@ pub fn show_chrome_toolbar(
                 )
                 .on_hover_text(chip_tip);
 
-                let url_w = (ui.available_width() - 132.0).max(80.0);
+                let url_w = (ui.available_width() - 142.0).max(80.0);
                 let mut url_enter = false;
                 ui.allocate_ui_with_layout(
-                    Vec2::new(url_w, 30.0),
+                    Vec2::new(url_w, 32.0),
                     Layout::left_to_right(Align::Center),
                     |ui| {
                         egui::Frame::default()
                             .fill(theme::OMNIBOX_FILL)
                             .stroke(Stroke::new(1.0, theme::OMNIBOX_STROKE))
-                            .rounding(9.0)
-                            .inner_margin(egui::Margin::symmetric(12.0, 5.0))
+                            .rounding(11.0)
+                            .inner_margin(egui::Margin::symmetric(14.0, 6.0))
                             .show(ui, |ui| {
                                 let output = egui::TextEdit::singleline(url_input)
                                     .id(omnibox_id())
@@ -416,9 +406,9 @@ pub fn show_chrome_toolbar(
                     theme::PRIMARY_BTN
                 };
                 let go = ui.add_sized(
-                    Vec2::new(52.0, 28.0),
-                    egui::Button::new(RichText::new(go_label).strong().size(13.5))
-                        .rounding(8.0)
+                    Vec2::new(54.0, 30.0),
+                    egui::Button::new(RichText::new(go_label).strong().size(14.0))
+                        .rounding(9.0)
                         .fill(go_fill),
                 );
                 if go.clicked() {
@@ -427,9 +417,9 @@ pub fn show_chrome_toolbar(
 
                 let settings_btn = ui
                     .add_sized(
-                        Vec2::new(36.0, 28.0),
-                        egui::Button::new(RichText::new("⚙").size(15.0))
-                            .rounding(7.0)
+                        Vec2::new(38.0, 30.0),
+                        egui::Button::new(RichText::new("⚙").size(16.0))
+                            .rounding(8.0)
                             .fill(theme::NAV_BTN_FILL),
                     )
                     .on_hover_text(i18n::settings_tooltip(loc));
@@ -437,7 +427,6 @@ pub fn show_chrome_toolbar(
                     open_settings = true;
                 }
             });
-        });
 
     ToolbarResult {
         navigate,
