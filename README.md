@@ -45,4 +45,4 @@ Tonet is licensed under the **PolyForm Noncommercial License 1.0.0**—see [`LIC
 
 ## Contributing
 
-Contributions are welcome: open issues and pull requests on GitHub. Please keep user-facing copy and maintainer docs in **English** unless the change is explicitly locale-specific (e.g. translated landing strings).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines. Contributions are welcome: open issues and pull requests on GitHub. Please keep user-facing copy and maintainer docs in **English** unless the change is explicitly locale-specific (e.g. translated landing strings).
