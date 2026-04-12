@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 
 use eframe::egui::{self, Color32, ViewportCommand};
 
+use crate::branding;
 use crate::i18n::{self, Locale};
 use crate::network::fetch_url;
 use crate::parser::{parse_html, DomNode, DomNodeType};
@@ -38,6 +39,8 @@ enum UpdateJobResult {
 }
 
 pub struct TonetApp {
+    /// If set after rendering the page, navigate to this URL on the next frame.
+    pending_link_navigation: Option<String>,
     url_input: String,
     loading: bool,
     error_message: Option<String>,
@@ -63,9 +66,16 @@ pub struct TonetApp {
 }
 
 impl TonetApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        egui_extras::install_image_loaders(&cc.egui_ctx);
+        cc.egui_ctx.include_bytes(
+            branding::TONET_LOGO_URI,
+            egui::load::Bytes::Static(branding::TONET_SVG),
+        );
+
         let settings = AppSettings::load();
         Self {
+            pending_link_navigation: None,
             url_input: "https://usetonet.com".to_string(),
             loading: false,
             error_message: None,
@@ -111,10 +121,11 @@ impl TonetApp {
         let (tx, rx) = mpsc::channel();
         self.fetch_rx = Some(rx);
 
+        let page_url = trimmed.clone();
         std::thread::spawn(move || {
             let outcome: FetchResult = (|| {
-                let html = fetch_url(&trimmed).map_err(|e| e.to_string())?;
-                Ok(parse_html(&html))
+                let html = fetch_url(&page_url).map_err(|e| e.to_string())?;
+                Ok(parse_html(&html, &page_url))
             })();
             let _ = tx.send(outcome);
         });
@@ -209,7 +220,7 @@ impl TonetApp {
                 ctx.request_repaint();
             }
             Ok(Err(msg)) => {
-                self.error_message = Some(msg);
+                self.error_message = Some(i18n::localize_fetch_error(self.loc(), &msg));
                 self.loading = false;
                 self.fetch_rx = None;
                 self.pending_nav = None;
@@ -328,9 +339,22 @@ impl TonetApp {
 
 impl eframe::App for TonetApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if let Some(url) = self.pending_link_navigation.take() {
+            self.url_input = url;
+            self.start_fetch_new();
+        }
+
         self.poll_fetch(ctx);
         self.poll_update_job(ctx);
         self.maybe_schedule_update_checks(ctx);
+
+        if ctx.input(|i| {
+            i.key_pressed(egui::Key::F5)
+                || (i.modifiers.command && i.key_pressed(egui::Key::R))
+        }) && !self.loading
+        {
+            self.reload_page();
+        }
 
         let loc = self.loc();
         let can_back = self.hist_index > 0;
@@ -356,6 +380,11 @@ impl eframe::App for TonetApp {
                 }
 
                 ui.horizontal(|ui| {
+                    ui.add(
+                        egui::Image::from_uri(branding::TONET_LOGO_URI)
+                            .max_height(22.0)
+                            .rounding(6.0),
+                    );
                     ui.label(
                         egui::RichText::new(i18n::app_name(loc))
                             .strong()
@@ -365,10 +394,12 @@ impl eframe::App for TonetApp {
                     ui.separator();
                 });
 
+                let chip_preview = self.url_input.trim().to_string();
                 let tb = show_chrome_toolbar(
                     ui,
                     loc,
                     &mut self.url_input,
+                    &chip_preview,
                     self.loading,
                     can_back,
                     can_forward,
@@ -406,7 +437,7 @@ impl eframe::App for TonetApp {
                 .auto_shrink([false, false])
                 .show(ui, |ui| {
                     if !self.loading && self.error_message.is_none() {
-                        render_nodes(ui, loc, &self.dom);
+                        render_nodes(ui, loc, &self.dom, &mut self.pending_link_navigation);
                     } else if !self.loading && self.error_message.is_some() {
                         ui.label(
                             egui::RichText::new(i18n::suggestion_fix_url(loc))

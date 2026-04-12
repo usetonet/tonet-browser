@@ -1,5 +1,7 @@
 //! UI strings for Tonet (browser chrome). Primary language: English; additional locales for international users.
 
+use url::Url;
+
 use crate::settings::{AppSettings, UpdatePolicy};
 
 /// Active display locale resolved from settings + OS.
@@ -110,12 +112,82 @@ pub fn reload_tooltip(loc: Locale) -> &'static str {
     }
 }
 
+pub fn reload_shortcuts_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "También: F5 o Ctrl/⌘+R",
+        Locale::De => "Auch: F5 oder Strg/⌘+R",
+        Locale::Fr => "Aussi : F5 ou Ctrl/⌘+R",
+        Locale::En => "Also: F5 or Ctrl/⌘+R",
+    }
+}
+
 pub fn security_chip_placeholder(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Seguridad",
         Locale::De => "Sicherheit",
         Locale::Fr => "Sécurité",
         Locale::En => "Security",
+    }
+}
+
+/// Omnibox security line (`label`, `hover_tooltip`) from the current address text.
+pub fn security_chip_pair(omnibox_url: &str, loc: Locale) -> (String, String) {
+    let t = omnibox_url.trim();
+    if t.is_empty() {
+        return (
+            security_chip_placeholder(loc).to_string(),
+            security_chip_tooltip_idle(loc).to_string(),
+        );
+    }
+    match Url::parse(t) {
+        Ok(u) if u.scheme() == "https" => {
+            let host = u.host_str().unwrap_or("—");
+            (format!("HTTPS · {host}"), security_chip_tooltip_https(loc).to_string())
+        }
+        Ok(u) if u.scheme() == "http" => {
+            let host = u.host_str().unwrap_or("—");
+            (format!("HTTP · {host}"), security_chip_tooltip_http(loc).to_string())
+        }
+        _ => (
+            security_chip_placeholder(loc).to_string(),
+            security_chip_tooltip_invalid(loc).to_string(),
+        ),
+    }
+}
+
+fn security_chip_tooltip_idle(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Escribe una URL para ver el esquema y el host.",
+        Locale::De => "URL eingeben, um Schema und Host zu sehen.",
+        Locale::Fr => "Saisissez une URL pour afficher le schéma et l’hôte.",
+        Locale::En => "Enter a URL to show scheme and host.",
+    }
+}
+
+fn security_chip_tooltip_https(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Conexión cifrada (HTTPS). Tonet no valida certificados todavía.",
+        Locale::De => "Verschlüsselte Verbindung (HTTPS). Tonet prüft noch keine Zertifikate.",
+        Locale::Fr => "Connexion chiffrée (HTTPS). Tonet ne vérifie pas encore les certificats.",
+        Locale::En => "Encrypted connection (HTTPS). Tonet does not validate certificates yet.",
+    }
+}
+
+fn security_chip_tooltip_http(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Conexión sin cifrar (HTTP). No introduzcas datos sensibles.",
+        Locale::De => "Unverschlüsselte Verbindung (HTTP). Keine sensiblen Daten eingeben.",
+        Locale::Fr => "Connexion non chiffrée (HTTP). Évitez les données sensibles.",
+        Locale::En => "Unencrypted connection (HTTP). Do not enter sensitive data.",
+    }
+}
+
+fn security_chip_tooltip_invalid(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "URL no válida o esquema no admitido (solo http/https).",
+        Locale::De => "Ungültige URL oder Schema — nur http/https.",
+        Locale::Fr => "URL invalide ou schéma non pris en charge (http/https seulement).",
+        Locale::En => "Invalid URL or unsupported scheme (http/https only).",
     }
 }
 
@@ -173,6 +245,76 @@ pub fn suggestion_fix_url(loc: Locale) -> &'static str {
         Locale::Fr => "Corrigez l’URL ou essayez une page plus légère.",
         Locale::En => "Fix the URL or try another lightweight page.",
     }
+}
+
+/// Best-effort localization of fetch-layer English errors (`network.rs` / anyhow).
+pub fn localize_fetch_error(loc: Locale, msg: &str) -> String {
+    let m = msg.trim();
+    if m.contains("Only http and https URLs are allowed") {
+        return match loc {
+            Locale::Es => "Solo se admiten URL http y https.".to_string(),
+            Locale::De => "Nur http- und https-URLs sind erlaubt.".to_string(),
+            Locale::Fr => "Seules les URL http et https sont autorisées.".to_string(),
+            Locale::En => "Only http and https URLs are allowed.".to_string(),
+        };
+    }
+    if m.contains("Invalid URL:") || m.contains("relative URL without a base") {
+        return match loc {
+            Locale::Es => "La dirección no es una URL válida.".to_string(),
+            Locale::De => "Die Eingabe ist keine gültige URL.".to_string(),
+            Locale::Fr => "L’adresse n’est pas une URL valide.".to_string(),
+            Locale::En => "The address is not a valid URL.".to_string(),
+        };
+    }
+    if m.contains("Could not build HTTP client") {
+        return match loc {
+            Locale::Es => "No se pudo iniciar el cliente HTTP.".to_string(),
+            Locale::De => "HTTP-Client konnte nicht erstellt werden.".to_string(),
+            Locale::Fr => "Impossible de créer le client HTTP.".to_string(),
+            Locale::En => "Could not start the HTTP client.".to_string(),
+        };
+    }
+    if m.contains("Request failed for") {
+        return match loc {
+            Locale::Es => "Fallo de red al contactar el servidor.".to_string(),
+            Locale::De => "Netzwerkfehler beim Kontaktieren des Servers.".to_string(),
+            Locale::Fr => "Échec réseau en joignant le serveur.".to_string(),
+            Locale::En => "Network error while contacting the server.".to_string(),
+        };
+    }
+    if m.contains("HTTP error: server responded with") {
+        return match loc {
+            Locale::Es => "El servidor respondió con un código distinto de 200 OK.".to_string(),
+            Locale::De => "Der Server antwortete nicht mit 200 OK.".to_string(),
+            Locale::Fr => "Le serveur n’a pas répondu avec 200 OK.".to_string(),
+            Locale::En => "The server did not respond with 200 OK.".to_string(),
+        };
+    }
+    if m.contains("page too large") || m.contains("too large (over 1 MB)") {
+        return match loc {
+            Locale::Es => "Página demasiado grande (más de 1 MB).".to_string(),
+            Locale::De => "Seite zu groß (über 1 MB).".to_string(),
+            Locale::Fr => "Page trop volumineuse (plus de 1 Mo).".to_string(),
+            Locale::En => "Page too large (over 1 MB).".to_string(),
+        };
+    }
+    if m.contains("not valid UTF-8") || m.contains("Body is not valid UTF-8") {
+        return match loc {
+            Locale::Es => "El cuerpo de la página no es UTF-8 válido.".to_string(),
+            Locale::De => "Der Seiteninhalt ist kein gültiges UTF-8.".to_string(),
+            Locale::Fr => "Le corps de la page n’est pas en UTF-8 valide.".to_string(),
+            Locale::En => "The page body is not valid UTF-8.".to_string(),
+        };
+    }
+    if m.contains("timed out") || m.contains("timeout") {
+        return match loc {
+            Locale::Es => "Tiempo de espera agotado al cargar la página.".to_string(),
+            Locale::De => "Zeitüberschreitung beim Laden der Seite.".to_string(),
+            Locale::Fr => "Délai dépassé lors du chargement de la page.".to_string(),
+            Locale::En => "Timed out while loading the page.".to_string(),
+        };
+    }
+    msg.to_string()
 }
 
 // --- Update banner ---
@@ -444,9 +586,9 @@ pub fn update_interrupted(loc: Locale) -> &'static str {
 
 pub fn empty_page_hint(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "No se encontró contenido reconocible (<title>, <h1>, <h2>, <p>).",
-        Locale::De => "Kein erkanntes Inhalts-Markup (<title>, <h1>, <h2>, <p>).",
-        Locale::Fr => "Aucun contenu reconnu (<title>, <h1>, <h2>, <p>).",
-        Locale::En => "No recognizable content found (<title>, <h1>, <h2>, <p>).",
+        Locale::Es => "No se encontró contenido reconocible (<title>, <h1>, <h2>, <p>, enlaces).",
+        Locale::De => "Kein erkanntes Inhalts-Markup (<title>, <h1>, <h2>, <p>, Links).",
+        Locale::Fr => "Aucun contenu reconnu (<title>, <h1>, <h2>, <p>, liens).",
+        Locale::En => "No recognizable content found (<title>, <h1>, <h2>, <p>, links).",
     }
 }

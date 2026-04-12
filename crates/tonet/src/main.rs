@@ -4,6 +4,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+mod branding;
 mod i18n;
 mod network;
 mod parser;
@@ -14,11 +15,34 @@ mod update;
 
 use eframe::egui;
 
+fn window_icon_from_svg() -> Option<egui::IconData> {
+    let img = egui_extras::image::load_svg_bytes_with_size(
+        branding::TONET_SVG,
+        Some(egui::SizeHint::Size(128, 128)),
+    )
+    .ok()?;
+    let [w, h] = img.size;
+    let mut rgba = Vec::with_capacity(w * h * 4);
+    for c in img.pixels {
+        rgba.extend_from_slice(&[c.r(), c.g(), c.b(), c.a()]);
+    }
+    Some(egui::IconData {
+        rgba,
+        width: w as u32,
+        height: h as u32,
+    })
+}
+
 fn main() -> eframe::Result<()> {
+    let mut viewport = egui::ViewportBuilder::default()
+        .with_title("Tonet")
+        .with_inner_size([960.0, 640.0]);
+    if let Some(icon) = window_icon_from_svg() {
+        viewport = viewport.with_icon(icon);
+    }
+
     let native_options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title("Tonet")
-            .with_inner_size([960.0, 640.0]),
+        viewport,
         ..Default::default()
     };
 

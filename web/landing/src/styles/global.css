@@ -78,7 +78,8 @@ a:hover {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  flex-shrink: 0;
+  background: url("/tonet.svg") center / contain no-repeat;
   box-shadow: 0 8px 28px rgba(79, 140, 255, 0.35);
 }
 

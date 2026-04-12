@@ -1,6 +1,8 @@
 //! Blocking HTTP fetch with Tonet policies: scheme allowlist, dynamic User-Agent, and the
 //! **Purity filter** rejecting bodies larger than 1 MiB.
 
+use std::time::Duration;
+
 use anyhow::{anyhow, Context};
 use url::Url;
 
@@ -27,6 +29,7 @@ pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
             "Tonet/{} (Minimalist Browser)",
             env!("CARGO_PKG_VERSION")
         ))
+        .timeout(Duration::from_secs(45))
         .build()
         .context("Could not build HTTP client")?;
 
