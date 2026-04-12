@@ -107,7 +107,7 @@ pub fn reload_tooltip(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Recargar",
         Locale::De => "Neu laden",
-        Locale::Fr => "Recharger",
+        Locale::Fr => "Actualiser",
         Locale::En => "Reload",
     }
 }
