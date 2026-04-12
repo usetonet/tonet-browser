@@ -112,6 +112,15 @@ pub fn reload_tooltip(loc: Locale) -> &'static str {
     }
 }
 
+pub fn stop_loading_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Detener carga",
+        Locale::De => "Laden abbrechen",
+        Locale::Fr => "Arrêter le chargement",
+        Locale::En => "Stop loading",
+    }
+}
+
 pub fn reload_shortcuts_hint(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "También: F5 o Ctrl/⌘+R",
