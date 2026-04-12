@@ -19,6 +19,7 @@ use crate::ui::{
 };
 use crate::update;
 use crate::window_chrome;
+use crate::window_resize;
 
 #[derive(Debug)]
 enum UpdateJobResult {
@@ -49,6 +50,10 @@ pub struct TonetApp {
 
     /// Borderless window with in-app caption (Windows by default; see `window_chrome`).
     integrated_title_chrome: bool,
+
+    /// Best-effort DWM corner rounding attempts (Windows integrated mode only).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    dwm_corner_attempts: u8,
 }
 
 impl TonetApp {
@@ -76,6 +81,7 @@ impl TonetApp {
             last_periodic_check: Instant::now(),
             omnibox_focus_select_all: false,
             integrated_title_chrome,
+            dwm_corner_attempts: 0,
         }
     }
 
@@ -370,7 +376,23 @@ impl TonetApp {
 }
 
 impl eframe::App for TonetApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        #[cfg(not(windows))]
+        let _ = frame;
+
+        #[cfg(windows)]
+        {
+            if self.integrated_title_chrome && self.dwm_corner_attempts < 60 {
+                if crate::platform_windows::try_apply_round_corners(frame) {
+                    self.dwm_corner_attempts = 60;
+                } else {
+                    self.dwm_corner_attempts = self.dwm_corner_attempts.saturating_add(1);
+                }
+            }
+        }
+
+        window_resize::maybe_begin_native_resize(ctx, self.integrated_title_chrome);
+
         if let Some(url) = self.active_tab_mut().pending_link_navigation.take() {
             self.active_tab_mut().url_input = url;
             self.start_fetch_new();

@@ -21,3 +21,4 @@ semver = "1.0"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 webbrowser = "1.0"
 sys-locale = "0.3"
+raw-window-handle = "0.6"

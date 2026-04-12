@@ -6,6 +6,9 @@
 ///
 /// On Windows, set environment variable `TONET_SYSTEM_DECORATIONS=1` (or `true`) to restore the
 /// classic framed window.
+///
+/// When integrated, Tonet also uses **edge resize hit-testing** and (Windows 11+) **DWM small
+/// corner rounding** when the OS accepts it.
 pub fn integrated_title_chrome() -> bool {
     if !cfg!(target_os = "windows") {
         return false;

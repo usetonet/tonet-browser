@@ -3893,6 +3893,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_extras",
+ "raw-window-handle",
  "reqwest",
  "semver",
  "serde",

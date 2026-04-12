@@ -32,39 +32,65 @@ pub struct TabBarResult {
     pub close_tab: Option<usize>,
 }
 
+/// Compact caption buttons (integrated title chrome).
+const CAPTION_BTN: Vec2 = Vec2::new(32.0, 24.0);
+
 fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
-    let cap = Vec2::new(36.0, 28.0);
-    let btn = |ui: &mut Ui, label: &str, tip: &'static str| -> bool {
-        ui.add_sized(
-            cap,
-            egui::Button::new(RichText::new(label).size(14.0).color(Color32::from_gray(220))),
+    ui.spacing_mut().item_spacing.x = 3.0;
+
+    let cap_btn = |ui: &mut Ui, label: RichText, tip: &'static str| -> bool {
+        ui.add(
+            egui::Button::new(label)
+                .min_size(CAPTION_BTN)
+                .rounding(5.0)
+                .fill(Color32::from_rgb(40, 42, 48)),
         )
         .on_hover_text(tip)
         .clicked()
     };
 
-    if btn(ui, "−", i18n::window_minimize(loc)) {
+    if cap_btn(
+        ui,
+        RichText::new("−").size(15.0).color(Color32::from_gray(230)),
+        i18n::window_minimize(loc),
+    ) {
         ctx.send_viewport_cmd(ViewportCommand::Minimized(true));
     }
 
     let maximized = ctx.input(|i| i.viewport().maximized).unwrap_or(false);
-    let (max_label, max_tip) = if maximized {
+    let (glyph, tip) = if maximized {
         ("❐", i18n::window_restore(loc))
     } else {
         ("□", i18n::window_maximize(loc))
     };
-    if btn(ui, max_label, max_tip) {
+    if cap_btn(
+        ui,
+        RichText::new(glyph).size(12.0).color(Color32::from_gray(225)),
+        tip,
+    ) {
         ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
     }
 
     let close = ui
-        .add_sized(
-            cap,
-            egui::Button::new(RichText::new("✕").size(13.0).color(Color32::from_rgb(230, 120, 120))),
+        .add(
+            egui::Button::new(RichText::new("✕").size(11.0).color(Color32::from_rgb(222, 118, 122)))
+                .min_size(CAPTION_BTN)
+                .rounding(5.0)
+                .fill(Color32::from_rgb(40, 42, 48)),
         )
         .on_hover_text(i18n::window_close(loc));
     if close.clicked() {
         ctx.send_viewport_cmd(ViewportCommand::Close);
+    }
+}
+
+fn apply_drag_or_maximize(ctx: &Context, resp: &egui::Response) {
+    if resp.drag_started() {
+        ctx.send_viewport_cmd(ViewportCommand::StartDrag);
+    }
+    if resp.double_clicked() {
+        let maximized = ctx.input(|i| i.viewport().maximized).unwrap_or(false);
+        ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
     }
 }
 
@@ -81,8 +107,25 @@ pub fn show_tab_bar(
     let mut out = TabBarResult::default();
     let strip_bg = Color32::from_rgb(26, 28, 34);
     let row_h = 30.0;
-    // Reserve space for drag strip (~40) + three caption buttons (36 each) + gaps.
-    let right_chrome = if integrated_caption { 160.0 } else { 0.0 };
+    // Caption column + dedicated drag gap + inner padding on the right (avoids clipped ✕).
+    const DRAG_GAP: f32 = 28.0;
+    let caption_block = CAPTION_BTN.x * 3.0 + 3.0 * 2.0 + 6.0;
+    let right_chrome = if integrated_caption {
+        DRAG_GAP + caption_block + 6.0
+    } else {
+        0.0
+    };
+
+    let inner = if integrated_caption {
+        egui::Margin {
+            left: 8.0,
+            right: 12.0,
+            top: 5.0,
+            bottom: 5.0,
+        }
+    } else {
+        egui::Margin::symmetric(6.0, 5.0)
+    };
 
     egui::Frame::default()
         .fill(strip_bg)
@@ -90,7 +133,7 @@ pub fn show_tab_bar(
             1.0,
             Color32::from_rgb(38, 40, 48),
         ))
-        .inner_margin(egui::Margin::symmetric(6.0, 5.0))
+        .inner_margin(inner)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 let scroll_w = (ui.available_width() - right_chrome).max(64.0);
@@ -180,26 +223,31 @@ pub fn show_tab_bar(
                                     {
                                         out.new_tab = true;
                                     }
+
+                                    // Empty strip to the right of "+" = drag surface (entire top row).
+                                    if integrated_caption {
+                                        let spare = ui.available_width();
+                                        if spare > 1.0 {
+                                            let drag = ui.allocate_response(
+                                                Vec2::new(spare, row_h),
+                                                Sense::click_and_drag(),
+                                            );
+                                            apply_drag_or_maximize(ctx, &drag);
+                                            drag.on_hover_text(i18n::window_drag_hint(loc));
+                                        }
+                                    }
                                 });
                             });
                     },
                 );
 
                 if integrated_caption {
-                    let drag_w = ui.available_width().max(8.0);
-                    let drag = ui.allocate_response(
-                        Vec2::new(drag_w.min(40.0), row_h),
+                    let drag_gap = ui.allocate_response(
+                        Vec2::new(DRAG_GAP, row_h),
                         Sense::click_and_drag(),
                     );
-                    if drag.drag_started() {
-                        ctx.send_viewport_cmd(ViewportCommand::StartDrag);
-                    }
-                    if drag.double_clicked() {
-                        let maximized =
-                            ctx.input(|i| i.viewport().maximized).unwrap_or(false);
-                        ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
-                    }
-                    drag.on_hover_text(i18n::window_drag_hint(loc));
+                    apply_drag_or_maximize(ctx, &drag_gap);
+                    drag_gap.on_hover_text(i18n::window_drag_hint(loc));
 
                     show_window_caption_controls(ui, ctx, loc);
                 }
