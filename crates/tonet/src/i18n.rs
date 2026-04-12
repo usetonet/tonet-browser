@@ -121,6 +121,33 @@ pub fn reload_shortcuts_hint(loc: Locale) -> &'static str {
     }
 }
 
+pub fn tab_new_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Nueva pestaña (Ctrl o ⌘ + T)",
+        Locale::De => "Neuer Tab (Strg bzw. ⌘ + T)",
+        Locale::Fr => "Nouvel onglet (Ctrl ou ⌘ + T)",
+        Locale::En => "New tab (Ctrl or ⌘ + T)",
+    }
+}
+
+pub fn tab_close_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cerrar pestaña (Ctrl o ⌘ + W)",
+        Locale::De => "Tab schließen (Strg bzw. ⌘ + W)",
+        Locale::Fr => "Fermer l’onglet (Ctrl ou ⌘ + W)",
+        Locale::En => "Close tab (Ctrl or ⌘ + W)",
+    }
+}
+
+pub fn tab_untitled(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Nueva pestaña",
+        Locale::De => "Neuer Tab",
+        Locale::Fr => "Nouvel onglet",
+        Locale::En => "New tab",
+    }
+}
+
 pub fn security_chip_placeholder(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Seguridad",

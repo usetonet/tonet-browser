@@ -15,6 +15,110 @@ pub struct ToolbarResult {
     pub go_forward: bool,
 }
 
+/// Tab strip: switch tab, open new, close.
+#[derive(Default)]
+pub struct TabBarResult {
+    pub new_tab: bool,
+    pub select_tab: Option<usize>,
+    pub close_tab: Option<usize>,
+}
+
+/// Horizontal tab strip (familiar browser layout) above the navigation toolbar.
+pub fn show_tab_bar(
+    ui: &mut Ui,
+    loc: Locale,
+    tab_titles: &[String],
+    active_index: usize,
+    can_close_any: bool,
+) -> TabBarResult {
+    let mut out = TabBarResult::default();
+    let strip_bg = Color32::from_rgb(26, 28, 34);
+
+    egui::Frame::default()
+        .fill(strip_bg)
+        .inner_margin(egui::Margin::symmetric(6.0, 4.0))
+        .show(ui, |ui| {
+            egui::ScrollArea::horizontal()
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.spacing_mut().item_spacing.x = 4.0;
+                        for (i, title) in tab_titles.iter().enumerate() {
+                            let selected = i == active_index;
+                            let tab_bg = if selected {
+                                Color32::from_rgb(44, 46, 54)
+                            } else {
+                                Color32::from_rgb(34, 36, 42)
+                            };
+                            let rounding = egui::Rounding {
+                                nw: 6.0,
+                                ne: 6.0,
+                                sw: 0.0,
+                                se: 0.0,
+                            };
+                            ui.push_id(i as i32, |ui| {
+                                egui::Frame::default()
+                                    .fill(tab_bg)
+                                    .stroke(if selected {
+                                        egui::Stroke::new(
+                                            1.0,
+                                            Color32::from_rgb(88, 130, 220),
+                                        )
+                                    } else {
+                                        egui::Stroke::NONE
+                                    })
+                                    .inner_margin(egui::Margin::symmetric(10.0, 5.0))
+                                    .rounding(rounding)
+                                    .show(ui, |ui| {
+                                        ui.horizontal(|ui| {
+                                            ui.spacing_mut().item_spacing.x = 4.0;
+                                            let label = RichText::new(title.as_str())
+                                                .small()
+                                                .color(if selected {
+                                                    Color32::from_gray(245)
+                                                } else {
+                                                    Color32::from_gray(195)
+                                                });
+                                            if ui
+                                                .add(egui::SelectableLabel::new(selected, label))
+                                                .clicked()
+                                            {
+                                                out.select_tab = Some(i);
+                                            }
+                                            if can_close_any {
+                                                let close = ui
+                                                    .add_sized(
+                                                        Vec2::new(22.0, 22.0),
+                                                        egui::Button::new(
+                                                            RichText::new("×").size(15.0),
+                                                        ),
+                                                    )
+                                                    .on_hover_text(i18n::tab_close_tooltip(loc));
+                                                if close.clicked() {
+                                                    out.close_tab = Some(i);
+                                                }
+                                            }
+                                        });
+                                    });
+                            });
+                        }
+                        if ui
+                            .add_sized(
+                                Vec2::new(30.0, 28.0),
+                                egui::Button::new(RichText::new("+").strong().size(15.0)),
+                            )
+                            .on_hover_text(i18n::tab_new_tooltip(loc))
+                            .clicked()
+                        {
+                            out.new_tab = true;
+                        }
+                    });
+                });
+        });
+
+    out
+}
+
 /// Chromium-style row: back / forward / reload, security chip, URL, Go, settings.
 pub fn show_chrome_toolbar(
     ui: &mut Ui,
