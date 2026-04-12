@@ -577,5 +577,7 @@ impl eframe::App for TonetApp {
                 self.settings_open = true;
             }
         });
+
+        window_resize::update_resize_hover_cursor(ctx, self.integrated_title_chrome);
     }
 }

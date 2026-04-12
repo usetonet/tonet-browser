@@ -1,6 +1,6 @@
 //! Hit-test for native window resize when using undecorated (integrated) chrome.
 
-use egui::{Context, Pos2, Rect, ResizeDirection, ViewportCommand};
+use egui::{Context, CursorIcon, Pos2, Rect, ResizeDirection, ViewportCommand};
 
 /// Pixels from the window edge that count as a resize grip.
 const EDGE: f32 = 6.0;
@@ -22,6 +22,36 @@ pub fn maybe_begin_native_resize(ctx: &Context, integrated: bool) {
     let screen = ctx.screen_rect();
     if let Some(dir) = hit_resize_direction(pos, screen) {
         ctx.send_viewport_cmd(ViewportCommand::BeginResize(dir));
+    }
+}
+
+/// Show resize cursors when the pointer hovers a native resize edge (integrated chrome only).
+///
+/// Call **after** other UI so the cursor wins over the default arrow on narrow window borders.
+pub fn update_resize_hover_cursor(ctx: &Context, integrated: bool) {
+    if !integrated {
+        return;
+    }
+    let Some(pos) = ctx.input(|i| i.pointer.hover_pos()) else {
+        return;
+    };
+    let screen = ctx.screen_rect();
+    let Some(dir) = hit_resize_direction(pos, screen) else {
+        return;
+    };
+    ctx.set_cursor_icon(cursor_for_resize_direction(dir));
+}
+
+fn cursor_for_resize_direction(dir: ResizeDirection) -> CursorIcon {
+    match dir {
+        ResizeDirection::North => CursorIcon::ResizeNorth,
+        ResizeDirection::South => CursorIcon::ResizeSouth,
+        ResizeDirection::East => CursorIcon::ResizeEast,
+        ResizeDirection::West => CursorIcon::ResizeWest,
+        ResizeDirection::NorthEast => CursorIcon::ResizeNorthEast,
+        ResizeDirection::NorthWest => CursorIcon::ResizeNorthWest,
+        ResizeDirection::SouthEast => CursorIcon::ResizeSouthEast,
+        ResizeDirection::SouthWest => CursorIcon::ResizeSouthWest,
     }
 }
 
