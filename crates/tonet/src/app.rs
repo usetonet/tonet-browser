@@ -18,6 +18,8 @@ use crate::ui::{
     show_update_banner,
 };
 use crate::update;
+use crate::window_chrome;
+use crate::window_resize;
 
 #[derive(Debug)]
 enum UpdateJobResult {
@@ -45,6 +47,13 @@ pub struct TonetApp {
 
     /// When set, next toolbar pass focuses the omnibox and selects all text (Ctrl/⌘+L).
     omnibox_focus_select_all: bool,
+
+    /// Borderless window with in-app caption (Windows by default; see `window_chrome`).
+    integrated_title_chrome: bool,
+
+    /// Best-effort DWM corner rounding attempts (Windows integrated mode only).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    dwm_corner_attempts: u8,
 }
 
 impl TonetApp {
@@ -56,6 +65,7 @@ impl TonetApp {
         );
 
         let settings = AppSettings::load();
+        let integrated_title_chrome = window_chrome::integrated_title_chrome();
         Self {
             tabs: vec![Tab::new(DEFAULT_HOME_URL)],
             active_tab: 0,
@@ -70,6 +80,8 @@ impl TonetApp {
             update_banner_dismissed: false,
             last_periodic_check: Instant::now(),
             omnibox_focus_select_all: false,
+            integrated_title_chrome,
+            dwm_corner_attempts: 0,
         }
     }
 
@@ -364,7 +376,23 @@ impl TonetApp {
 }
 
 impl eframe::App for TonetApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        #[cfg(not(windows))]
+        let _ = frame;
+
+        #[cfg(windows)]
+        {
+            if self.integrated_title_chrome && self.dwm_corner_attempts < 60 {
+                if crate::platform_windows::try_apply_round_corners(frame) {
+                    self.dwm_corner_attempts = 60;
+                } else {
+                    self.dwm_corner_attempts = self.dwm_corner_attempts.saturating_add(1);
+                }
+            }
+        }
+
+        window_resize::maybe_begin_native_resize(ctx, self.integrated_title_chrome);
+
         if let Some(url) = self.active_tab_mut().pending_link_navigation.take() {
             self.active_tab_mut().url_input = url;
             self.start_fetch_new();
@@ -407,7 +435,11 @@ impl eframe::App for TonetApp {
         let can_close_tabs = self.tabs.len() > 1;
 
         egui::TopBottomPanel::top("tonet_top").show(ctx, |ui| {
-            ui.add_space(6.0);
+            ui.add_space(if self.integrated_title_chrome {
+                2.0
+            } else {
+                6.0
+            });
             ui.vertical(|ui| {
                 if let Some(ver) = &self.update_banner {
                     if !self.update_banner_dismissed {
@@ -427,10 +459,12 @@ impl eframe::App for TonetApp {
 
                 let tb_tabs = show_tab_bar(
                     ui,
+                    ctx,
                     loc,
                     &tab_titles,
                     self.active_tab,
                     can_close_tabs,
+                    self.integrated_title_chrome,
                 );
                 if tb_tabs.new_tab {
                     self.open_new_tab(ctx);
@@ -543,5 +577,7 @@ impl eframe::App for TonetApp {
                 self.settings_open = true;
             }
         });
+
+        window_resize::update_resize_hover_cursor(ctx, self.integrated_title_chrome);
     }
 }

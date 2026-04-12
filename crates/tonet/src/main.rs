@@ -13,6 +13,11 @@ mod settings;
 mod tab;
 mod ui;
 mod update;
+mod window_chrome;
+mod window_resize;
+
+#[cfg(windows)]
+mod platform_windows;
 
 use eframe::egui;
 
@@ -37,7 +42,12 @@ fn window_icon_from_svg() -> Option<egui::IconData> {
 fn main() -> eframe::Result<()> {
     let mut viewport = egui::ViewportBuilder::default()
         .with_title("Tonet")
-        .with_inner_size([960.0, 640.0]);
+        .with_inner_size([960.0, 640.0])
+        .with_decorations(!window_chrome::integrated_title_chrome());
+    if window_chrome::integrated_title_chrome() {
+        // Brave-like minimum: roughly phone width × chrome-only height.
+        viewport = viewport.with_min_inner_size([340.0, 200.0]);
+    }
     if let Some(icon) = window_icon_from_svg() {
         viewport = viewport.with_icon(icon);
     }
