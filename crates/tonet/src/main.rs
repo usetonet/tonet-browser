@@ -13,6 +13,7 @@ mod settings;
 mod tab;
 mod ui;
 mod update;
+mod window_chrome;
 
 use eframe::egui;
 
@@ -37,7 +38,8 @@ fn window_icon_from_svg() -> Option<egui::IconData> {
 fn main() -> eframe::Result<()> {
     let mut viewport = egui::ViewportBuilder::default()
         .with_title("Tonet")
-        .with_inner_size([960.0, 640.0]);
+        .with_inner_size([960.0, 640.0])
+        .with_decorations(!window_chrome::integrated_title_chrome());
     if let Some(icon) = window_icon_from_svg() {
         viewport = viewport.with_icon(icon);
     }

@@ -157,6 +157,51 @@ pub fn tab_untitled(loc: Locale) -> &'static str {
     }
 }
 
+pub fn window_minimize(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Minimizar",
+        Locale::De => "Minimieren",
+        Locale::Fr => "Réduire",
+        Locale::En => "Minimize",
+    }
+}
+
+pub fn window_maximize(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Maximizar",
+        Locale::De => "Maximieren",
+        Locale::Fr => "Agrandir",
+        Locale::En => "Maximize",
+    }
+}
+
+pub fn window_restore(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Restaurar tamaño",
+        Locale::De => "Wiederherstellen",
+        Locale::Fr => "Restaurer",
+        Locale::En => "Restore down",
+    }
+}
+
+pub fn window_close(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cerrar",
+        Locale::De => "Schließen",
+        Locale::Fr => "Fermer",
+        Locale::En => "Close",
+    }
+}
+
+pub fn window_drag_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Arrastra para mover la ventana (doble clic para maximizar o restaurar)",
+        Locale::De => "Ziehen zum Verschieben (Doppelklick: maximieren/wiederherstellen)",
+        Locale::Fr => "Glisser pour déplacer (double-clic : agrandir ou restaurer)",
+        Locale::En => "Drag to move (double-click to maximize or restore)",
+    }
+}
+
 pub fn security_chip_placeholder(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Seguridad",

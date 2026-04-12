@@ -18,6 +18,7 @@ use crate::ui::{
     show_update_banner,
 };
 use crate::update;
+use crate::window_chrome;
 
 #[derive(Debug)]
 enum UpdateJobResult {
@@ -45,6 +46,9 @@ pub struct TonetApp {
 
     /// When set, next toolbar pass focuses the omnibox and selects all text (Ctrl/⌘+L).
     omnibox_focus_select_all: bool,
+
+    /// Borderless window with in-app caption (Windows by default; see `window_chrome`).
+    integrated_title_chrome: bool,
 }
 
 impl TonetApp {
@@ -56,6 +60,7 @@ impl TonetApp {
         );
 
         let settings = AppSettings::load();
+        let integrated_title_chrome = window_chrome::integrated_title_chrome();
         Self {
             tabs: vec![Tab::new(DEFAULT_HOME_URL)],
             active_tab: 0,
@@ -70,6 +75,7 @@ impl TonetApp {
             update_banner_dismissed: false,
             last_periodic_check: Instant::now(),
             omnibox_focus_select_all: false,
+            integrated_title_chrome,
         }
     }
 
@@ -407,7 +413,11 @@ impl eframe::App for TonetApp {
         let can_close_tabs = self.tabs.len() > 1;
 
         egui::TopBottomPanel::top("tonet_top").show(ctx, |ui| {
-            ui.add_space(6.0);
+            ui.add_space(if self.integrated_title_chrome {
+                2.0
+            } else {
+                6.0
+            });
             ui.vertical(|ui| {
                 if let Some(ver) = &self.update_banner {
                     if !self.update_banner_dismissed {
@@ -427,10 +437,12 @@ impl eframe::App for TonetApp {
 
                 let tb_tabs = show_tab_bar(
                     ui,
+                    ctx,
                     loc,
                     &tab_titles,
                     self.active_tab,
                     can_close_tabs,
+                    self.integrated_title_chrome,
                 );
                 if tb_tabs.new_tab {
                     self.open_new_tab(ctx);

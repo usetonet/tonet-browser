@@ -1,7 +1,9 @@
 //! Browser chrome (toolbar, omnibox, settings) — layout inspired by mainstream browsers.
 
 use egui::text::{CCursor, CCursorRange};
-use egui::{Align, Color32, Id, Layout, RichText, Ui, Vec2};
+use egui::{
+    Align, Color32, Context, Id, Layout, RichText, Sense, Ui, Vec2, ViewportCommand,
+};
 
 use crate::i18n::Locale;
 use crate::i18n;
@@ -30,97 +32,178 @@ pub struct TabBarResult {
     pub close_tab: Option<usize>,
 }
 
+fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
+    let cap = Vec2::new(36.0, 28.0);
+    let btn = |ui: &mut Ui, label: &str, tip: &'static str| -> bool {
+        ui.add_sized(
+            cap,
+            egui::Button::new(RichText::new(label).size(14.0).color(Color32::from_gray(220))),
+        )
+        .on_hover_text(tip)
+        .clicked()
+    };
+
+    if btn(ui, "−", i18n::window_minimize(loc)) {
+        ctx.send_viewport_cmd(ViewportCommand::Minimized(true));
+    }
+
+    let maximized = ctx.input(|i| i.viewport().maximized).unwrap_or(false);
+    let (max_label, max_tip) = if maximized {
+        ("❐", i18n::window_restore(loc))
+    } else {
+        ("□", i18n::window_maximize(loc))
+    };
+    if btn(ui, max_label, max_tip) {
+        ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
+    }
+
+    let close = ui
+        .add_sized(
+            cap,
+            egui::Button::new(RichText::new("✕").size(13.0).color(Color32::from_rgb(230, 120, 120))),
+        )
+        .on_hover_text(i18n::window_close(loc));
+    if close.clicked() {
+        ctx.send_viewport_cmd(ViewportCommand::Close);
+    }
+}
+
 /// Horizontal tab strip (familiar browser layout) above the navigation toolbar.
 pub fn show_tab_bar(
     ui: &mut Ui,
+    ctx: &Context,
     loc: Locale,
     tab_titles: &[String],
     active_index: usize,
     can_close_any: bool,
+    integrated_caption: bool,
 ) -> TabBarResult {
     let mut out = TabBarResult::default();
     let strip_bg = Color32::from_rgb(26, 28, 34);
+    let row_h = 30.0;
+    // Reserve space for drag strip (~40) + three caption buttons (36 each) + gaps.
+    let right_chrome = if integrated_caption { 160.0 } else { 0.0 };
 
     egui::Frame::default()
         .fill(strip_bg)
-        .inner_margin(egui::Margin::symmetric(6.0, 4.0))
+        .stroke(egui::Stroke::new(
+            1.0,
+            Color32::from_rgb(38, 40, 48),
+        ))
+        .inner_margin(egui::Margin::symmetric(6.0, 5.0))
         .show(ui, |ui| {
-            egui::ScrollArea::horizontal()
-                .auto_shrink([false, true])
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 4.0;
-                        for (i, title) in tab_titles.iter().enumerate() {
-                            let selected = i == active_index;
-                            let tab_bg = if selected {
-                                Color32::from_rgb(44, 46, 54)
-                            } else {
-                                Color32::from_rgb(34, 36, 42)
-                            };
-                            let rounding = egui::Rounding {
-                                nw: 6.0,
-                                ne: 6.0,
-                                sw: 0.0,
-                                se: 0.0,
-                            };
-                            ui.push_id(i as i32, |ui| {
-                                egui::Frame::default()
-                                    .fill(tab_bg)
-                                    .stroke(if selected {
-                                        egui::Stroke::new(
-                                            1.0,
-                                            Color32::from_rgb(88, 130, 220),
-                                        )
-                                    } else {
-                                        egui::Stroke::NONE
-                                    })
-                                    .inner_margin(egui::Margin::symmetric(10.0, 5.0))
-                                    .rounding(rounding)
-                                    .show(ui, |ui| {
-                                        ui.horizontal(|ui| {
-                                            ui.spacing_mut().item_spacing.x = 4.0;
-                                            let label = RichText::new(title.as_str())
-                                                .small()
-                                                .color(if selected {
-                                                    Color32::from_gray(245)
-                                                } else {
-                                                    Color32::from_gray(195)
-                                                });
-                                            if ui
-                                                .add(egui::SelectableLabel::new(selected, label))
-                                                .clicked()
-                                            {
-                                                out.select_tab = Some(i);
-                                            }
-                                            if can_close_any {
-                                                let close = ui
-                                                    .add_sized(
-                                                        Vec2::new(22.0, 22.0),
-                                                        egui::Button::new(
-                                                            RichText::new("×").size(15.0),
-                                                        ),
+            ui.horizontal(|ui| {
+                let scroll_w = (ui.available_width() - right_chrome).max(64.0);
+                ui.allocate_ui_with_layout(
+                    Vec2::new(scroll_w, row_h),
+                    Layout::left_to_right(Align::Center),
+                    |ui| {
+                        egui::ScrollArea::horizontal()
+                            .id_salt("tonet_tab_scroll")
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.spacing_mut().item_spacing.x = 4.0;
+                                    for (i, title) in tab_titles.iter().enumerate() {
+                                        let selected = i == active_index;
+                                        let tab_bg = if selected {
+                                            Color32::from_rgb(44, 46, 54)
+                                        } else {
+                                            Color32::from_rgb(34, 36, 42)
+                                        };
+                                        let rounding = egui::Rounding {
+                                            nw: 6.0,
+                                            ne: 6.0,
+                                            sw: 0.0,
+                                            se: 0.0,
+                                        };
+                                        ui.push_id(i as i32, |ui| {
+                                            egui::Frame::default()
+                                                .fill(tab_bg)
+                                                .stroke(if selected {
+                                                    egui::Stroke::new(
+                                                        1.0,
+                                                        Color32::from_rgb(88, 130, 220),
                                                     )
-                                                    .on_hover_text(i18n::tab_close_tooltip(loc));
-                                                if close.clicked() {
-                                                    out.close_tab = Some(i);
-                                                }
-                                            }
+                                                } else {
+                                                    egui::Stroke::NONE
+                                                })
+                                                .inner_margin(egui::Margin::symmetric(10.0, 5.0))
+                                                .rounding(rounding)
+                                                .show(ui, |ui| {
+                                                    ui.horizontal(|ui| {
+                                                        ui.spacing_mut().item_spacing.x = 4.0;
+                                                        let label = RichText::new(title.as_str())
+                                                            .small()
+                                                            .color(if selected {
+                                                                Color32::from_gray(245)
+                                                            } else {
+                                                                Color32::from_gray(195)
+                                                            });
+                                                        if ui
+                                                            .add(egui::SelectableLabel::new(
+                                                                selected, label,
+                                                            ))
+                                                            .clicked()
+                                                        {
+                                                            out.select_tab = Some(i);
+                                                        }
+                                                        if can_close_any {
+                                                            let close = ui
+                                                                .add_sized(
+                                                                    Vec2::new(22.0, 22.0),
+                                                                    egui::Button::new(
+                                                                        RichText::new("×")
+                                                                            .size(15.0),
+                                                                    ),
+                                                                )
+                                                                .on_hover_text(
+                                                                    i18n::tab_close_tooltip(loc),
+                                                                );
+                                                            if close.clicked() {
+                                                                out.close_tab = Some(i);
+                                                            }
+                                                        }
+                                                    });
+                                                });
                                         });
-                                    });
+                                    }
+                                    if ui
+                                        .add_sized(
+                                            Vec2::new(30.0, 28.0),
+                                            egui::Button::new(
+                                                RichText::new("+").strong().size(15.0),
+                                            ),
+                                        )
+                                        .on_hover_text(i18n::tab_new_tooltip(loc))
+                                        .clicked()
+                                    {
+                                        out.new_tab = true;
+                                    }
+                                });
                             });
-                        }
-                        if ui
-                            .add_sized(
-                                Vec2::new(30.0, 28.0),
-                                egui::Button::new(RichText::new("+").strong().size(15.0)),
-                            )
-                            .on_hover_text(i18n::tab_new_tooltip(loc))
-                            .clicked()
-                        {
-                            out.new_tab = true;
-                        }
-                    });
-                });
+                    },
+                );
+
+                if integrated_caption {
+                    let drag_w = ui.available_width().max(8.0);
+                    let drag = ui.allocate_response(
+                        Vec2::new(drag_w.min(40.0), row_h),
+                        Sense::click_and_drag(),
+                    );
+                    if drag.drag_started() {
+                        ctx.send_viewport_cmd(ViewportCommand::StartDrag);
+                    }
+                    if drag.double_clicked() {
+                        let maximized =
+                            ctx.input(|i| i.viewport().maximized).unwrap_or(false);
+                        ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
+                    }
+                    drag.on_hover_text(i18n::window_drag_hint(loc));
+
+                    show_window_caption_controls(ui, ctx, loc);
+                }
+            });
         });
 
     out
