@@ -10,6 +10,7 @@ mod network;
 mod parser;
 mod renderer;
 mod settings;
+mod tab;
 mod ui;
 mod update;
 
