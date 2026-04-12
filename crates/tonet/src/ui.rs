@@ -19,6 +19,7 @@ pub fn omnibox_id() -> Id {
 pub struct ToolbarResult {
     pub navigate: bool,
     pub reload: bool,
+    pub stop_loading: bool,
     pub open_settings: bool,
     pub go_back: bool,
     pub go_forward: bool,
@@ -271,6 +272,7 @@ pub fn show_chrome_toolbar(
 ) -> ToolbarResult {
     let mut navigate = false;
     let mut reload = false;
+    let mut stop_loading = false;
     let mut open_settings = false;
     let mut go_back = false;
     let mut go_forward = false;
@@ -301,15 +303,24 @@ pub fn show_chrome_toolbar(
                     go_forward = true;
                 }
 
-                let b_reload = ui
-                    .add(egui::Button::new(RichText::new("↻").size(18.0)).min_size(btn_size))
-                    .on_hover_text(format!(
-                        "{}\n{}",
-                        i18n::reload_tooltip(loc),
-                        i18n::reload_shortcuts_hint(loc)
-                    ));
-                if b_reload.clicked() {
-                    reload = true;
+                if loading {
+                    let b_stop = ui
+                        .add(egui::Button::new(RichText::new("⏹").size(14.0)).min_size(btn_size))
+                        .on_hover_text(i18n::stop_loading_tooltip(loc));
+                    if b_stop.clicked() {
+                        stop_loading = true;
+                    }
+                } else {
+                    let b_reload = ui
+                        .add(egui::Button::new(RichText::new("↻").size(18.0)).min_size(btn_size))
+                        .on_hover_text(format!(
+                            "{}\n{}",
+                            i18n::reload_tooltip(loc),
+                            i18n::reload_shortcuts_hint(loc)
+                        ));
+                    if b_reload.clicked() {
+                        reload = true;
+                    }
                 }
 
                 ui.separator();
@@ -395,6 +406,7 @@ pub fn show_chrome_toolbar(
     ToolbarResult {
         navigate,
         reload,
+        stop_loading,
         open_settings,
         go_back,
         go_forward,
