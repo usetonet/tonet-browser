@@ -121,6 +121,15 @@ pub fn reload_shortcuts_hint(loc: Locale) -> &'static str {
     }
 }
 
+pub fn omnibox_focus_shortcut_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ctrl o ⌘ + L: enfocar y seleccionar la barra de direcciones",
+        Locale::De => "Strg bzw. ⌘ + L: Adresszeile fokussieren und alles markieren",
+        Locale::Fr => "Ctrl ou ⌘ + L : focus sur la barre d’adresse et tout sélectionner",
+        Locale::En => "Ctrl or ⌘ + L: focus address bar and select all",
+    }
+}
+
 pub fn tab_new_tooltip(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Nueva pestaña (Ctrl o ⌘ + T)",

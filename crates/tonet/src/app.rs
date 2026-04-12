@@ -42,6 +42,9 @@ pub struct TonetApp {
     update_banner_dismissed: bool,
 
     last_periodic_check: Instant,
+
+    /// When set, next toolbar pass focuses the omnibox and selects all text (Ctrl/⌘+L).
+    omnibox_focus_select_all: bool,
 }
 
 impl TonetApp {
@@ -66,6 +69,7 @@ impl TonetApp {
             update_banner: None,
             update_banner_dismissed: false,
             last_periodic_check: Instant::now(),
+            omnibox_focus_select_all: false,
         }
     }
 
@@ -385,6 +389,12 @@ impl eframe::App for TonetApp {
             self.close_tab_at(self.active_tab, ctx);
         }
 
+        if !self.settings_open
+            && ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::L))
+        {
+            self.omnibox_focus_select_all = true;
+        }
+
         let loc = self.loc();
         let tab = self.active_tab();
         let can_back = tab.hist_index > 0;
@@ -448,6 +458,7 @@ impl eframe::App for TonetApp {
                     ui.separator();
                 });
 
+                let omnibox_focus = std::mem::take(&mut self.omnibox_focus_select_all);
                 let active = self.active_tab_mut();
                 let chip_preview = active.url_input.trim().to_string();
                 let tb = show_chrome_toolbar(
@@ -458,6 +469,7 @@ impl eframe::App for TonetApp {
                     active.loading,
                     can_back,
                     can_forward,
+                    omnibox_focus,
                 );
                 if tb.go_back {
                     self.go_back(ctx);
