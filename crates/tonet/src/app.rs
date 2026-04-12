@@ -514,6 +514,9 @@ impl eframe::App for TonetApp {
                 if tb.reload {
                     self.reload_page();
                 }
+                if tb.stop_loading {
+                    self.active_tab_mut().cancel_in_flight();
+                }
                 if tb.navigate {
                     self.start_fetch_new();
                 }
