@@ -11,6 +11,7 @@ mod parser;
 mod renderer;
 mod settings;
 mod tab;
+mod theme;
 mod ui;
 mod update;
 mod window_chrome;

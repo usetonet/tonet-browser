@@ -12,6 +12,7 @@ use crate::network::fetch_url;
 use crate::parser::parse_html;
 use crate::renderer::render_nodes;
 use crate::settings::{AppSettings, UpdatePolicy};
+use crate::theme;
 use crate::tab::{NavigateIntent, Tab, DEFAULT_HOME_URL};
 use crate::ui::{
     show_chrome_toolbar, show_error_panel, show_loading, show_settings_window, show_tab_bar,
@@ -63,6 +64,34 @@ impl TonetApp {
             branding::TONET_LOGO_URI,
             egui::load::Bytes::Static(branding::TONET_SVG),
         );
+
+        let mut visuals = egui::Visuals::dark();
+        visuals.panel_fill = theme::PANEL_FILL;
+        visuals.window_fill = theme::CONTENT_BG;
+        visuals.widgets.noninteractive.bg_fill = theme::CONTENT_BG;
+        visuals.extreme_bg_color = theme::OMNIBOX_FILL;
+        visuals.faint_bg_color = theme::NAV_BTN_FILL;
+        visuals.selection.bg_fill = Color32::from_rgb(55, 85, 135);
+        visuals.selection.stroke = egui::Stroke::new(1.0, theme::ACCENT);
+        let r = egui::Rounding::same(6.0);
+        visuals.widgets.inactive.rounding = r;
+        visuals.widgets.hovered.rounding = r;
+        visuals.widgets.active.rounding = r;
+        visuals.widgets.open.rounding = r;
+        cc.egui_ctx.set_visuals(visuals);
+
+        cc.egui_ctx.style_mut(|s| {
+            s.spacing.button_padding = egui::vec2(10.0, 5.0);
+            s.spacing.item_spacing = egui::vec2(8.0, 6.0);
+            s.text_styles.insert(
+                egui::TextStyle::Body,
+                egui::FontId::new(15.0, egui::FontFamily::Proportional),
+            );
+            s.text_styles.insert(
+                egui::TextStyle::Small,
+                egui::FontId::new(12.5, egui::FontFamily::Proportional),
+            );
+        });
 
         let settings = AppSettings::load();
         let integrated_title_chrome = window_chrome::integrated_title_chrome();
@@ -489,7 +518,7 @@ impl eframe::App for TonetApp {
                         egui::RichText::new(i18n::app_name(loc))
                             .strong()
                             .size(15.0)
-                            .color(Color32::from_rgb(120, 175, 255)),
+                            .color(theme::ACCENT),
                     );
                     ui.separator();
                 });
@@ -549,7 +578,7 @@ impl eframe::App for TonetApp {
                         ui.label(
                             egui::RichText::new(i18n::suggestion_fix_url(loc))
                                 .italics()
-                                .color(Color32::GRAY),
+                                .color(theme::LOADING_MUTED),
                         );
                     }
                 });

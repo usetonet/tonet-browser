@@ -2,12 +2,13 @@
 
 use egui::text::{CCursor, CCursorRange};
 use egui::{
-    Align, Color32, Context, Id, Layout, RichText, Sense, Ui, Vec2, ViewportCommand,
+    Align, Color32, Context, Id, Layout, RichText, Sense, Stroke, Ui, Vec2, ViewportCommand,
 };
 
 use crate::i18n::Locale;
 use crate::i18n;
 use crate::settings::{AppSettings, UpdatePolicy};
+use crate::theme;
 
 /// Stable [`Id`] for the omnibox so shortcuts can request focus and selection.
 #[inline]
@@ -43,8 +44,8 @@ fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
         ui.add(
             egui::Button::new(label)
                 .min_size(CAPTION_BTN)
-                .rounding(5.0)
-                .fill(Color32::from_rgb(40, 42, 48)),
+                .rounding(6.0)
+                .fill(theme::CAPTION_BTN_FILL),
         )
         .on_hover_text(tip)
         .clicked()
@@ -52,7 +53,7 @@ fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
 
     if cap_btn(
         ui,
-        RichText::new("−").size(15.0).color(Color32::from_gray(230)),
+        RichText::new("−").size(15.0).color(theme::CAPTION_GLYPH),
         i18n::window_minimize(loc),
     ) {
         ctx.send_viewport_cmd(ViewportCommand::Minimized(true));
@@ -66,7 +67,7 @@ fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
     };
     if cap_btn(
         ui,
-        RichText::new(glyph).size(12.0).color(Color32::from_gray(225)),
+        RichText::new(glyph).size(12.0).color(theme::CAPTION_GLYPH),
         tip,
     ) {
         ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
@@ -74,10 +75,10 @@ fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
 
     let close = ui
         .add(
-            egui::Button::new(RichText::new("✕").size(11.0).color(Color32::from_rgb(222, 118, 122)))
+            egui::Button::new(RichText::new("✕").size(11.0).color(theme::CAPTION_CLOSE))
                 .min_size(CAPTION_BTN)
-                .rounding(5.0)
-                .fill(Color32::from_rgb(40, 42, 48)),
+                .rounding(6.0)
+                .fill(theme::CAPTION_BTN_FILL),
         )
         .on_hover_text(i18n::window_close(loc));
     if close.clicked() {
@@ -106,7 +107,7 @@ pub fn show_tab_bar(
     integrated_caption: bool,
 ) -> TabBarResult {
     let mut out = TabBarResult::default();
-    let strip_bg = Color32::from_rgb(26, 28, 34);
+    let strip_bg = theme::STRIP_BG;
     let row_h = 30.0;
     // Caption column + dedicated drag gap + inner padding on the right (avoids clipped ✕).
     const DRAG_GAP: f32 = 28.0;
@@ -130,10 +131,7 @@ pub fn show_tab_bar(
 
     egui::Frame::default()
         .fill(strip_bg)
-        .stroke(egui::Stroke::new(
-            1.0,
-            Color32::from_rgb(38, 40, 48),
-        ))
+        .stroke(Stroke::new(1.0, theme::STRIP_STROKE))
         .inner_margin(inner)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
@@ -151,9 +149,9 @@ pub fn show_tab_bar(
                                     for (i, title) in tab_titles.iter().enumerate() {
                                         let selected = i == active_index;
                                         let tab_bg = if selected {
-                                            Color32::from_rgb(44, 46, 54)
+                                            theme::TAB_SELECTED
                                         } else {
-                                            Color32::from_rgb(34, 36, 42)
+                                            theme::TAB_IDLE
                                         };
                                         let rounding = egui::Rounding {
                                             nw: 6.0,
@@ -165,12 +163,9 @@ pub fn show_tab_bar(
                                             egui::Frame::default()
                                                 .fill(tab_bg)
                                                 .stroke(if selected {
-                                                    egui::Stroke::new(
-                                                        1.0,
-                                                        Color32::from_rgb(88, 130, 220),
-                                                    )
+                                                    Stroke::new(1.0, theme::TAB_SELECTED_STROKE)
                                                 } else {
-                                                    egui::Stroke::NONE
+                                                    Stroke::NONE
                                                 })
                                                 .inner_margin(egui::Margin::symmetric(10.0, 5.0))
                                                 .rounding(rounding)
@@ -180,9 +175,9 @@ pub fn show_tab_bar(
                                                         let label = RichText::new(title.as_str())
                                                             .small()
                                                             .color(if selected {
-                                                                Color32::from_gray(245)
+                                                                theme::TAB_TEXT
                                                             } else {
-                                                                Color32::from_gray(195)
+                                                                theme::TAB_TEXT_MUTED
                                                             });
                                                         if ui
                                                             .add(egui::SelectableLabel::new(
@@ -215,9 +210,9 @@ pub fn show_tab_bar(
                                     if ui
                                         .add_sized(
                                             Vec2::new(30.0, 28.0),
-                                            egui::Button::new(
-                                                RichText::new("+").strong().size(15.0),
-                                            ),
+                                            egui::Button::new(RichText::new("+").strong().size(15.0))
+                                                .rounding(7.0)
+                                                .fill(theme::NAV_BTN_FILL),
                                         )
                                         .on_hover_text(i18n::tab_new_tooltip(loc))
                                         .clicked()
@@ -277,53 +272,74 @@ pub fn show_chrome_toolbar(
     let mut go_back = false;
     let mut go_forward = false;
 
-    let bar_bg = Color32::from_rgb(32, 34, 40);
-    let btn_size = Vec2::new(34.0, 30.0);
+    let bar_bg = theme::TOOLBAR_BG;
+    let nav_size = Vec2::new(32.0, 28.0);
+    let nav_btn = |ui: &mut Ui, enabled: bool, label: RichText, tip: &'static str| -> bool {
+        ui.add_enabled(
+            enabled,
+            egui::Button::new(label)
+                .min_size(nav_size)
+                .rounding(7.0)
+                .fill(theme::NAV_BTN_FILL),
+        )
+        .on_hover_text(tip)
+        .clicked()
+    };
 
     egui::Frame::default()
         .fill(bar_bg)
-        .inner_margin(egui::Margin::symmetric(8.0, 5.0))
-        .rounding(10.0)
+        .inner_margin(egui::Margin::symmetric(10.0, 6.0))
+        .rounding(12.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                let b_back = ui
-                    .add_enabled(can_back, egui::Button::new(RichText::new("←").size(18.0)).min_size(btn_size))
-                    .on_hover_text(i18n::back_tooltip(loc));
-                if b_back.clicked() {
+                if nav_btn(
+                    ui,
+                    can_back,
+                    RichText::new("←").size(17.0),
+                    i18n::back_tooltip(loc),
+                ) {
                     go_back = true;
                 }
 
-                let b_fwd = ui
-                    .add_enabled(
-                        can_forward,
-                        egui::Button::new(RichText::new("→").size(18.0)).min_size(btn_size),
-                    )
-                    .on_hover_text(i18n::forward_tooltip(loc));
-                if b_fwd.clicked() {
+                if nav_btn(
+                    ui,
+                    can_forward,
+                    RichText::new("→").size(17.0),
+                    i18n::forward_tooltip(loc),
+                ) {
                     go_forward = true;
                 }
 
                 if loading {
                     let b_stop = ui
-                        .add(egui::Button::new(RichText::new("⏹").size(14.0)).min_size(btn_size))
+                        .add(
+                            egui::Button::new(RichText::new("⏹").size(13.0))
+                                .min_size(nav_size)
+                                .rounding(7.0)
+                                .fill(theme::NAV_BTN_FILL),
+                        )
                         .on_hover_text(i18n::stop_loading_tooltip(loc));
                     if b_stop.clicked() {
                         stop_loading = true;
                     }
-                } else {
-                    let b_reload = ui
-                        .add(egui::Button::new(RichText::new("↻").size(18.0)).min_size(btn_size))
-                        .on_hover_text(format!(
-                            "{}\n{}",
-                            i18n::reload_tooltip(loc),
-                            i18n::reload_shortcuts_hint(loc)
-                        ));
-                    if b_reload.clicked() {
-                        reload = true;
-                    }
+                } else if ui
+                    .add(
+                        egui::Button::new(RichText::new("↻").size(17.0))
+                            .min_size(nav_size)
+                            .rounding(7.0)
+                            .fill(theme::NAV_BTN_FILL),
+                    )
+                    .on_hover_text(format!(
+                        "{}\n{}",
+                        i18n::reload_tooltip(loc),
+                        i18n::reload_shortcuts_hint(loc)
+                    ))
+                    .clicked()
+                {
+                    reload = true;
                 }
 
-                ui.separator();
+                ui.add_space(4.0);
 
                 let (chip_label, chip_tip) = i18n::security_chip_pair(chip_address_preview, loc);
                 let chip_icon = if chip_label.starts_with("HTTPS") {
@@ -337,44 +353,52 @@ pub fn show_chrome_toolbar(
                     egui::Label::new(
                         RichText::new(format!("{chip_icon}  {chip_label}"))
                             .small()
-                            .color(Color32::from_gray(180)),
+                            .color(theme::CHIP),
                     )
                     .truncate(),
                 )
                 .on_hover_text(chip_tip);
 
-                let url_w = (ui.available_width() - 130.0).max(80.0);
+                let url_w = (ui.available_width() - 132.0).max(80.0);
                 let mut url_enter = false;
                 ui.allocate_ui_with_layout(
-                    Vec2::new(url_w, 28.0),
+                    Vec2::new(url_w, 30.0),
                     Layout::left_to_right(Align::Center),
                     |ui| {
-                        let output = egui::TextEdit::singleline(url_input)
-                            .id(omnibox_id())
-                            .hint_text(i18n::address_hint(loc))
-                            .desired_rows(1)
-                            .show(ui);
+                        egui::Frame::default()
+                            .fill(theme::OMNIBOX_FILL)
+                            .stroke(Stroke::new(1.0, theme::OMNIBOX_STROKE))
+                            .rounding(9.0)
+                            .inner_margin(egui::Margin::symmetric(12.0, 5.0))
+                            .show(ui, |ui| {
+                                let output = egui::TextEdit::singleline(url_input)
+                                    .id(omnibox_id())
+                                    .frame(false)
+                                    .hint_text(i18n::address_hint(loc))
+                                    .desired_rows(1)
+                                    .show(ui);
 
-                        if focus_omnibox_select_all {
-                            let id = output.response.id;
-                            let n = url_input.chars().count();
-                            ui.ctx().memory_mut(|m| m.request_focus(id));
-                            let mut state = output.state;
-                            state.cursor.set_char_range(Some(CCursorRange::two(
-                                CCursor::new(0),
-                                CCursor::new(n),
-                            )));
-                            state.store(ui.ctx(), id);
-                        }
+                                if focus_omnibox_select_all {
+                                    let id = output.response.id;
+                                    let n = url_input.chars().count();
+                                    ui.ctx().memory_mut(|m| m.request_focus(id));
+                                    let mut state = output.state;
+                                    state.cursor.set_char_range(Some(CCursorRange::two(
+                                        CCursor::new(0),
+                                        CCursor::new(n),
+                                    )));
+                                    state.store(ui.ctx(), id);
+                                }
 
-                        if output.response.has_focus()
-                            && ui.input(|i| i.key_pressed(egui::Key::Enter))
-                        {
-                            url_enter = true;
-                        }
-                        output
-                            .response
-                            .on_hover_text(i18n::omnibox_focus_shortcut_hint(loc));
+                                if output.response.has_focus()
+                                    && ui.input(|i| i.key_pressed(egui::Key::Enter))
+                                {
+                                    url_enter = true;
+                                }
+                                output
+                                    .response
+                                    .on_hover_text(i18n::omnibox_focus_shortcut_hint(loc));
+                            });
                     },
                 );
                 if url_enter {
@@ -386,16 +410,28 @@ pub fn show_chrome_toolbar(
                 } else {
                     i18n::go(loc)
                 };
+                let go_fill = if loading {
+                    theme::NAV_BTN_FILL
+                } else {
+                    theme::PRIMARY_BTN
+                };
                 let go = ui.add_sized(
-                    Vec2::new(56.0, 30.0),
-                    egui::Button::new(RichText::new(go_label).strong()),
+                    Vec2::new(52.0, 28.0),
+                    egui::Button::new(RichText::new(go_label).strong().size(13.5))
+                        .rounding(8.0)
+                        .fill(go_fill),
                 );
                 if go.clicked() {
                     navigate = true;
                 }
 
                 let settings_btn = ui
-                    .add_sized(Vec2::new(38.0, 30.0), egui::Button::new(RichText::new("⚙").size(16.0)))
+                    .add_sized(
+                        Vec2::new(36.0, 28.0),
+                        egui::Button::new(RichText::new("⚙").size(15.0))
+                            .rounding(7.0)
+                            .fill(theme::NAV_BTN_FILL),
+                    )
                     .on_hover_text(i18n::settings_tooltip(loc));
                 if settings_btn.clicked() {
                     open_settings = true;
@@ -415,35 +451,63 @@ pub fn show_chrome_toolbar(
 
 pub fn show_error_panel(ui: &mut Ui, loc: Locale, message: &str) {
     egui::Frame::default()
-        .fill(Color32::from_rgb(72, 28, 28))
-        .stroke(egui::Stroke::new(1.0, Color32::from_rgb(140, 60, 60)))
-        .inner_margin(14.0)
-        .rounding(8.0)
+        .fill(theme::ERROR_BG)
+        .stroke(Stroke::new(1.0, theme::ERROR_STROKE))
+        .inner_margin(egui::Margin::symmetric(18.0, 14.0))
+        .rounding(12.0)
         .show(ui, |ui| {
-            ui.with_layout(Layout::top_down(Align::Min), |ui| {
+            ui.horizontal_top(|ui| {
                 ui.label(
-                    RichText::new(i18n::error_title(loc))
+                    RichText::new("!")
                         .strong()
-                        .color(Color32::from_rgb(255, 160, 160)),
+                        .size(20.0)
+                        .color(theme::ERROR_TITLE),
                 );
-                ui.add_space(6.0);
-                ui.label(RichText::new(message).color(Color32::from_rgb(255, 220, 220)));
+                ui.add_space(10.0);
+                ui.with_layout(Layout::top_down(Align::Min), |ui| {
+                    ui.label(
+                        RichText::new(i18n::error_title(loc))
+                            .strong()
+                            .size(15.0)
+                            .color(theme::ERROR_TITLE),
+                    );
+                    ui.add_space(6.0);
+                    ui.label(
+                        RichText::new(message)
+                            .size(14.0)
+                            .color(theme::ERROR_BODY),
+                    );
+                });
             });
         });
 }
 
 pub fn show_loading(ui: &mut Ui, loc: Locale) {
     ui.vertical_centered(|ui| {
-        ui.add_space(32.0);
-        ui.spinner();
-        ui.add_space(10.0);
-        ui.label(RichText::new(i18n::loading_title(loc)).size(18.0).strong());
-        ui.add_space(6.0);
-        ui.label(
-            RichText::new(i18n::loading_sub(loc))
-                .small()
-                .color(Color32::GRAY),
-        );
+        ui.add_space(28.0);
+        egui::Frame::default()
+            .fill(theme::OMNIBOX_FILL)
+            .stroke(Stroke::new(1.0, theme::OMNIBOX_STROKE))
+            .inner_margin(egui::Margin::symmetric(28.0, 22.0))
+            .rounding(14.0)
+            .show(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.spinner();
+                    ui.add_space(12.0);
+                    ui.label(
+                        RichText::new(i18n::loading_title(loc))
+                            .size(17.0)
+                            .strong()
+                            .color(theme::TAB_TEXT),
+                    );
+                    ui.add_space(6.0);
+                    ui.label(
+                        RichText::new(i18n::loading_sub(loc))
+                            .small()
+                            .color(theme::LOADING_MUTED),
+                    );
+                });
+            });
     });
 }
 
@@ -455,21 +519,21 @@ pub fn show_update_banner(
     on_dismiss: impl FnOnce(),
 ) {
     egui::Frame::default()
-        .fill(Color32::from_rgb(28, 52, 88))
-        .stroke(egui::Stroke::new(1.0, Color32::from_rgb(80, 120, 200)))
-        .inner_margin(12.0)
-        .rounding(8.0)
+        .fill(theme::UPDATE_BANNER_BG)
+        .stroke(Stroke::new(1.0, theme::UPDATE_BANNER_STROKE))
+        .inner_margin(14.0)
+        .rounding(10.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(
                     RichText::new(i18n::update_banner_title(loc))
                         .strong()
-                        .color(Color32::WHITE),
+                        .color(theme::SETTINGS_HEADING),
                 );
                 ui.label(
                     RichText::new(version_label)
                         .strong()
-                        .color(Color32::from_rgb(180, 210, 255)),
+                        .color(theme::UPDATE_ACCENT_LABEL),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     if ui.button(i18n::update_dismiss(loc)).clicked() {
@@ -478,7 +542,8 @@ pub fn show_update_banner(
                     if ui
                         .add(
                             egui::Button::new(RichText::new(i18n::update_download(loc)).strong())
-                                .fill(Color32::from_rgb(70, 130, 220)),
+                                .rounding(7.0)
+                                .fill(theme::PRIMARY_BTN),
                         )
                         .clicked()
                     {
@@ -509,8 +574,8 @@ pub fn show_settings_window(
         .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .frame(
             egui::Frame::window(&ctx.style())
-                .fill(Color32::from_rgb(36, 38, 42))
-                .rounding(10.0),
+                .fill(theme::SETTINGS_WINDOW_BG)
+                .rounding(12.0),
         );
 
     win.show(ctx, |ui| {
@@ -519,7 +584,7 @@ pub fn show_settings_window(
             RichText::new(i18n::settings_section_language(loc))
                 .size(17.0)
                 .strong()
-                .color(Color32::WHITE),
+                .color(theme::SETTINGS_HEADING),
         );
         ui.label(
             RichText::new(i18n::settings_language_help(loc))
@@ -555,7 +620,7 @@ pub fn show_settings_window(
             RichText::new(i18n::settings_section_updates(loc))
                 .size(17.0)
                 .strong()
-                .color(Color32::WHITE),
+                .color(theme::SETTINGS_HEADING),
         );
         ui.add_space(6.0);
         ui.label(
@@ -611,11 +676,11 @@ pub fn show_settings_window(
         ui.add_space(8.0);
         if !status_line.is_empty() {
             egui::Frame::default()
-                .fill(Color32::from_rgb(30, 32, 36))
+                .fill(theme::SETTINGS_STATUS_BG)
                 .inner_margin(10.0)
-                .rounding(6.0)
+                .rounding(8.0)
                 .show(ui, |ui| {
-                    ui.label(RichText::new(status_line).color(Color32::from_gray(210)));
+                    ui.label(RichText::new(status_line).color(theme::CHIP));
                 });
         }
 

@@ -3,7 +3,8 @@
 use crate::i18n::Locale;
 use crate::i18n;
 use crate::parser::{DomNode, DomNodeType};
-use egui::{Color32, RichText, Ui};
+use crate::theme;
+use egui::{RichText, Ui};
 
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode], link_target: &mut Option<String>) {
@@ -11,7 +12,7 @@ pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode], link_target: &m
         ui.label(
             RichText::new(i18n::empty_page_hint(loc))
                 .italics()
-                .color(Color32::GRAY),
+                .color(theme::LOADING_MUTED),
         );
         return;
     }
@@ -23,34 +24,39 @@ pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode], link_target: &m
                 ui.label(
                     RichText::new(&node.text)
                         .strong()
-                        .size(22.0)
-                        .color(Color32::from_rgb(40, 90, 160)),
+                        .size(21.0)
+                        .color(theme::PAGE_TITLE),
                 );
                 ui.add_space(8.0);
             }
             DomNodeType::H1 => {
                 ui.add_space(6.0);
-                ui.label(RichText::new(&node.text).strong().size(28.0));
+                ui.label(RichText::new(&node.text).strong().size(26.0).color(theme::BODY_TEXT));
                 ui.add_space(4.0);
             }
             DomNodeType::H2 => {
                 ui.add_space(4.0);
-                ui.label(RichText::new(&node.text).strong().size(20.0));
+                ui.label(
+                    RichText::new(&node.text)
+                        .strong()
+                        .size(19.0)
+                        .color(theme::BODY_TEXT),
+                );
                 ui.add_space(2.0);
             }
             DomNodeType::Paragraph => {
-                ui.label(RichText::new(&node.text).size(15.0));
+                ui.label(RichText::new(&node.text).size(15.0).color(theme::BODY_TEXT));
                 ui.add_space(6.0);
             }
             DomNodeType::Link => {
                 if let Some(ref href) = node.href {
-                    let r = ui.link(RichText::new(&node.text).size(15.0).color(Color32::from_rgb(120, 175, 255)));
+                    let r = ui.link(RichText::new(&node.text).size(15.0).color(theme::LINK));
                     if r.clicked() {
                         *link_target = Some(href.clone());
                     }
                     r.on_hover_text(href);
                 } else {
-                    ui.label(RichText::new(&node.text).size(15.0));
+                    ui.label(RichText::new(&node.text).size(15.0).color(theme::BODY_TEXT));
                 }
                 ui.add_space(4.0);
             }
