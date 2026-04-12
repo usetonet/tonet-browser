@@ -1,7 +1,9 @@
 //! Minimal hand-rolled HTML parser (no full HTML engine).
 //!
-//! Extracts, in document order, the text content of `<title>`, `<h1>`, `<h2>`, and `<p>`.
+//! Extracts, in document order, `<title>`, `<h1>`, `<h2>`, `<p>`, and `<a href="…">` (http/https only after resolution).
 //! Other tags are ignored except to strip nested markup from extracted text.
+
+use url::Url;
 
 /// Semantic kind of a node extracted from the document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -10,6 +12,7 @@ pub enum DomNodeType {
     H1,
     H2,
     Paragraph,
+    Link,
 }
 
 impl DomNodeType {
@@ -20,16 +23,18 @@ impl DomNodeType {
             DomNodeType::H1 => "h1",
             DomNodeType::H2 => "h2",
             DomNodeType::Paragraph => "p",
+            DomNodeType::Link => "a",
         }
     }
 
     /// All kinds Tonet recognizes, in preferred detection order.
-    fn all() -> [DomNodeType; 4] {
+    fn all() -> [DomNodeType; 5] {
         [
             DomNodeType::Title,
             DomNodeType::H1,
             DomNodeType::H2,
             DomNodeType::Paragraph,
+            DomNodeType::Link,
         ]
     }
 }
@@ -39,22 +44,69 @@ impl DomNodeType {
 pub struct DomNode {
     pub kind: DomNodeType,
     pub text: String,
+    /// Absolute `http`/`https` URL when [`DomNodeType::Link`]; otherwise `None`.
+    pub href: Option<String>,
 }
 
-/// Very limited HTML parse: returns detected nodes in order.
-pub fn parse_html(html: &str) -> Vec<DomNode> {
+/// Resolve `href` against `page_url` for navigation. Returns `None` for unsupported schemes or fragments-only.
+pub fn resolve_href(page_url: &str, href: &str) -> Option<String> {
+    let href = href.trim();
+    if href.is_empty() || href.starts_with('#') {
+        return None;
+    }
+    let lower = href.to_ascii_lowercase();
+    if lower.starts_with("javascript:") || lower.starts_with("mailto:") || lower.starts_with("tel:") {
+        return None;
+    }
+
+    if href.starts_with("//") {
+        return Url::parse(&format!("https:{href}"))
+            .ok()
+            .filter(|u| matches!(u.scheme(), "http" | "https"))
+            .map(|u| u.to_string());
+    }
+
+    if lower.starts_with("http://") || lower.starts_with("https://") {
+        return Url::parse(href)
+            .ok()
+            .filter(|u| matches!(u.scheme(), "http" | "https"))
+            .map(|u| u.to_string());
+    }
+
+    let base = Url::parse(page_url).ok()?;
+    base.join(href)
+        .ok()
+        .filter(|u| matches!(u.scheme(), "http" | "https"))
+        .map(|u| u.to_string())
+}
+
+/// Very limited HTML parse: returns detected nodes in order. `page_url` resolves relative links.
+pub fn parse_html(html: &str, page_url: &str) -> Vec<DomNode> {
     let mut out = Vec::new();
     let mut pos = 0usize;
 
     while pos < html.len() {
-        // Next opening tag we care about.
         let Some((idx, kind)) = find_next_target_open_tag(html, pos) else {
             break;
         };
 
         let tag = kind.tag_name();
+
+        if kind == DomNodeType::Link {
+            if let Some((href_abs, label, end_after_close)) = extract_anchor_link(html, idx, page_url) {
+                out.push(DomNode {
+                    kind: DomNodeType::Link,
+                    text: label,
+                    href: Some(href_abs),
+                });
+                pos = end_after_close;
+            } else {
+                pos = idx.saturating_add(1);
+            }
+            continue;
+        }
+
         let Some((raw_inner, end_after_close)) = extract_inner_until_close(html, idx, tag) else {
-            // No well-formed close: advance one byte to avoid stalling.
             pos = idx.saturating_add(1);
             continue;
         };
@@ -64,6 +116,7 @@ pub fn parse_html(html: &str) -> Vec<DomNode> {
             out.push(DomNode {
                 kind,
                 text: cleaned,
+                href: None,
             });
         }
 
@@ -93,7 +146,51 @@ fn normalize_whitespace(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Finds the next `<title`, `<h1`, `<h2`, or `<p` open from `pos` (ASCII case-insensitive).
+fn extract_anchor_link(html: &str, open_idx: usize, page_url: &str) -> Option<(String, String, usize)> {
+    let bytes = html.as_bytes();
+    let gt = find_byte(bytes, b'>', open_idx)?;
+    let open_tag = html.get(open_idx..=gt)?;
+    let href_raw = parse_href_from_opening_a(open_tag)?;
+    let inner_start = gt + 1;
+    let close_start = find_closing_tag(html, inner_start, "a")?;
+    let tail = html.get(close_start..)?;
+    let rel_gt = tail.find('>')?;
+    let close_end = close_start + rel_gt + 1;
+    let inner = html.get(inner_start..close_start)?;
+    let mut label = normalize_whitespace(&strip_html_tags(inner));
+    if label.is_empty() {
+        label = href_raw.clone();
+    }
+    let href_abs = resolve_href(page_url, &href_raw)?;
+    Some((href_abs, label, close_end))
+}
+
+fn parse_href_from_opening_a(open_tag: &str) -> Option<String> {
+    let lower: String = open_tag.chars().map(|c| c.to_ascii_lowercase()).collect();
+    let key = "href";
+    let i = lower.find(key)? + key.len();
+    let mut rest = open_tag.get(i..)?.trim_start();
+    rest = rest.strip_prefix('=')?.trim_start();
+    let val = if let Some(r) = rest.strip_prefix('"') {
+        r.split('"').next()?.trim().to_string()
+    } else if let Some(r) = rest.strip_prefix('\'') {
+        r.split('\'').next()?.trim().to_string()
+    } else {
+        let end = rest
+            .char_indices()
+            .find(|(_, c)| c.is_whitespace() || *c == '>')
+            .map(|(i, _)| i)
+            .unwrap_or(rest.len());
+        rest.get(..end)?.trim().to_string()
+    };
+    if val.is_empty() {
+        None
+    } else {
+        Some(val)
+    }
+}
+
+/// Finds the next supported open tag from `pos` (ASCII case-insensitive).
 fn find_next_target_open_tag(html: &str, pos: usize) -> Option<(usize, DomNodeType)> {
     let bytes = html.as_bytes();
     let mut i = pos;
@@ -172,4 +269,47 @@ fn find_closing_tag(html: &str, from: usize, tag: &str) -> Option<usize> {
         i += 1;
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_title_and_paragraph() {
+        let html = "<html><title>Hello</title><body><p>World text</p></body>";
+        let nodes = parse_html(html, "https://example.com/");
+        assert!(nodes.iter().any(|n| n.kind == DomNodeType::Title && n.text == "Hello"));
+        assert!(nodes.iter().any(|n| n.kind == DomNodeType::Paragraph && n.text == "World text"));
+    }
+
+    #[test]
+    fn resolves_relative_link() {
+        let html = r#"<a href="/path">Go</a>"#;
+        let nodes = parse_html(html, "https://example.com/page");
+        let link = nodes.iter().find(|n| n.kind == DomNodeType::Link).expect("link");
+        assert_eq!(link.href.as_deref(), Some("https://example.com/path"));
+        assert_eq!(link.text, "Go");
+    }
+
+    #[test]
+    fn absolute_https_link_unchanged() {
+        let html = r#"<a href="https://other.test/x">Y</a>"#;
+        let nodes = parse_html(html, "https://example.com/");
+        let link = nodes.iter().find(|n| n.kind == DomNodeType::Link).unwrap();
+        assert_eq!(link.href.as_deref(), Some("https://other.test/x"));
+    }
+
+    #[test]
+    fn skips_javascript_href() {
+        let html = r#"<a href="javascript:void(0)">X</a>"#;
+        let nodes = parse_html(html, "https://example.com/");
+        assert!(!nodes.iter().any(|n| n.kind == DomNodeType::Link));
+    }
+
+    #[test]
+    fn resolve_href_protocol_relative() {
+        let u = resolve_href("https://ex.com/a", "//cdn.ex.com/z").unwrap();
+        assert_eq!(u, "https://cdn.ex.com/z");
+    }
 }

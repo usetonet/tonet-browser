@@ -5,8 +5,8 @@ use crate::i18n;
 use crate::parser::{DomNode, DomNodeType};
 use egui::{Color32, RichText, Ui};
 
-/// Draws parsed nodes in the scrollable page area.
-pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode]) {
+/// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
+pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode], link_target: &mut Option<String>) {
     if nodes.is_empty() {
         ui.label(
             RichText::new(i18n::empty_page_hint(loc))
@@ -41,6 +41,18 @@ pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode]) {
             DomNodeType::Paragraph => {
                 ui.label(RichText::new(&node.text).size(15.0));
                 ui.add_space(6.0);
+            }
+            DomNodeType::Link => {
+                if let Some(ref href) = node.href {
+                    let r = ui.link(RichText::new(&node.text).size(15.0).color(Color32::from_rgb(120, 175, 255)));
+                    if r.clicked() {
+                        *link_target = Some(href.clone());
+                    }
+                    r.on_hover_text(href);
+                } else {
+                    ui.label(RichText::new(&node.text).size(15.0));
+                }
+                ui.add_space(4.0);
             }
         }
     }

@@ -20,6 +20,7 @@ pub fn show_chrome_toolbar(
     ui: &mut Ui,
     loc: Locale,
     url_input: &mut String,
+    chip_address_preview: &str,
     loading: bool,
     can_back: bool,
     can_forward: bool,
@@ -58,24 +59,34 @@ pub fn show_chrome_toolbar(
 
                 let b_reload = ui
                     .add(egui::Button::new(RichText::new("↻").size(18.0)).min_size(btn_size))
-                    .on_hover_text(i18n::reload_tooltip(loc));
+                    .on_hover_text(format!(
+                        "{}\n{}",
+                        i18n::reload_tooltip(loc),
+                        i18n::reload_shortcuts_hint(loc)
+                    ));
                 if b_reload.clicked() {
                     reload = true;
                 }
 
                 ui.separator();
 
+                let (chip_label, chip_tip) = i18n::security_chip_pair(chip_address_preview, loc);
+                let chip_icon = if chip_label.starts_with("HTTPS") {
+                    "🔒"
+                } else if chip_label.starts_with("HTTP ·") {
+                    "⚠"
+                } else {
+                    "◌"
+                };
                 ui.add(
                     egui::Label::new(
-                        RichText::new(format!("🔒  {}", i18n::security_chip_placeholder(loc)))
+                        RichText::new(format!("{chip_icon}  {chip_label}"))
                             .small()
                             .color(Color32::from_gray(180)),
                     )
                     .truncate(),
                 )
-                .on_hover_text(
-                    "TLS and page trust indicators will grow with Tonet’s security roadmap.",
-                );
+                .on_hover_text(chip_tip);
 
                 let url_w = (ui.available_width() - 130.0).max(80.0);
                 let url_response = ui.add_sized(
