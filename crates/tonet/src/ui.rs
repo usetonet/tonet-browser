@@ -1,10 +1,17 @@
 //! Browser chrome (toolbar, omnibox, settings) — layout inspired by mainstream browsers.
 
-use egui::{Align, Color32, Layout, RichText, Ui, Vec2};
+use egui::text::{CCursor, CCursorRange};
+use egui::{Align, Color32, Id, Layout, RichText, Ui, Vec2};
 
 use crate::i18n::Locale;
 use crate::i18n;
 use crate::settings::{AppSettings, UpdatePolicy};
+
+/// Stable [`Id`] for the omnibox so shortcuts can request focus and selection.
+#[inline]
+pub fn omnibox_id() -> Id {
+    Id::new("tonet_omnibox")
+}
 
 /// Result of the main toolbar (omnibox row).
 pub struct ToolbarResult {
@@ -120,6 +127,7 @@ pub fn show_tab_bar(
 }
 
 /// Chromium-style row: back / forward / reload, security chip, URL, Go, settings.
+#[allow(clippy::too_many_arguments)]
 pub fn show_chrome_toolbar(
     ui: &mut Ui,
     loc: Locale,
@@ -128,6 +136,7 @@ pub fn show_chrome_toolbar(
     loading: bool,
     can_back: bool,
     can_forward: bool,
+    focus_omnibox_select_all: bool,
 ) -> ToolbarResult {
     let mut navigate = false;
     let mut reload = false;
@@ -193,13 +202,40 @@ pub fn show_chrome_toolbar(
                 .on_hover_text(chip_tip);
 
                 let url_w = (ui.available_width() - 130.0).max(80.0);
-                let url_response = ui.add_sized(
-                    [url_w, 28.0],
-                    egui::TextEdit::singleline(url_input)
-                        .hint_text(i18n::address_hint(loc))
-                        .desired_rows(1),
+                let mut url_enter = false;
+                ui.allocate_ui_with_layout(
+                    Vec2::new(url_w, 28.0),
+                    Layout::left_to_right(Align::Center),
+                    |ui| {
+                        let output = egui::TextEdit::singleline(url_input)
+                            .id(omnibox_id())
+                            .hint_text(i18n::address_hint(loc))
+                            .desired_rows(1)
+                            .show(ui);
+
+                        if focus_omnibox_select_all {
+                            let id = output.response.id;
+                            let n = url_input.chars().count();
+                            ui.ctx().memory_mut(|m| m.request_focus(id));
+                            let mut state = output.state;
+                            state.cursor.set_char_range(Some(CCursorRange::two(
+                                CCursor::new(0),
+                                CCursor::new(n),
+                            )));
+                            state.store(ui.ctx(), id);
+                        }
+
+                        if output.response.has_focus()
+                            && ui.input(|i| i.key_pressed(egui::Key::Enter))
+                        {
+                            url_enter = true;
+                        }
+                        output
+                            .response
+                            .on_hover_text(i18n::omnibox_focus_shortcut_hint(loc));
+                    },
                 );
-                if url_response.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                if url_enter {
                     navigate = true;
                 }
 
