@@ -107,8 +107,17 @@ pub fn reload_tooltip(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Recargar",
         Locale::De => "Neu laden",
-        Locale::Fr => "Actualiser",
+        Locale::Fr => "Recharger",
         Locale::En => "Reload",
+    }
+}
+
+pub fn stop_loading_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Detener carga",
+        Locale::De => "Laden abbrechen",
+        Locale::Fr => "Arrêter le chargement",
+        Locale::En => "Stop loading",
     }
 }
 
