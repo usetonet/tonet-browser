@@ -44,7 +44,11 @@ pub fn show_tab_bar(
 
     egui::Frame::default()
         .fill(strip_bg)
-        .inner_margin(egui::Margin::symmetric(6.0, 4.0))
+        .stroke(egui::Stroke::new(
+            1.0,
+            Color32::from_rgb(38, 40, 48),
+        ))
+        .inner_margin(egui::Margin::symmetric(6.0, 5.0))
         .show(ui, |ui| {
             egui::ScrollArea::horizontal()
                 .auto_shrink([false, true])
@@ -151,8 +155,8 @@ pub fn show_chrome_toolbar(
 
     egui::Frame::default()
         .fill(bar_bg)
-        .inner_margin(egui::Margin::symmetric(6.0, 4.0))
-        .rounding(8.0)
+        .inner_margin(egui::Margin::symmetric(8.0, 5.0))
+        .rounding(10.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 let b_back = ui
