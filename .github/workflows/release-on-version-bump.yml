@@ -138,6 +138,16 @@ jobs:
           if (-not (Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
           & $iscc (Join-Path (Get-Location) "installer\tonet.iss")
 
+      - name: Portable zip + web installer (TonetSetup)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.crate.outputs.version }}"
+          $dist = Join-Path (Get-Location) "dist"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Compress-Archive -Path "target\release\tonet.exe" -DestinationPath "$dist\Tonet-$v-windows-x64-portable.zip" -Force
+          cargo build --release -p tonet-setup
+          Copy-Item "target\release\TonetSetup.exe" "$dist\TonetSetup-x64.exe" -Force
+
       - uses: actions/upload-artifact@v4
         with:
           name: release-windows-${{ needs.check-version.outputs.version }}
@@ -175,18 +185,60 @@ jobs:
           chmod +x packaging/debian/build-deb.sh
           ./packaging/debian/build-deb.sh
 
+      - name: Web installer (TonetSetup) for Linux
+        run: |
+          cargo build --release -p tonet-setup
+          mkdir -p dist
+          cp "target/release/TonetSetup" "dist/TonetSetup-x86_64"
+
       - uses: actions/upload-artifact@v4
         with:
           name: release-linux-${{ needs.check-version.outputs.version }}
-          path: dist/*.deb
+          path: dist/*
+
+  build-macos:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release -p tonet
+
+      - name: Verify version matches
+        shell: bash
+        run: |
+          v=$(grep -m1 '^version' crates/tonet/Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          test "$v" = "${{ needs.check-version.outputs.version }}"
+
+      - name: Package macOS tarball + web installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          v="${{ needs.check-version.outputs.version }}"
+          mkdir -p dist
+          tar -czf "dist/Tonet-${v}-macos.tar.gz" -C target/release tonet
+          cargo build --release -p tonet-setup
+          cp "target/release/TonetSetup" "dist/TonetSetup-macos"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-${{ needs.check-version.outputs.version }}
+          path: dist/*
 
   publish:
-    needs: [check-version, build-windows, build-linux]
+    needs: [check-version, build-windows, build-linux, build-macos]
     if: >-
       always() &&
       needs.check-version.outputs.should_release == 'true' &&
       needs.build-windows.result == 'success' &&
-      needs.build-linux.result == 'success'
+      needs.build-linux.result == 'success' &&
+      needs.build-macos.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows installers
@@ -195,10 +247,16 @@ jobs:
           name: release-windows-${{ needs.check-version.outputs.version }}
           path: assets
 
-      - name: Download Linux .deb
+      - name: Download Linux assets
         uses: actions/download-artifact@v4
         with:
           name: release-linux-${{ needs.check-version.outputs.version }}
+          path: assets
+
+      - name: Download macOS assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release-macos-${{ needs.check-version.outputs.version }}
           path: assets
 
       - name: List assets

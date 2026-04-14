@@ -1,0 +1,29 @@
+[package]
+name = "tonet-setup"
+version = "0.2.0"
+edition = "2021"
+description = "Tonet web installer — downloads and installs the latest release"
+authors = ["Tonet Contributors"]
+license = "PolyForm-Noncommercial-1.0.0"
+repository = "https://github.com/usetonet/tonet-browser"
+build = "build.rs"
+
+[[bin]]
+name = "TonetSetup"
+path = "src/main.rs"
+
+[dependencies]
+eframe = "0.29"
+egui = "0.29"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
+regex = "1.11"
+thiserror = "2.0"
+dirs = "5.0"
+
+[target.'cfg(windows)'.dependencies]
+zip = { version = "2.2", default-features = false, features = ["deflate"] }
+
+[build-dependencies]
+winres = "0.1"
