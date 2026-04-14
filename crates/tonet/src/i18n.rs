@@ -63,19 +63,6 @@ pub fn address_hint(loc: Locale) -> &'static str {
     }
 }
 
-pub fn go(loc: Locale) -> &'static str {
-    match loc {
-        Locale::Es => "Ir",
-        Locale::De => "Los",
-        Locale::Fr => "Aller",
-        Locale::En => "Go",
-    }
-}
-
-pub fn go_loading(_: Locale) -> &'static str {
-    "…"
-}
-
 pub fn settings_tooltip(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Ajustes (Ctrl o ⌘ + coma)",
@@ -310,14 +297,6 @@ pub fn loading_sub(loc: Locale) -> &'static str {
     }
 }
 
-pub fn err_empty_url(loc: Locale) -> &'static str {
-    match loc {
-        Locale::Es => "Escribe una URL válida (http o https).",
-        Locale::De => "Bitte eine gültige http(s)-URL eingeben.",
-        Locale::Fr => "Saisissez une URL http ou https valide.",
-        Locale::En => "Enter a valid http or https URL.",
-    }
-}
 
 pub fn err_fetch_disconnected(loc: Locale) -> &'static str {
     match loc {
@@ -669,6 +648,17 @@ pub fn update_interrupted(loc: Locale) -> &'static str {
         Locale::De => "Die Aktualisierungsprüfung wurde unterbrochen.",
         Locale::Fr => "La vérification des mises à jour a été interrompue.",
         Locale::En => "The update check was interrupted.",
+    }
+}
+
+// --- New Tab page ---
+
+pub fn new_tab_search_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Busca con Tonet o escribe una URL",
+        Locale::De => "Suche mit Tonet oder gib eine URL ein",
+        Locale::Fr => "Rechercher avec Tonet ou saisir une URL",
+        Locale::En => "Search with Tonet or enter URL",
     }
 }
 

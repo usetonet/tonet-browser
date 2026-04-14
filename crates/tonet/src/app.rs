@@ -8,19 +8,106 @@ use eframe::egui::{self, Color32, ViewportCommand};
 
 use crate::branding;
 use crate::i18n::{self, Locale};
-use crate::network::fetch_url;
-use crate::parser::parse_html;
+use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext};
+use crate::parser::{extract_favicon_candidates, parse_html};
 use crate::renderer::render_nodes;
 use crate::settings::{AppSettings, UpdatePolicy};
 use crate::theme;
-use crate::tab::{NavigateIntent, Tab, DEFAULT_HOME_URL};
+use crate::tab::{HistoryEntry, NavigateIntent, PageFetchData, Tab, DEFAULT_HOME_URL};
+use crate::chrome::{show_chrome_toolbar, show_tab_bar};
 use crate::ui::{
-    show_chrome_toolbar, show_error_panel, show_loading, show_settings_window, show_tab_bar,
-    show_update_banner,
+    show_error_panel, show_loading, show_settings_window, show_update_banner,
 };
 use crate::update;
 use crate::window_chrome;
 use crate::window_resize;
+
+fn url_encode_query(query: &str) -> String {
+    let mut encoded = String::with_capacity(query.len() * 3);
+    for byte in query.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            b' ' => encoded.push('+'),
+            _ => {
+                use std::fmt::Write;
+                let _ = write!(encoded, "%{byte:02X}");
+            }
+        }
+    }
+    encoded
+}
+
+fn duckduckgo_search_url(query: &str) -> String {
+    format!("https://duckduckgo.com/?q={}", url_encode_query(query))
+}
+
+fn favicon_cache_uri(page_url: &str, ext: &str) -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut h = DefaultHasher::new();
+    page_url.hash(&mut h);
+    format!("bytes://favicon/{:016x}{ext}", h.finish())
+}
+
+/// Consume a key-down event only if it is NOT an OS auto-repeat.
+/// Returns `true` on the first physical press and removes the event so it
+/// won't fire again this frame.
+fn consume_non_repeat(ctx: &egui::Context, key: egui::Key, need_command: bool) -> bool {
+    ctx.input_mut(|input| {
+        let pos = input.events.iter().position(|e| {
+            matches!(e,
+                egui::Event::Key {
+                    key: k,
+                    pressed: true,
+                    repeat: false,
+                    modifiers,
+                    ..
+                } if *k == key && (!need_command || modifiers.command)
+            )
+        });
+        if let Some(idx) = pos {
+            input.events.remove(idx);
+            true
+        } else {
+            false
+        }
+    })
+}
+
+fn resolve_omnibox_input(input: &str) -> String {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    if trimmed.starts_with("http://")
+        || trimmed.starts_with("https://")
+        || trimmed.starts_with("file://")
+    {
+        return trimmed.to_string();
+    }
+
+    if trimmed.chars().any(|c| c.is_whitespace()) {
+        return duckduckgo_search_url(trimmed);
+    }
+
+    let host_part = trimmed.split('/').next().unwrap_or(trimmed);
+
+    if host_part.contains('.') {
+        let segments: Vec<&str> = host_part.split('.').collect();
+        if segments.len() >= 2 && segments.iter().all(|s| !s.is_empty()) {
+            return format!("https://{trimmed}");
+        }
+    }
+
+    if host_part.contains(':') {
+        return format!("https://{trimmed}");
+    }
+
+    duckduckgo_search_url(trimmed)
+}
 
 #[derive(Debug)]
 enum UpdateJobResult {
@@ -55,6 +142,10 @@ pub struct TonetApp {
     /// Best-effort DWM corner rounding attempts (Windows integrated mode only).
     #[cfg_attr(not(windows), allow(dead_code))]
     dwm_corner_attempts: u8,
+
+    /// True once an overflow browser instance has been spawned at MAX_TABS.
+    /// Prevents spawning unlimited processes.
+    max_tabs_overflow_spawned: bool,
 }
 
 impl TonetApp {
@@ -66,13 +157,15 @@ impl TonetApp {
         );
 
         let mut visuals = egui::Visuals::dark();
-        visuals.panel_fill = theme::PANEL_FILL;
+        visuals.panel_fill = theme::CHROME_BG;
         visuals.window_fill = theme::CONTENT_BG;
         visuals.widgets.noninteractive.bg_fill = theme::CONTENT_BG;
         visuals.extreme_bg_color = theme::OMNIBOX_FILL;
-        visuals.faint_bg_color = theme::NAV_BTN_FILL;
+        visuals.faint_bg_color = theme::CHROME_BG;
         visuals.selection.bg_fill = Color32::from_rgb(55, 85, 135);
         visuals.selection.stroke = egui::Stroke::new(1.0, theme::ACCENT);
+        visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        visuals.widgets.active.bg_stroke = egui::Stroke::new(1.5, theme::ACCENT);
         let r = egui::Rounding::same(6.0);
         visuals.widgets.inactive.rounding = r;
         visuals.widgets.hovered.rounding = r;
@@ -81,11 +174,11 @@ impl TonetApp {
         cc.egui_ctx.set_visuals(visuals);
 
         cc.egui_ctx.style_mut(|s| {
-            s.spacing.button_padding = egui::vec2(10.0, 5.0);
-            s.spacing.item_spacing = egui::vec2(8.0, 6.0);
+            s.spacing.button_padding = egui::vec2(6.0, 4.0);
+            s.spacing.item_spacing = egui::vec2(6.0, 4.0);
             s.text_styles.insert(
                 egui::TextStyle::Body,
-                egui::FontId::new(15.0, egui::FontFamily::Proportional),
+                egui::FontId::new(14.0, egui::FontFamily::Proportional),
             );
             s.text_styles.insert(
                 egui::TextStyle::Small,
@@ -111,6 +204,7 @@ impl TonetApp {
             omnibox_focus_select_all: false,
             integrated_title_chrome,
             dwm_corner_attempts: 0,
+            max_tabs_overflow_spawned: false,
         }
     }
 
@@ -160,17 +254,31 @@ impl TonetApp {
         self.sync_window_title(ctx);
     }
 
+    const MAX_TABS: usize = 73;
+
     fn open_new_tab(&mut self, ctx: &egui::Context) {
+        if self.tabs.len() >= Self::MAX_TABS {
+            if !self.max_tabs_overflow_spawned {
+                self.max_tabs_overflow_spawned = true;
+                if let Ok(exe) = std::env::current_exe() {
+                    let _ = std::process::Command::new(exe).spawn();
+                }
+            }
+            return;
+        }
         self.tabs.push(Tab::new(DEFAULT_HOME_URL));
         self.active_tab = self.tabs.len() - 1;
         self.sync_window_title(ctx);
     }
 
     fn close_tab_at(&mut self, index: usize, ctx: &egui::Context) {
+        self.tabs[index].cancel_in_flight();
         if self.tabs.len() <= 1 {
+            self.tabs[0] = Tab::new(DEFAULT_HOME_URL);
+            self.active_tab = 0;
+            self.sync_window_title(ctx);
             return;
         }
-        self.tabs[index].cancel_in_flight();
         self.tabs.remove(index);
         if index < self.active_tab {
             self.active_tab -= 1;
@@ -181,31 +289,46 @@ impl TonetApp {
     }
 
     fn start_fetch_with_intent(&mut self, intent: NavigateIntent) {
-        let loc = self.loc();
         let tab = self.active_tab_mut();
         let trimmed = tab.url_input.trim().to_string();
         if trimmed.is_empty() {
-            tab.error_message = Some(i18n::err_empty_url(loc).to_string());
-            tab.dom.clear();
             return;
+        }
+
+        let was_new_tab = tab.show_new_tab;
+
+        let resolved = resolve_omnibox_input(&trimmed);
+        tab.url_input = resolved.clone();
+        tab.show_new_tab = false;
+
+        if was_new_tab && matches!(intent, NavigateIntent::NewPage) {
+            tab.history.push(HistoryEntry {
+                url: String::new(),
+                nodes: Vec::new(),
+            });
+            tab.hist_index = 0;
         }
 
         tab.loading = true;
         tab.error_message = None;
+        tab.favicon_uri.clear();
+        tab.favicon_fetch_rx = None;
         if matches!(intent, NavigateIntent::NewPage) {
             tab.dom.clear();
         }
 
-        tab.pending_nav = Some((trimmed.clone(), intent));
+        tab.pending_nav = Some((resolved.clone(), intent));
 
         let (tx, rx) = mpsc::channel();
         tab.fetch_rx = Some(rx);
 
-        let page_url = trimmed.clone();
+        let page_url = resolved;
         std::thread::spawn(move || {
             let outcome = (|| {
                 let html = fetch_url(&page_url).map_err(|e| e.to_string())?;
-                Ok(parse_html(&html, &page_url))
+                let nodes = parse_html(&html, &page_url);
+                let favicon_candidates = extract_favicon_candidates(&html, &page_url);
+                Ok(PageFetchData { nodes, favicon_candidates })
             })();
             let _ = tx.send(outcome);
         });
@@ -226,6 +349,7 @@ impl TonetApp {
         }
         tab.hist_index -= 1;
         let e = tab.history[tab.hist_index].clone();
+        tab.show_new_tab = e.url.is_empty() && e.nodes.is_empty();
         tab.url_input = e.url;
         tab.dom = e.nodes;
         tab.error_message = None;
@@ -239,6 +363,7 @@ impl TonetApp {
         }
         tab.hist_index += 1;
         let e = tab.history[tab.hist_index].clone();
+        tab.show_new_tab = e.url.is_empty() && e.nodes.is_empty();
         tab.url_input = e.url;
         tab.dom = e.nodes;
         tab.error_message = None;
@@ -268,10 +393,20 @@ impl TonetApp {
             };
 
             match rx.try_recv() {
-                Ok(Ok(nodes)) => {
+                Ok(Ok(data)) => {
                     tab.loading = false;
                     tab.fetch_rx = None;
-                    tab.apply_successful_navigation(nodes);
+                    let favicon_candidates = data.favicon_candidates;
+                    tab.apply_successful_navigation(data.nodes);
+
+                    if !favicon_candidates.is_empty() {
+                        let (fav_tx, fav_rx) = mpsc::channel();
+                        tab.favicon_fetch_rx = Some(fav_rx);
+                        std::thread::spawn(move || {
+                            let _ = fav_tx.send(fetch_favicon_from_candidates(&favicon_candidates));
+                        });
+                    }
+
                     if i == active {
                         title_dirty = true;
                     }
@@ -305,6 +440,36 @@ impl TonetApp {
             self.window_title = "Tonet".to_string();
         } else if title_dirty {
             self.sync_window_title(ctx);
+        }
+    }
+
+    fn poll_favicons(&mut self, ctx: &egui::Context) {
+        for tab in &mut self.tabs {
+            let Some(rx) = &tab.favicon_fetch_rx else {
+                continue;
+            };
+            match rx.try_recv() {
+                Ok(Some(bytes)) => {
+                    tab.favicon_fetch_rx = None;
+                    let ext = guess_favicon_ext(&bytes);
+                    let uri = favicon_cache_uri(&tab.url_input, ext);
+                    ctx.include_bytes(
+                        uri.clone(),
+                        egui::load::Bytes::Shared(std::sync::Arc::from(bytes.as_slice())),
+                    );
+                    tab.favicon_uri = uri;
+                    ctx.request_repaint();
+                }
+                Ok(None) => {
+                    tab.favicon_fetch_rx = None;
+                }
+                Err(mpsc::TryRecvError::Empty) => {
+                    ctx.request_repaint();
+                }
+                Err(mpsc::TryRecvError::Disconnected) => {
+                    tab.favicon_fetch_rx = None;
+                }
+            }
         }
     }
 
@@ -428,6 +593,7 @@ impl eframe::App for TonetApp {
         }
 
         self.poll_fetch(ctx);
+        self.poll_favicons(ctx);
         self.poll_update_job(ctx);
         self.maybe_schedule_update_checks(ctx);
 
@@ -439,17 +605,62 @@ impl eframe::App for TonetApp {
             self.reload_page();
         }
 
-        if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::T)) {
+        if consume_non_repeat(ctx, egui::Key::T, true) {
             self.open_new_tab(ctx);
         }
-        if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::W)) {
+        if consume_non_repeat(ctx, egui::Key::W, true) {
             self.close_tab_at(self.active_tab, ctx);
+        }
+
+        if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::Tab)) {
+            let n = self.tabs.len();
+            if n > 1 {
+                let next = if ctx.input(|i| i.modifiers.shift) {
+                    if self.active_tab == 0 { n - 1 } else { self.active_tab - 1 }
+                } else {
+                    (self.active_tab + 1) % n
+                };
+                self.set_active_tab(next, ctx);
+            }
+            ctx.input_mut(|i| i.events.retain(|e| !matches!(e, egui::Event::Key { key: egui::Key::Tab, .. })));
+        }
+
+        {
+            let num_tabs = self.tabs.len();
+            let digit_keys = [
+                (egui::Key::Num1, 0usize),
+                (egui::Key::Num2, 1),
+                (egui::Key::Num3, 2),
+                (egui::Key::Num4, 3),
+                (egui::Key::Num5, 4),
+                (egui::Key::Num6, 5),
+                (egui::Key::Num7, 6),
+                (egui::Key::Num8, 7),
+            ];
+            for (key, idx) in digit_keys {
+                if ctx.input(|i| i.modifiers.command && i.key_pressed(key)) && idx < num_tabs {
+                    self.set_active_tab(idx, ctx);
+                }
+            }
+            if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::Num9)) && num_tabs > 0
+            {
+                self.set_active_tab(num_tabs - 1, ctx);
+            }
         }
 
         if !self.settings_open
             && ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::L))
         {
             self.omnibox_focus_select_all = true;
+        }
+
+        if ctx.input(|i| i.key_pressed(egui::Key::Tab) && !i.modifiers.command && !i.modifiers.alt)
+        {
+            let omnibox_has_focus = ctx.memory(|m| m.has_focus(crate::ui::omnibox_id()));
+            if !omnibox_has_focus {
+                self.omnibox_focus_select_all = true;
+                ctx.input_mut(|i| i.events.retain(|e| !matches!(e, egui::Event::Key { key: egui::Key::Tab, .. })));
+            }
         }
 
         let loc = self.loc();
@@ -461,15 +672,33 @@ impl eframe::App for TonetApp {
             .iter()
             .map(|t| Self::tab_strip_title(t, loc))
             .collect();
-        let can_close_tabs = self.tabs.len() > 1;
+        let tab_favicons: Vec<String> = self
+            .tabs
+            .iter()
+            .map(|t| {
+                if t.show_new_tab {
+                    branding::TONET_LOGO_URI.to_string()
+                } else {
+                    t.favicon_uri.clone()
+                }
+            })
+            .collect();
+        let can_close_tabs = true;
 
-        egui::TopBottomPanel::top("tonet_top").show(ctx, |ui| {
-            ui.add_space(if self.integrated_title_chrome {
-                6.0
-            } else {
-                8.0
-            });
-            ui.vertical(|ui| {
+        egui::TopBottomPanel::top("tonet_top")
+            .frame(
+                egui::Frame::none()
+                    .fill(theme::CHROME_BG)
+                    .inner_margin(egui::Margin {
+                        left: 0.0,
+                        right: 0.0,
+                        top: 0.0,
+                        bottom: theme::SP,
+                    }),
+            )
+            .show(ctx, |ui| {
+                ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
+
                 if let Some(ver) = &self.update_banner {
                     if !self.update_banner_dismissed {
                         show_update_banner(
@@ -482,7 +711,7 @@ impl eframe::App for TonetApp {
                                 self.update_banner = None;
                             },
                         );
-                        ui.add_space(6.0);
+                        ui.add_space(theme::SP);
                     }
                 }
 
@@ -491,6 +720,7 @@ impl eframe::App for TonetApp {
                     ctx,
                     loc,
                     &tab_titles,
+                    &tab_favicons,
                     self.active_tab,
                     can_close_tabs,
                     self.integrated_title_chrome,
@@ -504,45 +734,29 @@ impl eframe::App for TonetApp {
                 if let Some(i) = tb_tabs.close_tab {
                     self.close_tab_at(i, ctx);
                 }
-                ui.add_space(10.0);
 
-                let chrome = egui::Frame::default()
-                    .fill(theme::CHROME_CARD)
-                    .stroke(egui::Stroke::new(1.0, theme::CHROME_CARD_STROKE))
-                    .rounding(18.0)
-                    .inner_margin(egui::Margin::symmetric(14.0, 12.0))
-                    .show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.spacing_mut().item_spacing.x = 12.0;
-                            ui.add(
-                                egui::Image::from_uri(branding::TONET_LOGO_URI)
-                                    .max_height(26.0)
-                                    .rounding(8.0),
-                            );
-                            ui.label(
-                                egui::RichText::new(i18n::app_name(loc))
-                                    .strong()
-                                    .size(16.0)
-                                    .color(theme::ACCENT),
-                            );
-                        });
-                        ui.add_space(12.0);
+                ui.add_space(1.0);
+                let r = ui.available_rect_before_wrap();
+                ui.painter().hline(
+                    r.x_range(),
+                    r.top(),
+                    egui::Stroke::new(1.0, theme::SEPARATOR),
+                );
+                ui.add_space(1.0);
 
-                        let omnibox_focus = std::mem::take(&mut self.omnibox_focus_select_all);
-                        let active = self.active_tab_mut();
-                        let chip_preview = active.url_input.trim().to_string();
-                        show_chrome_toolbar(
-                            ui,
-                            loc,
-                            &mut active.url_input,
-                            &chip_preview,
-                            active.loading,
-                            can_back,
-                            can_forward,
-                            omnibox_focus,
-                        )
-                    });
-                let tb = chrome.inner;
+                let omnibox_focus = std::mem::take(&mut self.omnibox_focus_select_all);
+                let active = self.active_tab_mut();
+                let chip_preview = active.url_input.trim().to_string();
+                let tb = show_chrome_toolbar(
+                    ui,
+                    loc,
+                    &mut active.url_input,
+                    &chip_preview,
+                    active.loading,
+                    can_back,
+                    can_forward,
+                    omnibox_focus,
+                );
                 if tb.go_back {
                     self.go_back(ctx);
                 }
@@ -562,33 +776,49 @@ impl eframe::App for TonetApp {
                     self.settings_open = true;
                 }
             });
-            ui.add_space(10.0);
-        });
 
         let tab = self.active_tab_mut();
+        let is_new_tab = tab.is_new_tab();
         egui::CentralPanel::default().show(ctx, |ui| {
-            if let Some(err) = &tab.error_message {
-                show_error_panel(ui, loc, err);
-                ui.add_space(8.0);
-            }
+            if is_new_tab {
+                let nta = crate::new_tab::show_new_tab_page(
+                    ui,
+                    loc,
+                    &mut tab.url_input,
+                );
+                if let Some(url) = nta.navigate_to {
+                    tab.url_input = url;
+                    tab.pending_link_navigation = Some(tab.url_input.clone());
+                }
+            } else {
+                if let Some(err) = &tab.error_message {
+                    show_error_panel(ui, loc, err);
+                    ui.add_space(8.0);
+                }
 
-            if tab.loading {
-                show_loading(ui, loc);
-            }
+                if tab.loading {
+                    show_loading(ui, loc);
+                }
 
-            egui::ScrollArea::vertical()
-                .auto_shrink([false, false])
-                .show(ui, |ui| {
-                    if !tab.loading && tab.error_message.is_none() {
-                        render_nodes(ui, loc, &tab.dom, &mut tab.pending_link_navigation);
-                    } else if !tab.loading && tab.error_message.is_some() {
-                        ui.label(
-                            egui::RichText::new(i18n::suggestion_fix_url(loc))
-                                .italics()
-                                .color(theme::LOADING_MUTED),
-                        );
-                    }
-                });
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        if !tab.loading && tab.error_message.is_none() {
+                            render_nodes(
+                                ui,
+                                loc,
+                                &tab.dom,
+                                &mut tab.pending_link_navigation,
+                            );
+                        } else if !tab.loading && tab.error_message.is_some() {
+                            ui.label(
+                                egui::RichText::new(i18n::suggestion_fix_url(loc))
+                                    .italics()
+                                    .color(theme::LOADING_MUTED),
+                            );
+                        }
+                    });
+            }
         });
 
         let current = env!("CARGO_PKG_VERSION");
