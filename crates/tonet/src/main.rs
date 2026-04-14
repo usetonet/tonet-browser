@@ -13,6 +13,7 @@ mod network;
 mod new_tab;
 mod parser;
 mod renderer;
+mod session_snapshot;
 mod shortcut_catalog;
 mod settings;
 mod tab;

@@ -16,7 +16,7 @@ pub enum UpdatePolicy {
     ManualOnly,
 }
 
-/// What to do when Tonet starts (stub for session restore / specific URLs).
+/// What to do when Tonet starts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum StartupPolicy {
@@ -95,6 +95,10 @@ fn default_ui_language() -> String {
     "auto".to_string()
 }
 
+fn default_startup_urls() -> String {
+    String::new()
+}
+
 /// Settings stored on disk.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -108,6 +112,9 @@ pub struct AppSettings {
     pub last_update_check_unix: Option<i64>,
     #[serde(default)]
     pub startup_policy: StartupPolicy,
+    /// When [`StartupPolicy::OpenSpecificPages`]: one URL or search per line (same rules as the omnibox).
+    #[serde(default = "default_startup_urls")]
+    pub startup_urls: String,
     #[serde(default)]
     pub system: SystemSettings,
 }
@@ -120,6 +127,7 @@ impl Default for AppSettings {
             update_policy: UpdatePolicy::default(),
             last_update_check_unix: None,
             startup_policy: StartupPolicy::default(),
+            startup_urls: default_startup_urls(),
             system: SystemSettings::default(),
         }
     }
