@@ -9,7 +9,25 @@ import {
   wireLanguageSwitcher,
 } from "./site-i18n";
 
-async function loadVersion(): Promise<{ version: string } | null> {
+type VersionDownload = {
+  windowsSetup: string;
+  linuxSetup: string;
+  macSetup: string;
+  windowsMsi: string;
+  windowsExe: string;
+  windowsPortableZip: string;
+  deb: string;
+  macTarball: string;
+};
+
+type VersionMeta = {
+  version: string;
+  repo?: string;
+  releasesUrl?: string;
+  download?: VersionDownload;
+};
+
+async function loadVersion(): Promise<VersionMeta | null> {
   try {
     const r = await fetch("/version.json", { cache: "no-store" });
     if (!r.ok) return null;
@@ -71,19 +89,35 @@ async function main(): Promise<void> {
 
   const latestDl =
     "https://github.com/usetonet/tonet-browser/releases/latest/download";
+  const releasesLatest = "https://github.com/usetonet/tonet-browser/releases/latest";
   const winSetup = document.getElementById("win-setup") as HTMLAnchorElement | null;
   const linuxSetup = document.getElementById("linux-setup") as HTMLAnchorElement | null;
   const macSetup = document.getElementById("mac-setup") as HTMLAnchorElement | null;
-  if (winSetup) winSetup.href = `${latestDl}/TonetSetup-x64.exe`;
-  if (linuxSetup) linuxSetup.href = `${latestDl}/TonetSetup-x86_64`;
-  if (macSetup) macSetup.href = `${latestDl}/TonetSetup-macos`;
+  const d = meta?.download;
+  if (winSetup) {
+    winSetup.href =
+      d?.windowsSetup ??
+      (meta?.version
+        ? `${latestDl}/Tonet-Setup-${meta.version}-x64.exe`
+        : releasesLatest);
+  }
+  if (linuxSetup) {
+    linuxSetup.href =
+      d?.linuxSetup ??
+      (meta?.version
+        ? `${latestDl}/tonet_${meta.version}_amd64.deb`
+        : releasesLatest);
+  }
+  if (macSetup) {
+    macSetup.href = d?.macSetup ?? releasesLatest;
+  }
 
   const tag = `v${ver}`;
   const base = `https://github.com/usetonet/tonet-browser/releases/download/${tag}`;
   const winMsi = document.getElementById("win-msi") as HTMLAnchorElement | null;
   const winExe = document.getElementById("win-exe") as HTMLAnchorElement | null;
   const linuxDeb = document.getElementById("linux-deb") as HTMLAnchorElement | null;
-  if (meta?.version && winMsi && winExe && linuxDeb) {
+  if (meta?.version && ver !== "…" && winMsi && winExe && linuxDeb) {
     winMsi.href = `${base}/Tonet-${ver}-x64.msi`;
     winExe.href = `${base}/Tonet-Setup-${ver}-x64.exe`;
     linuxDeb.href = `${base}/tonet_${ver}_amd64.deb`;

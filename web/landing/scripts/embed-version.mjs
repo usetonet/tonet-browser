@@ -16,9 +16,11 @@ const payload = {
   repo: "usetonet/tonet-browser",
   releasesUrl: "https://github.com/usetonet/tonet-browser/releases/latest",
   download: {
-    windowsSetup: "https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x64.exe",
-    linuxSetup: "https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x86_64",
-    macSetup: "https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-macos",
+    // Match CI asset names (see .github/workflows/release-on-version-bump.yml). TonetSetup-* may be added later.
+    windowsSetup: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-Setup-${version}-x64.exe`,
+    linuxSetup: `https://github.com/usetonet/tonet-browser/releases/latest/download/tonet_${version}_amd64.deb`,
+    // macOS tarball + TonetSetup are not on every historical release; link to the release page until assets are stable.
+    macSetup: "https://github.com/usetonet/tonet-browser/releases/latest",
     windowsMsi: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-x64.msi`,
     windowsExe: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-Setup-${version}-x64.exe`,
     windowsPortableZip: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-windows-x64-portable.zip`,
