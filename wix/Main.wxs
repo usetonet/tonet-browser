@@ -27,6 +27,7 @@
              Description="Navegador Tonet y accesos directos">
       <ComponentGroupRef Id="TonetComponents" />
       <ComponentGroupRef Id="StartMenuCleanup" />
+      <ComponentRef Id="CmpTonetDesktopShortcut" />
     </Feature>
 
     <!-- Interfaz gráfica: solo elegir carpeta (sin EULA obligatoria). -->
@@ -61,6 +62,25 @@
         </File>
       </Component>
     </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <!-- Acceso directo en el escritorio «Todos los usuarios». -->
+    <DirectoryRef Id="CommonDesktopFolder">
+      <Component Id="CmpTonetDesktopShortcut" Guid="A1B2C3D4-E5F6-4789-A012-3456789ABCDE" Win64="yes">
+        <Shortcut Id="TonetDesktopShortcut"
+                  Name="Tonet"
+                  Target="[#TonetEXE]"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Description="Abrir el navegador Tonet" />
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\usetonet\Tonet"
+                       Name="DesktopShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
   </Fragment>
 
   <Fragment>

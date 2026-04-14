@@ -71,6 +71,17 @@ jobs:
           if (-not (Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
           & $iscc (Join-Path (Get-Location) "installer\tonet.iss")
 
+      - name: Web installer (TonetSetup) + portable zip
+        shell: pwsh
+        run: |
+          $meta = cargo metadata --no-deps --format-version 1 | ConvertFrom-Json
+          $v = ($meta.packages | Where-Object { $_.name -eq "tonet" } | Select-Object -First 1).version
+          $dist = Join-Path (Get-Location) "dist"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Compress-Archive -Path "target\release\tonet.exe" -DestinationPath "$dist\Tonet-$v-windows-x64-portable.zip" -Force
+          cargo build --release -p tonet-setup
+          Copy-Item "target\release\TonetSetup.exe" "$dist\TonetSetup-x64.exe" -Force
+
       - name: Subir artefactos (MSI y EXE)
         uses: actions/upload-artifact@v4
         with:

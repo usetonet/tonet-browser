@@ -65,3 +65,12 @@ Write-Host "WiX light..." -ForegroundColor Cyan
     (Join-Path $Dist "Main.wixobj")
 
 Write-Host "MSI generado: $Msi" -ForegroundColor Green
+
+Write-Host "Portable zip + TonetSetup..." -ForegroundColor Cyan
+$PortableZip = Join-Path $Dist "Tonet-$Version-windows-x64-portable.zip"
+Compress-Archive -Path $Exe -DestinationPath $PortableZip -Force
+cargo build --release -p tonet-setup
+$SetupExe = Join-Path $Root "target\release\TonetSetup.exe"
+$SetupOut = Join-Path $Dist "TonetSetup-x64.exe"
+Copy-Item $SetupExe $SetupOut -Force
+Write-Host "Listo: $PortableZip y $SetupOut" -ForegroundColor Green
