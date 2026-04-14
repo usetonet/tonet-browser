@@ -5,8 +5,10 @@
 
 mod app;
 mod branding;
+mod browser_log;
 mod chrome;
 mod i18n;
+mod internal_pages;
 mod network;
 mod new_tab;
 mod parser;
