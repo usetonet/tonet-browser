@@ -2,7 +2,9 @@
 
 use url::Url;
 
-use crate::settings::{AppSettings, SearchEngine, UpdatePolicy};
+use crate::settings::{
+    AppSettings, EnergySaverMode, SearchEngine, StartupPolicy, UpdatePolicy,
+};
 
 /// Active display locale resolved from settings + OS.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -1033,3 +1035,582 @@ pub fn internal_no_items(loc: Locale) -> &'static str {
         Locale::En => "No items yet.",
     }
 }
+
+pub fn internal_settings_get_started_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Primeros pasos",
+        Locale::De => "Erste Schritte",
+        Locale::Fr => "Pour commencer",
+        Locale::En => "Get started",
+    }
+}
+
+pub fn internal_settings_profile_row(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Nombre e icono del perfil",
+        Locale::De => "Profilname und -symbol",
+        Locale::Fr => "Nom et icône du profil",
+        Locale::En => "Profile name and icon",
+    }
+}
+
+pub fn internal_settings_profile_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Próximamente.",
+        Locale::De => "Demnächst.",
+        Locale::Fr => "Bientôt disponible.",
+        Locale::En => "Coming soon.",
+    }
+}
+
+pub fn internal_settings_startup_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Al iniciar",
+        Locale::De => "Beim Start",
+        Locale::Fr => "Au démarrage",
+        Locale::En => "On startup",
+    }
+}
+
+pub fn internal_settings_startup_label(loc: Locale, pol: StartupPolicy) -> &'static str {
+    match (loc, pol) {
+        (Locale::Es, StartupPolicy::NewTabPage) => "Abrir la página Nueva pestaña",
+        (Locale::De, StartupPolicy::NewTabPage) => "Neue-Tab-Seite öffnen",
+        (Locale::Fr, StartupPolicy::NewTabPage) => "Ouvrir la page Nouvel onglet",
+        (Locale::En, StartupPolicy::NewTabPage) => "Open the New Tab page",
+        (Locale::Es, StartupPolicy::RestoreSession) => "Continuar donde lo dejaste",
+        (Locale::De, StartupPolicy::RestoreSession) => "Weiter dort, wo du aufgehört hast",
+        (Locale::Fr, StartupPolicy::RestoreSession) => "Reprendre où vous vous étiez arrêté",
+        (Locale::En, StartupPolicy::RestoreSession) => "Continue where you left off",
+        (Locale::Es, StartupPolicy::OpenSpecificPages) => "Abrir una página o conjunto específico",
+        (Locale::De, StartupPolicy::OpenSpecificPages) => "Bestimmte Seiten öffnen",
+        (Locale::Fr, StartupPolicy::OpenSpecificPages) => "Ouvrir une ou plusieurs pages",
+        (Locale::En, StartupPolicy::OpenSpecificPages) => "Open a specific page or set of pages",
+    }
+}
+
+pub fn internal_settings_startup_help(loc: Locale, pol: StartupPolicy) -> &'static str {
+    match (loc, pol) {
+        (Locale::Es, StartupPolicy::NewTabPage) => "Página de inicio predeterminada de Tonet.",
+        (Locale::De, StartupPolicy::NewTabPage) => "Tonet-Standard-Startseite.",
+        (Locale::Fr, StartupPolicy::NewTabPage) => "Page d’accueil par défaut de Tonet.",
+        (Locale::En, StartupPolicy::NewTabPage) => "Tonet’s default home experience.",
+        (Locale::Es, StartupPolicy::RestoreSession) => "Aún no restaura pestañas; se guardará en una versión futura.",
+        (Locale::De, StartupPolicy::RestoreSession) => "Sitzungswiederherstellung folgt in einer späteren Version.",
+        (Locale::Fr, StartupPolicy::RestoreSession) => "La restauration de session arrive dans une version ultérieure.",
+        (Locale::En, StartupPolicy::RestoreSession) => "Session restore is not implemented yet.",
+        (Locale::Es, StartupPolicy::OpenSpecificPages) => "Aún no disponible.",
+        (Locale::De, StartupPolicy::OpenSpecificPages) => "Noch nicht verfügbar.",
+        (Locale::Fr, StartupPolicy::OpenSpecificPages) => "Pas encore disponible.",
+        (Locale::En, StartupPolicy::OpenSpecificPages) => "Not available yet.",
+    }
+}
+
+pub fn internal_settings_system_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Sistema",
+        Locale::De => "System",
+        Locale::Fr => "Système",
+        Locale::En => "System",
+    }
+}
+
+pub fn internal_settings_shortcuts_row(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Atajos",
+        Locale::De => "Tastenkürzel",
+        Locale::Fr => "Raccourcis",
+        Locale::En => "Shortcuts",
+    }
+}
+
+pub fn internal_settings_shortcuts_row_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ver y personalizar atajos de teclado.",
+        Locale::De => "Tastenkürzel anzeigen und anpassen.",
+        Locale::Fr => "Afficher et personnaliser les raccourcis.",
+        Locale::En => "View and customize keyboard shortcuts.",
+    }
+}
+
+pub fn internal_settings_bg_apps(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Seguir ejecutando apps en segundo plano al cerrar Tonet",
+        Locale::De => "Apps im Hintergrund weiterlaufen lassen, wenn Tonet geschlossen ist",
+        Locale::Fr => "Continuer à exécuter des applications en arrière-plan",
+        Locale::En => "Continue running background apps when Tonet is closed",
+    }
+}
+
+pub fn internal_settings_hw_accel(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Usar aceleración por hardware cuando esté disponible",
+        Locale::De => "Hardwarebeschleunigung verwenden, falls verfügbar",
+        Locale::Fr => "Utiliser l’accélération matérielle si disponible",
+        Locale::En => "Use hardware acceleration when available",
+    }
+}
+
+pub fn internal_settings_proxy(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Abrir la configuración de proxy del sistema",
+        Locale::De => "System-Proxy-Einstellungen öffnen",
+        Locale::Fr => "Ouvrir les paramètres proxy du système",
+        Locale::En => "Open your computer’s proxy settings",
+    }
+}
+
+pub fn internal_settings_open_system(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Abrir sistema",
+        Locale::De => "System öffnen",
+        Locale::Fr => "Ouvrir",
+        Locale::En => "Open",
+    }
+}
+
+pub fn internal_settings_close_last_tab(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cerrar la ventana al cerrar la última pestaña",
+        Locale::De => "Fenster schließen, wenn der letzte Tab geschlossen wird",
+        Locale::Fr => "Fermer la fenêtre en fermant le dernier onglet",
+        Locale::En => "Close window when closing last tab",
+    }
+}
+
+pub fn internal_settings_warn_close(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Advertir antes de cerrar la ventana con varias pestañas",
+        Locale::De => "Warnen, bevor ein Fenster mit mehreren Tabs geschlossen wird",
+        Locale::Fr => "Avertir avant de fermer une fenêtre avec plusieurs onglets",
+        Locale::En => "Warn me before closing window with multiple tabs",
+    }
+}
+
+pub fn internal_settings_fullscreen_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Mostrar recordatorio de pantalla completa (Esc)",
+        Locale::De => "Vollbild-Hinweis (Esc) anzeigen",
+        Locale::Fr => "Rappel plein écran (Échap)",
+        Locale::En => "Show full screen reminder to press Esc on exit",
+    }
+}
+
+pub fn internal_settings_vpn_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "VPN (vista previa)",
+        Locale::De => "VPN (Vorschau)",
+        Locale::Fr => "VPN (aperçu)",
+        Locale::En => "VPN (preview)",
+    }
+}
+
+pub fn internal_settings_vpn_wireguard(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Usar protocolo WireGuard en VPN",
+        Locale::De => "WireGuard-Protokoll in der VPN verwenden",
+        Locale::Fr => "Utiliser le protocole WireGuard pour le VPN",
+        Locale::En => "Use WireGuard protocol in VPN",
+    }
+}
+
+pub fn internal_settings_vpn_tray(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Mostrar icono de VPN en la bandeja",
+        Locale::De => "VPN-Symbol in der Taskleiste anzeigen",
+        Locale::Fr => "Afficher l’icône VPN dans la barre des tâches",
+        Locale::En => "Show VPN tray icon",
+    }
+}
+
+pub fn internal_settings_vpn_tray_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cuando está activo, la barra de tareas puede mostrar el icono de VPN.",
+        Locale::De => "Wenn aktiviert, erscheint ein VPN-Symbol in der Taskleiste.",
+        Locale::Fr => "Si activé, une icône VPN peut apparaître dans la barre des tâches.",
+        Locale::En => "When enabled, the taskbar may show the VPN tray icon.",
+    }
+}
+
+pub fn internal_settings_memory_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Memoria",
+        Locale::De => "Speicher",
+        Locale::Fr => "Mémoire",
+        Locale::En => "Memory",
+    }
+}
+
+pub fn internal_settings_memory_body(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Tonet puede liberar memoria de pestañas inactivas (cuando esté disponible).",
+        Locale::De => "Tonet kann Speicher inaktiver Tabs freigeben (wenn verfügbar).",
+        Locale::Fr => "Tonet peut libérer la mémoire des onglets inactifs (lorsque disponible).",
+        Locale::En => "Tonet can free memory from inactive tabs when the feature is available.",
+    }
+}
+
+pub fn internal_settings_memory_saver(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ahorro de memoria",
+        Locale::De => "Speicher sparen",
+        Locale::Fr => "Économiseur de mémoire",
+        Locale::En => "Memory saver",
+    }
+}
+
+pub fn internal_settings_keep_sites(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Mantener siempre activos estos sitios",
+        Locale::De => "Diese Websites immer aktiv halten",
+        Locale::Fr => "Toujours garder ces sites actifs",
+        Locale::En => "Always keep these sites active",
+    }
+}
+
+pub fn internal_settings_keep_sites_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Los sitios que añadas no entrarán en suspensión.",
+        Locale::De => "Hinzugefügte Websites werden nicht ausgelagert.",
+        Locale::Fr => "Les sites ajoutés ne seront pas mis en veille.",
+        Locale::En => "Sites you add will not be suspended.",
+    }
+}
+
+pub fn internal_settings_add(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Añadir",
+        Locale::De => "Hinzufügen",
+        Locale::Fr => "Ajouter",
+        Locale::En => "Add",
+    }
+}
+
+pub fn internal_settings_no_sites(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "No hay sitios añadidos",
+        Locale::De => "Keine Websites hinzugefügt",
+        Locale::Fr => "Aucun site ajouté",
+        Locale::En => "No sites added",
+    }
+}
+
+pub fn internal_settings_power_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Energía",
+        Locale::De => "Energie",
+        Locale::Fr => "Énergie",
+        Locale::En => "Power",
+    }
+}
+
+pub fn internal_settings_power_body(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Tonet puede reducir actividad en segundo plano para ahorrar batería (cuando esté disponible).",
+        Locale::De => "Tonet kann Hintergrundaktivität reduzieren (wenn verfügbar).",
+        Locale::Fr => "Tonet peut limiter l’activité en arrière-plan pour économiser la batterie.",
+        Locale::En => "Tonet can limit background activity to save battery when available.",
+    }
+}
+
+pub fn internal_settings_energy_saver(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ahorro de energía",
+        Locale::De => "Energiesparmodus",
+        Locale::Fr => "Économiseur d’énergie",
+        Locale::En => "Energy saver",
+    }
+}
+
+pub fn internal_settings_energy_mode(loc: Locale, m: EnergySaverMode) -> &'static str {
+    match (loc, m) {
+        (Locale::Es, EnergySaverMode::WhenBatteryLow) => {
+            "Activar solo cuando la batería esté al 20% o menos"
+        }
+        (Locale::De, EnergySaverMode::WhenBatteryLow) => {
+            "Nur aktivieren, wenn der Akku 20 % oder weniger hat"
+        }
+        (Locale::Fr, EnergySaverMode::WhenBatteryLow) => {
+            "Activer seulement lorsque la batterie est à 20 % ou moins"
+        }
+        (Locale::En, EnergySaverMode::WhenBatteryLow) => {
+            "Turn on only when your battery is at 20% or lower"
+        }
+        (Locale::Es, EnergySaverMode::WhenUnplugged) => "Activar cuando el equipo no esté enchufado",
+        (Locale::De, EnergySaverMode::WhenUnplugged) => "Aktivieren, wenn nicht am Netz",
+        (Locale::Fr, EnergySaverMode::WhenUnplugged) => "Activer sur batterie",
+        (Locale::En, EnergySaverMode::WhenUnplugged) => "Turn on when your computer is unplugged",
+    }
+}
+
+pub fn internal_settings_shortcuts_back(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Atrás",
+        Locale::De => "Zurück",
+        Locale::Fr => "Retour",
+        Locale::En => "Back",
+    }
+}
+
+pub fn internal_settings_shortcuts_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Atajos de teclado",
+        Locale::De => "Tastenkürzel",
+        Locale::Fr => "Raccourcis clavier",
+        Locale::En => "Keyboard shortcuts",
+    }
+}
+
+pub fn internal_settings_shortcuts_search_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Busca un comando o atajo.",
+        Locale::De => "Nach Befehl oder Kürzel suchen.",
+        Locale::Fr => "Rechercher une commande ou un raccourci.",
+        Locale::En => "Search for a command or shortcut.",
+    }
+}
+
+pub fn internal_settings_shortcuts_filter_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Filtrar…",
+        Locale::De => "Filtern…",
+        Locale::Fr => "Filtrer…",
+        Locale::En => "Filter…",
+    }
+}
+
+pub fn internal_settings_add_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "La personalización de atajos llegará en una versión futura.",
+        Locale::De => "Anpassbare Tastenkürzel kommen in einer späteren Version.",
+        Locale::Fr => "La personnalisation des raccourcis arrive dans une version ultérieure.",
+        Locale::En => "Custom shortcut editing is not available yet.",
+    }
+}
+
+pub fn internal_settings_shortcuts_reset(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Restablecer valores por defecto",
+        Locale::De => "Auf Standard zurücksetzen",
+        Locale::Fr => "Rétablir les valeurs par défaut",
+        Locale::En => "Reset all to defaults",
+    }
+}
+
+pub fn internal_settings_reset_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Restablecer Tonet",
+        Locale::De => "Tonet zurücksetzen",
+        Locale::Fr => "Réinitialiser Tonet",
+        Locale::En => "Reset Tonet",
+    }
+}
+
+pub fn internal_settings_reset_body(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Esto restaura preferencias, motor de búsqueda y opciones del sistema a los valores predeterminados.",
+        Locale::De => "Setzt Einstellungen, Suchmaschine und Systemoptionen auf Standardwerte zurück.",
+        Locale::Fr => "Rétablit les préférences, le moteur de recherche et les options système par défaut.",
+        Locale::En => "Restores preferences, search engine, and system options to their defaults.",
+    }
+}
+
+pub fn internal_settings_reset_button(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Restablecer ahora",
+        Locale::De => "Jetzt zurücksetzen",
+        Locale::Fr => "Réinitialiser maintenant",
+        Locale::En => "Reset now",
+    }
+}
+
+pub fn internal_settings_reset_confirm_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "¿Restablecer todos los ajustes?",
+        Locale::De => "Alle Einstellungen zurücksetzen?",
+        Locale::Fr => "Réinitialiser tous les paramètres ?",
+        Locale::En => "Reset all settings?",
+    }
+}
+
+pub fn internal_settings_reset_confirm_body(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Esta acción no se puede deshacer. ¿Continuar?",
+        Locale::De => "Dies kann nicht rückgängig gemacht werden. Fortfahren?",
+        Locale::Fr => "Cette action est irréversible. Continuer ?",
+        Locale::En => "This cannot be undone. Continue?",
+    }
+}
+
+pub fn internal_settings_reset_confirm(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Restablecer",
+        Locale::De => "Zurücksetzen",
+        Locale::Fr => "Réinitialiser",
+        Locale::En => "Reset",
+    }
+}
+
+macro_rules! stub_settings_page {
+    ($fn_title:ident, $fn_body:ident, $es_t:literal, $de_t:literal, $fr_t:literal, $en_t:literal, $es_b:literal, $de_b:literal, $fr_b:literal, $en_b:literal) => {
+        pub fn $fn_title(loc: Locale) -> &'static str {
+            match loc {
+                Locale::Es => $es_t,
+                Locale::De => $de_t,
+                Locale::Fr => $fr_t,
+                Locale::En => $en_t,
+            }
+        }
+        pub fn $fn_body(loc: Locale) -> &'static str {
+            match loc {
+                Locale::Es => $es_b,
+                Locale::De => $de_b,
+                Locale::Fr => $fr_b,
+                Locale::En => $en_b,
+            }
+        }
+    };
+}
+
+stub_settings_page!(
+    internal_settings_appearance_title,
+    internal_settings_appearance_body,
+    "Aspecto",
+    "Darstellung",
+    "Apparence",
+    "Appearance",
+    "Temas y modo claro/oscuro: próximamente.",
+    "Themes und Hell/Dunkel: demnächst.",
+    "Thèmes et mode clair/sombre : bientôt.",
+    "Themes and light/dark mode: coming soon."
+);
+
+stub_settings_page!(
+    internal_settings_content_title,
+    internal_settings_content_body,
+    "Contenido",
+    "Inhalt",
+    "Contenu",
+    "Content",
+    "PDF, fuentes y contenido incrustado: próximamente.",
+    "PDF, Schriftarten, eingebettete Inhalte: demnächst.",
+    "PDF, polices et contenu intégré : bientôt.",
+    "PDFs, fonts, and embedded content: coming soon."
+);
+
+stub_settings_page!(
+    internal_settings_shields_title,
+    internal_settings_shields_body,
+    "Escudos",
+    "Shields",
+    "Boucliers",
+    "Shields",
+    "Bloqueo de rastreadores y anuncios: próximamente.",
+    "Tracker- und Werbeblockierung: demnächst.",
+    "Blocage des traqueurs et publicités : bientôt.",
+    "Tracker and ad blocking: coming soon."
+);
+
+stub_settings_page!(
+    internal_settings_privacy_title,
+    internal_settings_privacy_body,
+    "Privacidad y seguridad",
+    "Datenschutz und Sicherheit",
+    "Confidentialité et sécurité",
+    "Privacy and security",
+    "Cookies, permisos del sitio y datos: próximamente.",
+    "Cookies, Website-Berechtigungen: demnächst.",
+    "Cookies, autorisations et données : bientôt.",
+    "Cookies, site permissions, and data: coming soon."
+);
+
+stub_settings_page!(
+    internal_settings_web3_title,
+    internal_settings_web3_body,
+    "Web3",
+    "Web3",
+    "Web3",
+    "Web3",
+    "Cartera y dApps: no disponible en esta versión.",
+    "Wallet und dApps: in dieser Version nicht verfügbar.",
+    "Portefeuille et dApps : non disponible pour l’instant.",
+    "Wallet and dApps: not available in this build."
+);
+
+stub_settings_page!(
+    internal_settings_leo_title,
+    internal_settings_leo_body,
+    "Leo",
+    "Leo",
+    "Leo",
+    "Leo",
+    "Asistente de IA: no integrado aún.",
+    "KI-Assistent: noch nicht integriert.",
+    "Assistant IA : pas encore intégré.",
+    "AI assistant: not integrated yet."
+);
+
+stub_settings_page!(
+    internal_settings_sync_title,
+    internal_settings_sync_body,
+    "Sincronización",
+    "Synchronisation",
+    "Synchronisation",
+    "Sync",
+    "Sincronización entre dispositivos: próximamente.",
+    "Gerätesynchronisation: demnächst.",
+    "Synchronisation multi-appareils : bientôt.",
+    "Cross-device sync: coming soon."
+);
+
+stub_settings_page!(
+    internal_settings_extensions_title,
+    internal_settings_extensions_body,
+    "Extensiones",
+    "Erweiterungen",
+    "Extensions",
+    "Extensions",
+    "Las extensiones del navegador no están soportadas aún.",
+    "Browser-Erweiterungen werden noch nicht unterstützt.",
+    "Les extensions ne sont pas encore prises en charge.",
+    "Browser extensions are not supported yet."
+);
+
+stub_settings_page!(
+    internal_settings_autofill_title,
+    internal_settings_autofill_body,
+    "Autocompletar y contraseñas",
+    "Autofill und Passwörter",
+    "Saisie automatique et mots de passe",
+    "Autofill and passwords",
+    "Gestor de contraseñas integrado: próximamente.",
+    "Integrierte Passwortverwaltung: demnächst.",
+    "Gestionnaire de mots de passe intégré : bientôt.",
+    "Built-in password manager: coming soon."
+);
+
+stub_settings_page!(
+    internal_settings_dl_prefs_title,
+    internal_settings_dl_prefs_body,
+    "Descargas",
+    "Downloads",
+    "Téléchargements",
+    "Downloads",
+    "Carpeta de descarga y comportamiento: próximamente.",
+    "Download-Ordner und Verhalten: demnächst.",
+    "Dossier et comportement des téléchargements : bientôt.",
+    "Download folder and behavior: coming soon."
+);
+
+stub_settings_page!(
+    internal_settings_a11y_title,
+    internal_settings_a11y_body,
+    "Accesibilidad",
+    "Bedienungshilfen",
+    "Accessibilité",
+    "Accessibility",
+    "Opciones de accesibilidad: próximamente.",
+    "Barrierefreiheit: demnächst.",
+    "Options d’accessibilité : bientôt.",
+    "Accessibility options: coming soon."
+);

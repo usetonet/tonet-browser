@@ -16,6 +16,71 @@ pub enum UpdatePolicy {
     ManualOnly,
 }
 
+/// What to do when Tonet starts (stub for session restore / specific URLs).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum StartupPolicy {
+    #[default]
+    NewTabPage,
+    RestoreSession,
+    OpenSpecificPages,
+}
+
+/// Energy saver sub-mode (UI only until a power backend exists).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EnergySaverMode {
+    #[default]
+    WhenBatteryLow,
+    WhenUnplugged,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// System-style toggles mirrored from common browser settings pages.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SystemSettings {
+    #[serde(default)]
+    pub continue_background_apps: bool,
+    #[serde(default = "default_true")]
+    pub use_hardware_acceleration: bool,
+    #[serde(default = "default_true")]
+    pub close_window_when_last_tab: bool,
+    #[serde(default = "default_true")]
+    pub warn_before_closing_multi_tab_window: bool,
+    #[serde(default = "default_true")]
+    pub show_fullscreen_esc_reminder: bool,
+    #[serde(default)]
+    pub vpn_use_wireguard: bool,
+    #[serde(default = "default_true")]
+    pub vpn_show_tray_icon: bool,
+    #[serde(default)]
+    pub memory_saver_enabled: bool,
+    #[serde(default = "default_true")]
+    pub energy_saver_enabled: bool,
+    #[serde(default)]
+    pub energy_saver_mode: EnergySaverMode,
+}
+
+impl Default for SystemSettings {
+    fn default() -> Self {
+        Self {
+            continue_background_apps: false,
+            use_hardware_acceleration: true,
+            close_window_when_last_tab: true,
+            warn_before_closing_multi_tab_window: true,
+            show_fullscreen_esc_reminder: true,
+            vpn_use_wireguard: false,
+            vpn_show_tray_icon: true,
+            memory_saver_enabled: false,
+            energy_saver_enabled: true,
+            energy_saver_mode: EnergySaverMode::default(),
+        }
+    }
+}
+
 /// Default web search used when omnibox input is not a URL (omnibox + New Tab search).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -41,6 +106,10 @@ pub struct AppSettings {
     pub update_policy: UpdatePolicy,
     #[serde(default)]
     pub last_update_check_unix: Option<i64>,
+    #[serde(default)]
+    pub startup_policy: StartupPolicy,
+    #[serde(default)]
+    pub system: SystemSettings,
 }
 
 impl Default for AppSettings {
@@ -50,6 +119,8 @@ impl Default for AppSettings {
             search_engine: SearchEngine::default(),
             update_policy: UpdatePolicy::default(),
             last_update_check_unix: None,
+            startup_policy: StartupPolicy::default(),
+            system: SystemSettings::default(),
         }
     }
 }

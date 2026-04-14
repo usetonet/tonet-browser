@@ -11,7 +11,7 @@ use eframe::egui::{self, Color32, ViewportCommand};
 use crate::branding;
 use crate::browser_log::BrowserLog;
 use crate::i18n::{self, Locale};
-use crate::internal_pages::{self, InternalRoute, SettingsNav};
+use crate::internal_pages::{self, InternalRoute};
 use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext};
 use crate::parser::{extract_favicon_candidates, parse_html};
 use crate::renderer::render_nodes;
@@ -158,7 +158,8 @@ pub struct TonetApp {
     max_tabs_overflow_spawned: bool,
 
     browser_log: BrowserLog,
-    settings_internal_nav: SettingsNav,
+    internal_shortcuts_filter: String,
+    confirm_reset_settings: bool,
     internal_hist_search: String,
     internal_dl_search: String,
     internal_hist_selected: HashSet<u64>,
@@ -224,7 +225,8 @@ impl TonetApp {
             dwm_corner_attempts: 0,
             max_tabs_overflow_spawned: false,
             browser_log: BrowserLog::load(),
-            settings_internal_nav: SettingsNav::default(),
+            internal_shortcuts_filter: String::new(),
+            confirm_reset_settings: false,
             internal_hist_search: String::new(),
             internal_dl_search: String::new(),
             internal_hist_selected: HashSet::new(),
@@ -246,8 +248,8 @@ impl TonetApp {
     }
 
     fn tab_strip_title(tab: &Tab, loc: Locale) -> String {
-        if let Some(r) = internal_pages::parse_tonet_url(&tab.url_input) {
-            return Self::clamp_strip_label(internal_pages::tab_title(r, loc), 24);
+        if let Some(p) = internal_pages::parse_tonet_url(&tab.url_input) {
+            return Self::clamp_strip_label(internal_pages::tab_title(p.route, loc), 24);
         }
         if let Some(t) = tab.doc_title_trimmed() {
             Self::clamp_strip_label(t, 24)
@@ -324,8 +326,8 @@ impl TonetApp {
             return;
         }
 
-        if let Some(route) = internal_pages::parse_tonet_url(&trimmed) {
-            let canonical = route.canonical_url().to_string();
+        if let Some(parsed) = internal_pages::parse_tonet_url(&trimmed) {
+            let canonical = parsed.normalized_url();
             let was_new_tab = tab.show_new_tab;
             tab.cancel_in_flight();
             tab.show_new_tab = false;
@@ -345,11 +347,6 @@ impl TonetApp {
             }
             tab.pending_nav = Some((canonical.clone(), intent));
             tab.apply_successful_navigation(Vec::new());
-            let loc = self.loc();
-            self.browser_log.record_visit(
-                canonical,
-                Some(internal_pages::tab_title(route, loc).to_string()),
-            );
             self.sync_window_title(ctx);
             return;
         }
@@ -432,8 +429,8 @@ impl TonetApp {
     fn sync_window_title(&mut self, ctx: &egui::Context) {
         let tab = self.active_tab();
         let loc = self.loc();
-        let new_title: String = if let Some(r) = internal_pages::parse_tonet_url(tab.url_input.trim()) {
-            internal_pages::tab_title(r, loc).to_string()
+        let new_title: String = if let Some(p) = internal_pages::parse_tonet_url(tab.url_input.trim()) {
+            internal_pages::tab_title(p.route, loc).to_string()
         } else if let Some(t) = tab.doc_title_trimmed() {
             t.to_string()
         } else {
@@ -688,6 +685,15 @@ impl eframe::App for TonetApp {
             self.close_tab_at(self.active_tab, ctx);
         }
 
+        if consume_non_repeat(ctx, egui::Key::H, true) {
+            self.active_tab_mut().url_input = InternalRoute::History.canonical_url().to_string();
+            self.start_fetch_new(ctx);
+        }
+        if consume_non_repeat(ctx, egui::Key::J, true) {
+            self.active_tab_mut().url_input = InternalRoute::Downloads.canonical_url().to_string();
+            self.start_fetch_new(ctx);
+        }
+
         if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::Tab)) {
             let n = self.tabs.len();
             if n > 1 {
@@ -879,17 +885,21 @@ impl eframe::App for TonetApp {
                     tab.url_input = url;
                     tab.pending_link_navigation = Some(tab.url_input.clone());
                 }
-            } else if let Some(route) = internal_route {
+            } else if let Some(parsed) = internal_route {
+                let route = parsed.route;
+                let settings_url = tab.url_input.clone();
                 let out = match route {
                     InternalRoute::Settings => internal_pages::show_settings_page(
                         ui,
                         loc,
                         route,
-                        &mut self.settings_internal_nav,
+                        settings_url.as_str(),
                         &mut self.settings,
                         self.update_busy,
                         &self.update_status_line,
                         current,
+                        &mut self.internal_shortcuts_filter,
+                        &mut self.confirm_reset_settings,
                         |s| {
                             let _ = s.save();
                         },
@@ -966,6 +976,12 @@ impl eframe::App for TonetApp {
             i18n::internal_confirm_clear_downloads(loc),
             &mut self.browser_log,
             internal_pages::ClearTarget::Downloads,
+        );
+        internal_pages::show_reset_settings_modal(
+            ctx,
+            &mut self.confirm_reset_settings,
+            loc,
+            &mut self.settings,
         );
         show_settings_window(
             ctx,
