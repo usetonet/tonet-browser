@@ -1,133 +1,42 @@
 //! Chromium-style shortcut reference for the internal settings page (display only).
+//! Data is loaded from `assets/shortcuts.tsv` (tab-separated: command, binding).
 
 use std::sync::LazyLock;
 
-/// `(command label, primary binding description)`.
-static SHORTCUT_PAIRS: LazyLock<Vec<(&'static str, &'static str)>> = LazyLock::new(|| {
-    vec![
-        ("Back", "Alt + ←   ·   AltGr + ←"),
-        ("Forward", "Alt + →   ·   AltGr + →"),
-        ("Reload", "Ctrl + R   ·   F5"),
-        ("Home", "Alt + Home"),
-        ("Stop", "Esc (page load)"),
-        ("Reload bypassing cache", "Ctrl + Shift + R   ·   Ctrl + F5   ·   Shift + F5"),
-        ("Reload clearing cache", "—"),
-        ("New window", "Ctrl + N"),
-        ("New Private window", "Ctrl + Shift + N"),
-        ("Close window", "Ctrl + Shift + W   ·   Alt + F4"),
-        ("New tab", "Ctrl + T"),
-        ("Close tab", "Ctrl + W   ·   Ctrl + F4"),
-        ("Next tab", "Ctrl + Tab   ·   Ctrl + PageDown"),
-        ("Previous tab", "Ctrl + Shift + Tab   ·   Ctrl + PageUp"),
-        ("Select tab 1 … 8", "Ctrl + 1 … Ctrl + 8"),
-        ("Select last tab", "Ctrl + 9"),
-        ("Duplicate tab", "—"),
-        ("Reopen closed tab", "Ctrl + Shift + T"),
-        ("Show as tab", "—"),
-        ("Full screen", "F11"),
-        ("Exit", "Alt + F4"),
-        ("Move tab next", "Ctrl + Shift + PageDown"),
-        ("Move tab previous", "Ctrl + Shift + PageUp"),
-        ("Search", "Ctrl + K / Ctrl + E (omnibox)"),
-        ("Minimize window", "—"),
-        ("Maximize window", "—"),
-        ("Show all windows", "—"),
-        ("Name window…", "—"),
-        ("Open in PWA window", "—"),
-        ("Move tab to new window", "—"),
-        ("New split view with current tab", "—"),
-        ("Copy URL", "Ctrl + L then Ctrl + C"),
-        ("Open in external browser", "—"),
-        ("Web app settings", "—"),
-        ("Web app info", "—"),
-        ("Add new tab to group", "Alt + Shift + C"),
-        ("Create new tab group", "Alt + Shift + P"),
-        ("Focus next tab group", "Alt + Shift + X"),
-        ("Focus previous tab group", "Alt + Shift + Z"),
-        ("Close tab group", "Alt + Shift + W"),
-        ("Bookmark this tab…", "Ctrl + D"),
-        ("Bookmark all tabs…", "Ctrl + Shift + D"),
-        ("View source", "Ctrl + U"),
-        ("Print", "Ctrl + P"),
-        ("Save page as…", "Ctrl + S"),
-        ("Email page URL", "—"),
-        ("Basic print", "Ctrl + Shift + P"),
-        ("Translate…", "—"),
-        ("Route media", "—"),
-        ("Mute site", "—"),
-        ("Pin tab", "—"),
-        ("Group tab", "—"),
-        ("QR code generator", "—"),
-        ("Close tabs to the right", "—"),
-        ("Close other tabs", "—"),
-        ("New tab to the right", "—"),
-        ("Sharing hub screenshot", "Ctrl + Shift + S"),
-        ("Show password manager", "—"),
-        ("Show payment methods", "—"),
-        ("Show addresses", "—"),
-        ("Open Guest profile", "—"),
-        ("Add new profile", "—"),
-        ("Cut", "Ctrl + X"),
-        ("Copy", "Ctrl + C"),
-        ("Paste", "Ctrl + V"),
-        ("Find…", "Ctrl + F"),
-        ("Find next", "Ctrl + G   ·   F3"),
-        ("Find previous", "Ctrl + Shift + G   ·   Shift + F3"),
-        ("Close find or stop", "Escape"),
-        ("Zoom in", "Ctrl + +   ·   Ctrl + Num+"),
-        ("Reset zoom", "Ctrl + 0   ·   Ctrl + Num0"),
-        ("Zoom out", "Ctrl + -   ·   Ctrl + Num-"),
-        ("Focus toolbar", "Alt + Shift + T"),
-        ("Focus location", "Ctrl + L   ·   Alt + D"),
-        ("Focus search", "Ctrl + E   ·   Ctrl + K"),
-        ("Focus menu bar", "F10"),
-        ("Focus next pane", "F6"),
-        ("Focus previous pane", "Shift + F6"),
-        ("Focus bookmarks", "Alt + Shift + B"),
-        ("Focus inactive popup for accessibility", "Alt + Shift + A"),
-        ("Focus web contents pane", "Ctrl + F6"),
-        ("Open File", "Ctrl + O"),
-        ("Create shortcut", "—"),
-        ("Developer tools", "Ctrl + Shift + I"),
-        ("JavaScript console", "Ctrl + Shift + J"),
-        ("Inspect devices", "—"),
-        ("Report an issue", "—"),
-        ("Show bookmarks", "Ctrl + Shift + B"),
-        ("Show history", "Ctrl + H"),
-        ("Show bookmark manager", "Ctrl + Shift + O"),
-        ("Download history", "Ctrl + J"),
-        ("Delete browsing data", "Ctrl + Shift + Delete"),
-        ("Import settings", "—"),
-        ("Options", "Ctrl + ,"),
-        ("Edit search engines", "—"),
-        ("Password Manager", "—"),
-        ("About Tonet", "—"),
-        ("Show help", "F1"),
-        ("Show app menu", "Alt + E   ·   Alt + F"),
-        ("Manage extensions", "—"),
-        ("Dev tools inspect", "Ctrl + Shift + C"),
-        ("Show avatar menu", "Ctrl + Shift + M"),
-        ("Dev tools toggle", "F12"),
-        ("Take screenshot", "—"),
-        ("Task manager", "Shift + Escape"),
-        ("Quick commands", "Ctrl + Space"),
-        ("Tab search", "Ctrl + Shift + A"),
-        ("Toggle tab mute", "Ctrl + M"),
-        ("Caret browsing toggle", "F7"),
-        ("Paste and go", "—"),
-    ]
+static CATALOG: LazyLock<Vec<(String, String)>> = LazyLock::new(|| {
+    let raw = include_str!("../assets/shortcuts.tsv");
+    let mut out = Vec::new();
+    for line in raw.lines() {
+        let line = line.trim_end();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let mut parts = line.splitn(2, '\t');
+        let cmd = parts.next().unwrap_or("").trim();
+        if cmd.is_empty() {
+            continue;
+        }
+        let bind = parts
+            .next()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("—")
+            .to_string();
+        out.push((cmd.to_string(), bind));
+    }
+    out
 });
 
-pub fn filter_pairs(query: &str) -> Vec<(&'static str, &'static str)> {
+pub fn filter_pairs(query: &str) -> Vec<(String, String)> {
     let q = query.trim().to_ascii_lowercase();
     if q.is_empty() {
-        return SHORTCUT_PAIRS.iter().copied().collect();
+        return CATALOG.clone();
     }
-    SHORTCUT_PAIRS
+    CATALOG
         .iter()
-        .copied()
         .filter(|(cmd, keys)| {
             cmd.to_ascii_lowercase().contains(&q) || keys.to_ascii_lowercase().contains(&q)
         })
+        .cloned()
         .collect()
 }

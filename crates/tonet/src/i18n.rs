@@ -1388,12 +1388,20 @@ pub fn internal_settings_add_hint(loc: Locale) -> &'static str {
     }
 }
 
-pub fn internal_settings_shortcuts_reset(loc: Locale) -> &'static str {
+pub fn internal_settings_shortcuts_footer_note(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "Restablecer valores por defecto",
-        Locale::De => "Auf Standard zurücksetzen",
-        Locale::Fr => "Rétablir les valeurs par défaut",
-        Locale::En => "Reset all to defaults",
+        Locale::Es => {
+            "Lista de referencia tipo Chromium; Tonet aún no guarda atajos personalizados. El botón «Añadir» está reservado."
+        }
+        Locale::De => {
+            "Chromium-Referenzliste; benutzerdefinierte Kürzel werden in Tonet noch nicht gespeichert. „Hinzufügen“ ist vorbehalten."
+        }
+        Locale::Fr => {
+            "Liste de référence de type Chromium ; les raccourcis personnalisés ne sont pas encore enregistrés. Le bouton « Ajouter » est réservé."
+        }
+        Locale::En => {
+            "Chromium-style reference list; Tonet does not store custom shortcuts yet. The Add button is reserved for a future release."
+        }
     }
 }
 

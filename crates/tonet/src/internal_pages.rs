@@ -607,8 +607,8 @@ fn render_shortcuts_page(
             for (cmd, keys) in rows {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
-                        ui.label(RichText::new(cmd).strong().color(theme::TAB_TEXT));
-                        ui.label(RichText::new(keys).small().color(theme::LOADING_MUTED));
+                        ui.label(RichText::new(&cmd).strong().color(theme::TAB_TEXT));
+                        ui.label(RichText::new(&keys).small().color(theme::LOADING_MUTED));
                     });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let _ = ui
@@ -619,10 +619,12 @@ fn render_shortcuts_page(
                 ui.separator();
             }
         });
-    ui.add_space(8.0);
-    if ui.button(i18n::internal_settings_shortcuts_reset(loc)).clicked() {
-        filter.clear();
-    }
+    ui.add_space(10.0);
+    ui.label(
+        RichText::new(i18n::internal_settings_shortcuts_footer_note(loc))
+            .small()
+            .color(theme::LOADING_MUTED),
+    );
 }
 
 fn render_reset_page(ui: &mut Ui, loc: Locale, confirm_reset: &mut bool) {
