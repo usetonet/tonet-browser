@@ -216,19 +216,41 @@ pub fn security_chip_pair(omnibox_url: &str, loc: Locale) -> (String, String) {
             security_chip_tooltip_idle(loc).to_string(),
         );
     }
-    match Url::parse(t) {
-        Ok(u) if u.scheme() == "https" => {
-            let host = u.host_str().unwrap_or("—");
-            (format!("HTTPS · {host}"), security_chip_tooltip_https(loc).to_string())
+    if let Ok(u) = Url::parse(t) {
+        if u.scheme() == "tonet" {
+            let host = u.host_str().unwrap_or("internal");
+            return (
+                format!("Tonet · {host}"),
+                security_chip_tooltip_tonet(loc).to_string(),
+            );
         }
-        Ok(u) if u.scheme() == "http" => {
+        if u.scheme() == "https" {
             let host = u.host_str().unwrap_or("—");
-            (format!("HTTP · {host}"), security_chip_tooltip_http(loc).to_string())
+            return (
+                format!("HTTPS · {host}"),
+                security_chip_tooltip_https(loc).to_string(),
+            );
         }
-        _ => (
-            security_chip_placeholder(loc).to_string(),
-            security_chip_tooltip_invalid(loc).to_string(),
-        ),
+        if u.scheme() == "http" {
+            let host = u.host_str().unwrap_or("—");
+            return (
+                format!("HTTP · {host}"),
+                security_chip_tooltip_http(loc).to_string(),
+            );
+        }
+    }
+    (
+        security_chip_placeholder(loc).to_string(),
+        security_chip_tooltip_invalid(loc).to_string(),
+    )
+}
+
+fn security_chip_tooltip_tonet(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Página interna de Tonet (tonet://). No usa la red.",
+        Locale::De => "Interne Tonet-Seite (tonet://). Kein Netzwerk.",
+        Locale::Fr => "Page interne Tonet (tonet://). Pas de réseau.",
+        Locale::En => "Tonet internal page (tonet://). No network access.",
     }
 }
 
@@ -261,10 +283,10 @@ fn security_chip_tooltip_http(loc: Locale) -> &'static str {
 
 fn security_chip_tooltip_invalid(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "URL no válida o esquema no admitido (solo http/https).",
-        Locale::De => "Ungültige URL oder Schema — nur http/https.",
-        Locale::Fr => "URL invalide ou schéma non pris en charge (http/https seulement).",
-        Locale::En => "Invalid URL or unsupported scheme (http/https only).",
+        Locale::Es => "URL no válida o esquema no admitido (http, https o tonet).",
+        Locale::De => "Ungültige URL oder Schema — http, https oder tonet.",
+        Locale::Fr => "URL invalide ou schéma non pris en charge (http, https ou tonet).",
+        Locale::En => "Invalid URL or unsupported scheme (http, https, or tonet).",
     }
 }
 
@@ -719,5 +741,295 @@ pub fn empty_page_hint(loc: Locale) -> &'static str {
         Locale::De => "Kein erkanntes Inhalts-Markup (<title>, <h1>, <h2>, <p>, Links).",
         Locale::Fr => "Aucun contenu reconnu (<title>, <h1>, <h2>, <p>, liens).",
         Locale::En => "No recognizable content found (<title>, <h1>, <h2>, <p>, links).",
+    }
+}
+
+// --- tonet:// internal pages ---
+
+pub fn internal_tab_title_settings(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ajustes",
+        Locale::De => "Einstellungen",
+        Locale::Fr => "Paramètres",
+        Locale::En => "Settings",
+    }
+}
+
+pub fn internal_tab_title_downloads(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Descargas",
+        Locale::De => "Downloads",
+        Locale::Fr => "Téléchargements",
+        Locale::En => "Downloads",
+    }
+}
+
+pub fn internal_tab_title_history(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Historial",
+        Locale::De => "Verlauf",
+        Locale::Fr => "Historique",
+        Locale::En => "History",
+    }
+}
+
+pub fn internal_nav_history(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Historial",
+        Locale::De => "Verlauf",
+        Locale::Fr => "Historique",
+        Locale::En => "History",
+    }
+}
+
+pub fn internal_nav_downloads(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Descargas",
+        Locale::De => "Downloads",
+        Locale::Fr => "Téléchargements",
+        Locale::En => "Downloads",
+    }
+}
+
+pub fn internal_nav_settings(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ajustes",
+        Locale::De => "Einstellungen",
+        Locale::Fr => "Paramètres",
+        Locale::En => "Settings",
+    }
+}
+
+pub fn internal_search_history(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Buscar en el historial",
+        Locale::De => "Verlauf durchsuchen",
+        Locale::Fr => "Rechercher dans l’historique",
+        Locale::En => "Search history",
+    }
+}
+
+pub fn internal_search_downloads(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Buscar descargas",
+        Locale::De => "Downloads durchsuchen",
+        Locale::Fr => "Rechercher des téléchargements",
+        Locale::En => "Search downloads",
+    }
+}
+
+pub fn internal_clear_all(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Borrar todo",
+        Locale::De => "Alle löschen",
+        Locale::Fr => "Tout effacer",
+        Locale::En => "Clear all",
+    }
+}
+
+pub fn internal_history_sidebar(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Historial de Tonet",
+        Locale::De => "Tonet-Verlauf",
+        Locale::Fr => "Historique Tonet",
+        Locale::En => "Tonet history",
+    }
+}
+
+pub fn internal_history_other_devices(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Pestañas de otros dispositivos",
+        Locale::De => "Tabs von anderen Geräten",
+        Locale::Fr => "Onglets d’autres appareils",
+        Locale::En => "Tabs from other devices",
+    }
+}
+
+pub fn internal_history_other_devices_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Aún no disponible.",
+        Locale::De => "Noch nicht verfügbar.",
+        Locale::Fr => "Pas encore disponible.",
+        Locale::En => "Not available yet.",
+    }
+}
+
+pub fn internal_history_delete_data(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Borrar datos de navegación…",
+        Locale::De => "Browserdaten löschen…",
+        Locale::Fr => "Effacer les données de navigation…",
+        Locale::En => "Delete browsing data…",
+    }
+}
+
+pub fn internal_confirm_clear_history(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "¿Borrar todo el historial de visitas guardado en este dispositivo?",
+        Locale::De => "Den gesamten gespeicherten Verlauf auf diesem Gerät löschen?",
+        Locale::Fr => "Supprimer tout l’historique de navigation enregistré sur cet appareil ?",
+        Locale::En => "Clear all saved visit history on this device?",
+    }
+}
+
+pub fn internal_confirm_clear_downloads(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "¿Borrar la lista de descargas (solo registro, no archivos en disco)?",
+        Locale::De => "Download-Liste löschen? (nur Protokoll, keine Dateien auf der Festplatte)",
+        Locale::Fr => "Effacer la liste des téléchargements (journal seulement, pas les fichiers) ?",
+        Locale::En => "Clear the downloads list? (log only; no files on disk are removed.)",
+    }
+}
+
+pub fn internal_btn_cancel(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cancelar",
+        Locale::De => "Abbrechen",
+        Locale::Fr => "Annuler",
+        Locale::En => "Cancel",
+    }
+}
+
+pub fn internal_btn_clear(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Borrar",
+        Locale::De => "Löschen",
+        Locale::Fr => "Effacer",
+        Locale::En => "Clear",
+    }
+}
+
+pub fn internal_hist_today(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Hoy",
+        Locale::De => "Heute",
+        Locale::Fr => "Aujourd’hui",
+        Locale::En => "Today",
+    }
+}
+
+pub fn internal_hist_yesterday(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ayer",
+        Locale::De => "Gestern",
+        Locale::Fr => "Hier",
+        Locale::En => "Yesterday",
+    }
+}
+
+pub fn internal_from_url(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Desde",
+        Locale::De => "Von",
+        Locale::Fr => "Depuis",
+        Locale::En => "From",
+    }
+}
+
+pub fn internal_copy_link(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Copiar enlace",
+        Locale::De => "Link kopieren",
+        Locale::Fr => "Copier le lien",
+        Locale::En => "Copy link",
+    }
+}
+
+pub fn internal_open_folder(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Abrir carpeta",
+        Locale::De => "Ordner öffnen",
+        Locale::Fr => "Ouvrir le dossier",
+        Locale::En => "Open folder",
+    }
+}
+
+pub fn internal_open_folder_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Tonet aún no guarda archivos en disco desde esta lista.",
+        Locale::De => "Tonet speichert aus dieser Liste noch keine Dateien auf der Festplatte.",
+        Locale::Fr => "Tonet n’enregistre pas encore de fichiers sur le disque depuis cette liste.",
+        Locale::En => "Tonet does not save files to disk from this list yet.",
+    }
+}
+
+pub fn internal_remove_row(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Quitar",
+        Locale::De => "Entfernen",
+        Locale::Fr => "Retirer",
+        Locale::En => "Remove",
+    }
+}
+
+pub fn internal_open_in_tonet(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Abrir en Tonet",
+        Locale::De => "In Tonet öffnen",
+        Locale::Fr => "Ouvrir dans Tonet",
+        Locale::En => "Open in Tonet",
+    }
+}
+
+pub fn internal_remove_selected(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Quitar selección",
+        Locale::De => "Auswahl entfernen",
+        Locale::Fr => "Supprimer la sélection",
+        Locale::En => "Remove selected",
+    }
+}
+
+pub fn internal_settings_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Preferencias de Tonet. Los cambios se guardan al pulsar «Guardar preferencias».",
+        Locale::De => "Tonet-Einstellungen. Änderungen mit „Einstellungen speichern“ sichern.",
+        Locale::Fr => "Préférences Tonet. Enregistrez avec « Enregistrer les préférences ».",
+        Locale::En => "Tonet preferences. Use “Save preferences” to persist changes.",
+    }
+}
+
+pub fn internal_settings_nav_general(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Inicio",
+        Locale::De => "Start",
+        Locale::Fr => "Démarrer",
+        Locale::En => "Get started",
+    }
+}
+
+pub fn internal_settings_nav_search(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Buscador",
+        Locale::De => "Suche",
+        Locale::Fr => "Moteur de recherche",
+        Locale::En => "Search engine",
+    }
+}
+
+pub fn internal_settings_nav_updates(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Actualizaciones",
+        Locale::De => "Updates",
+        Locale::Fr => "Mises à jour",
+        Locale::En => "Updates",
+    }
+}
+
+pub fn internal_downloads_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Páginas cargadas recientemente (registro). No es un gestor de archivos descargados todavía.",
+        Locale::De => "Kürzlich geladene Seiten (Protokoll). Noch kein klassischer Datei-Download-Manager.",
+        Locale::Fr => "Pages récemment chargées (journal). Pas encore un gestionnaire de fichiers.",
+        Locale::En => "Recently loaded pages (log). Not a classic file download manager yet.",
+    }
+}
+
+pub fn internal_no_items(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "No hay elementos.",
+        Locale::De => "Keine Einträge.",
+        Locale::Fr => "Aucun élément.",
+        Locale::En => "No items yet.",
     }
 }

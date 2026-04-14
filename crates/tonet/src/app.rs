@@ -1,13 +1,17 @@
 //! Tonet application: tabs, chrome, navigation history, locale, and update checks.
 
 use std::cell::Cell;
+use std::collections::HashSet;
+use std::rc::Rc;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use eframe::egui::{self, Color32, ViewportCommand};
 
 use crate::branding;
+use crate::browser_log::BrowserLog;
 use crate::i18n::{self, Locale};
+use crate::internal_pages::{self, InternalRoute, SettingsNav};
 use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext};
 use crate::parser::{extract_favicon_candidates, parse_html};
 use crate::renderer::render_nodes;
@@ -90,6 +94,7 @@ fn resolve_omnibox_input(input: &str, search_engine: SearchEngine) -> String {
     if trimmed.starts_with("http://")
         || trimmed.starts_with("https://")
         || trimmed.starts_with("file://")
+        || trimmed.starts_with("tonet://")
     {
         return trimmed.to_string();
     }
@@ -151,6 +156,14 @@ pub struct TonetApp {
     /// True once an overflow browser instance has been spawned at MAX_TABS.
     /// Prevents spawning unlimited processes.
     max_tabs_overflow_spawned: bool,
+
+    browser_log: BrowserLog,
+    settings_internal_nav: SettingsNav,
+    internal_hist_search: String,
+    internal_dl_search: String,
+    internal_hist_selected: HashSet<u64>,
+    confirm_clear_history: bool,
+    confirm_clear_downloads: bool,
 }
 
 impl TonetApp {
@@ -210,6 +223,13 @@ impl TonetApp {
             integrated_title_chrome,
             dwm_corner_attempts: 0,
             max_tabs_overflow_spawned: false,
+            browser_log: BrowserLog::load(),
+            settings_internal_nav: SettingsNav::default(),
+            internal_hist_search: String::new(),
+            internal_dl_search: String::new(),
+            internal_hist_selected: HashSet::new(),
+            confirm_clear_history: false,
+            confirm_clear_downloads: false,
         }
     }
 
@@ -226,6 +246,9 @@ impl TonetApp {
     }
 
     fn tab_strip_title(tab: &Tab, loc: Locale) -> String {
+        if let Some(r) = internal_pages::parse_tonet_url(&tab.url_input) {
+            return Self::clamp_strip_label(internal_pages::tab_title(r, loc), 24);
+        }
         if let Some(t) = tab.doc_title_trimmed() {
             Self::clamp_strip_label(t, 24)
         } else {
@@ -293,11 +316,41 @@ impl TonetApp {
         self.sync_window_title(ctx);
     }
 
-    fn start_fetch_with_intent(&mut self, intent: NavigateIntent) {
+    fn start_fetch_with_intent(&mut self, intent: NavigateIntent, ctx: &egui::Context) {
         let search_engine = self.settings.search_engine;
         let tab = self.active_tab_mut();
         let trimmed = tab.url_input.trim().to_string();
         if trimmed.is_empty() {
+            return;
+        }
+
+        if let Some(route) = internal_pages::parse_tonet_url(&trimmed) {
+            let canonical = route.canonical_url().to_string();
+            let was_new_tab = tab.show_new_tab;
+            tab.cancel_in_flight();
+            tab.show_new_tab = false;
+            tab.loading = false;
+            tab.error_message = None;
+            tab.fetch_rx = None;
+            tab.favicon_fetch_rx = None;
+            tab.favicon_uri.clear();
+            tab.dom.clear();
+            tab.url_input = canonical.clone();
+            if was_new_tab && matches!(intent, NavigateIntent::NewPage) {
+                tab.history.push(HistoryEntry {
+                    url: String::new(),
+                    nodes: Vec::new(),
+                });
+                tab.hist_index = 0;
+            }
+            tab.pending_nav = Some((canonical.clone(), intent));
+            tab.apply_successful_navigation(Vec::new());
+            let loc = self.loc();
+            self.browser_log.record_visit(
+                canonical,
+                Some(internal_pages::tab_title(route, loc).to_string()),
+            );
+            self.sync_window_title(ctx);
             return;
         }
 
@@ -340,12 +393,12 @@ impl TonetApp {
         });
     }
 
-    fn start_fetch_new(&mut self) {
-        self.start_fetch_with_intent(NavigateIntent::NewPage);
+    fn start_fetch_new(&mut self, ctx: &egui::Context) {
+        self.start_fetch_with_intent(NavigateIntent::NewPage, ctx);
     }
 
-    fn reload_page(&mut self) {
-        self.start_fetch_with_intent(NavigateIntent::Reload);
+    fn reload_page(&mut self, ctx: &egui::Context) {
+        self.start_fetch_with_intent(NavigateIntent::Reload, ctx);
     }
 
     fn go_back(&mut self, ctx: &egui::Context) {
@@ -378,11 +431,16 @@ impl TonetApp {
 
     fn sync_window_title(&mut self, ctx: &egui::Context) {
         let tab = self.active_tab();
-        let doc_title = tab.doc_title_trimmed();
-
-        let new_title = doc_title.unwrap_or(i18n::app_name(self.loc()));
+        let loc = self.loc();
+        let new_title: String = if let Some(r) = internal_pages::parse_tonet_url(tab.url_input.trim()) {
+            internal_pages::tab_title(r, loc).to_string()
+        } else if let Some(t) = tab.doc_title_trimmed() {
+            t.to_string()
+        } else {
+            i18n::app_name(loc).to_string()
+        };
         if new_title != self.window_title {
-            self.window_title = new_title.to_string();
+            self.window_title = new_title;
             ctx.send_viewport_cmd(ViewportCommand::Title(self.window_title.clone()));
         }
     }
@@ -392,6 +450,7 @@ impl TonetApp {
         let active = self.active_tab;
         let mut title_dirty = false;
         let mut reset_window_title = false;
+        let mut visit_queue: Vec<(String, Option<String>)> = Vec::new();
 
         for (i, tab) in self.tabs.iter_mut().enumerate() {
             let Some(rx) = &tab.fetch_rx else {
@@ -404,6 +463,12 @@ impl TonetApp {
                     tab.fetch_rx = None;
                     let favicon_candidates = data.favicon_candidates;
                     tab.apply_successful_navigation(data.nodes);
+
+                    let page_url = tab.url_input.trim().to_string();
+                    if page_url.starts_with("http://") || page_url.starts_with("https://") {
+                        let title = tab.doc_title_trimmed().map(|s| s.to_string());
+                        visit_queue.push((page_url, title));
+                    }
 
                     if !favicon_candidates.is_empty() {
                         let (fav_tx, fav_rx) = mpsc::channel();
@@ -439,6 +504,11 @@ impl TonetApp {
                     ctx.request_repaint();
                 }
             }
+        }
+
+        for (page_url, title) in visit_queue {
+            self.browser_log.record_visit(page_url.clone(), title.clone());
+            self.browser_log.record_page_fetch(&page_url, title);
         }
 
         if reset_window_title {
@@ -595,7 +665,7 @@ impl eframe::App for TonetApp {
 
         if let Some(url) = self.active_tab_mut().pending_link_navigation.take() {
             self.active_tab_mut().url_input = url;
-            self.start_fetch_new();
+            self.start_fetch_new(ctx);
         }
 
         self.poll_fetch(ctx);
@@ -608,7 +678,7 @@ impl eframe::App for TonetApp {
                 || (i.modifiers.command && i.key_pressed(egui::Key::R))
         }) && !self.active_tab().loading
         {
-            self.reload_page();
+            self.reload_page(ctx);
         }
 
         if consume_non_repeat(ctx, egui::Key::T, true) {
@@ -683,6 +753,8 @@ impl eframe::App for TonetApp {
             .iter()
             .map(|t| {
                 if t.show_new_tab {
+                    branding::TONET_LOGO_URI.to_string()
+                } else if internal_pages::parse_tonet_url(t.url_input.trim()).is_some() {
                     branding::TONET_LOGO_URI.to_string()
                 } else {
                     t.favicon_uri.clone()
@@ -770,31 +842,83 @@ impl eframe::App for TonetApp {
                     self.go_forward(ctx);
                 }
                 if tb.reload {
-                    self.reload_page();
+                    self.reload_page(ctx);
                 }
                 if tb.stop_loading {
                     self.active_tab_mut().cancel_in_flight();
                 }
                 if tb.navigate {
-                    self.start_fetch_new();
+                    self.start_fetch_new(ctx);
+                }
+                if tb.navigate_to_settings {
+                    self.active_tab_mut().url_input =
+                        InternalRoute::Settings.canonical_url().to_string();
+                    self.start_fetch_new(ctx);
                 }
                 if tb.open_settings {
                     self.settings_open = true;
                 }
             });
 
-        let tab = self.active_tab_mut();
-        let is_new_tab = tab.is_new_tab();
+        let current = env!("CARGO_PKG_VERSION");
+        let active_i = self.active_tab;
+        let is_new_tab = self.tabs[active_i].is_new_tab();
+        let internal_route = if !is_new_tab {
+            internal_pages::parse_tonet_url(self.tabs[active_i].url_input.trim())
+        } else {
+            None
+        };
+        let check_now = Rc::new(Cell::new(false));
+        let check_now_settings = check_now.clone();
+
         egui::CentralPanel::default().show(ctx, |ui| {
+            let tab = &mut self.tabs[active_i];
             if is_new_tab {
-                let nta = crate::new_tab::show_new_tab_page(
-                    ui,
-                    loc,
-                    &mut tab.url_input,
-                );
+                let nta = crate::new_tab::show_new_tab_page(ui, loc, &mut tab.url_input);
                 if let Some(url) = nta.navigate_to {
                     tab.url_input = url;
                     tab.pending_link_navigation = Some(tab.url_input.clone());
+                }
+            } else if let Some(route) = internal_route {
+                let out = match route {
+                    InternalRoute::Settings => internal_pages::show_settings_page(
+                        ui,
+                        loc,
+                        route,
+                        &mut self.settings_internal_nav,
+                        &mut self.settings,
+                        self.update_busy,
+                        &self.update_status_line,
+                        current,
+                        |s| {
+                            let _ = s.save();
+                        },
+                        || {
+                            check_now_settings.set(true);
+                        },
+                    ),
+                    InternalRoute::Downloads => internal_pages::show_downloads_page(
+                        ui,
+                        ctx,
+                        loc,
+                        route,
+                        &mut self.browser_log,
+                        &mut self.internal_dl_search,
+                        &mut self.confirm_clear_downloads,
+                    ),
+                    InternalRoute::History => internal_pages::show_history_page(
+                        ui,
+                        ctx,
+                        loc,
+                        route,
+                        &mut self.browser_log,
+                        &mut self.internal_hist_search,
+                        &mut self.internal_hist_selected,
+                        &mut self.confirm_clear_history,
+                    ),
+                };
+                if let Some(url) = out.navigate_to {
+                    tab.pending_link_navigation = Some(url);
                 }
             } else {
                 if let Some(err) = &tab.error_message {
@@ -827,8 +951,22 @@ impl eframe::App for TonetApp {
             }
         });
 
-        let current = env!("CARGO_PKG_VERSION");
-        let check_now = Cell::new(false);
+        internal_pages::show_clear_confirm_modal(
+            ctx,
+            &mut self.confirm_clear_history,
+            loc,
+            i18n::internal_confirm_clear_history(loc),
+            &mut self.browser_log,
+            internal_pages::ClearTarget::History,
+        );
+        internal_pages::show_clear_confirm_modal(
+            ctx,
+            &mut self.confirm_clear_downloads,
+            loc,
+            i18n::internal_confirm_clear_downloads(loc),
+            &mut self.browser_log,
+            internal_pages::ClearTarget::Downloads,
+        );
         show_settings_window(
             ctx,
             &mut self.settings_open,
@@ -840,8 +978,9 @@ impl eframe::App for TonetApp {
             |s| {
                 let _ = s.save();
             },
-            || {
-                check_now.set(true);
+            {
+                let c = check_now.clone();
+                move || c.set(true)
             },
         );
         if check_now.get() {

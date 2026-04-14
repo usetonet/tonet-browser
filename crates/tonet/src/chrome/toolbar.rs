@@ -15,7 +15,10 @@ pub struct ToolbarResult {
     pub navigate: bool,
     pub reload: bool,
     pub stop_loading: bool,
+    /// Open legacy modal settings (e.g. Ctrl/⌘+,). Hamburger uses `navigate_to_settings`.
     pub open_settings: bool,
+    /// Navigate current tab to `tonet://settings` (main settings entry).
+    pub navigate_to_settings: bool,
     pub go_back: bool,
     pub go_forward: bool,
 }
@@ -52,7 +55,8 @@ pub fn show_chrome_toolbar(
     let mut navigate = false;
     let mut reload = false;
     let mut stop_loading = false;
-    let mut open_settings = false;
+    let open_settings = false;
+    let mut navigate_to_settings = false;
     let mut go_back = false;
     let mut go_forward = false;
 
@@ -200,7 +204,7 @@ pub fn show_chrome_toolbar(
             .on_hover_text(i18n::settings_tooltip(loc))
             .clicked()
         {
-            open_settings = true;
+            navigate_to_settings = true;
         }
     });
 
@@ -209,6 +213,7 @@ pub fn show_chrome_toolbar(
         reload,
         stop_loading,
         open_settings,
+        navigate_to_settings,
         go_back,
         go_forward,
     }
