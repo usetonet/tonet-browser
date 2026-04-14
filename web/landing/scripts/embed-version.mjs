@@ -16,9 +16,14 @@ const payload = {
   repo: "usetonet/tonet-browser",
   releasesUrl: "https://github.com/usetonet/tonet-browser/releases/latest",
   download: {
+    windowsSetup: "https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x64.exe",
+    linuxSetup: "https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x86_64",
+    macSetup: "https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-macos",
     windowsMsi: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-x64.msi`,
     windowsExe: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-Setup-${version}-x64.exe`,
+    windowsPortableZip: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-windows-x64-portable.zip`,
     deb: `https://github.com/usetonet/tonet-browser/releases/latest/download/tonet_${version}_amd64.deb`,
+    macTarball: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-macos.tar.gz`,
   },
 };
 

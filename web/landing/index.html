@@ -81,28 +81,42 @@
 
         <div id="panel-windows" class="os-panel" role="tabpanel">
           <h3 id="panel-win-h3">Windows</h3>
-          <p id="panel-win-p1">CI-built installers: MSI (enterprise / Intune) and EXE via Inno Setup.</p>
+          <p id="panel-win-p1">
+            One-click web installer downloads the latest Tonet from GitHub and installs it (MSI when allowed, otherwise a per-user portable copy).
+          </p>
           <p>
-            <a class="btn btn-primary" id="win-msi" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >Download MSI (x64)</a
+            <a class="btn btn-primary" id="win-setup" href="https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x64.exe" target="_blank" rel="noopener"
+              >Download Tonet (Windows)</a
+            >
+          </p>
+          <p style="margin-top: 12px">
+            <a class="btn btn-ghost" id="win-msi" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >MSI (x64)</a
             >
             &nbsp;
             <a class="btn btn-ghost" id="win-exe" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >Download EXE (x64)</a
+              >Inno Setup EXE (x64)</a
             >
           </p>
           <p style="color: var(--muted); font-size: 0.9rem" id="panel-win-foot">
-            After a release, files appear as <code>Tonet-&lt;version&gt;-x64.msi</code> and <code>Tonet-Setup-&lt;version&gt;-x64.exe</code>. The
-            “latest” release page always lists current binaries.
+            Advanced: versioned <code>Tonet-&lt;version&gt;-x64.msi</code> and <code>Tonet-Setup-&lt;version&gt;-x64.exe</code> are linked automatically when this site knows the current version.
           </p>
         </div>
 
         <div id="panel-linux" class="os-panel" role="tabpanel">
           <h3 id="panel-linux-h3">Linux</h3>
-          <p id="panel-linux-p1"><strong>.deb</strong> package for amd64 (when the release workflow publishes it) or build from source.</p>
+          <p id="panel-linux-p1">
+            Web installer for amd64: downloads the latest release and installs the <code>.deb</code> when possible, or falls back to a user-local
+            layout.
+          </p>
           <p>
-            <a class="btn btn-primary" id="linux-deb" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >Open releases (.deb)</a
+            <a class="btn btn-primary" id="linux-setup" href="https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x86_64" target="_blank" rel="noopener"
+              >Download Tonet (Linux)</a
+            >
+          </p>
+          <p style="margin-top: 12px">
+            <a class="btn btn-ghost" id="linux-deb" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >Debian package (.deb)</a
             >
           </p>
           <h4 style="margin: 24px 0 8px; font-size: 1rem" id="linux-h4-src">Build from the repository</h4>
@@ -125,7 +139,13 @@ chmod +x scripts/install-linux-user.sh
         <div id="panel-macos" class="os-panel" role="tabpanel">
           <h3 id="panel-mac-h3">macOS</h3>
           <p id="panel-mac-p1">
-            A signed, notarized <code>.app</code> bundle is on the roadmap. Until then, build with stable Rust and Xcode Command Line Tools.
+            Web installer downloads the latest macOS tarball and places Tonet under <code>~/Applications/Tonet</code>. A signed <code>.app</code> bundle
+            is still on the roadmap; you can also build from source.
+          </p>
+          <p>
+            <a class="btn btn-primary" id="mac-setup" href="https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-macos" target="_blank" rel="noopener"
+              >Download Tonet (macOS)</a
+            >
           </p>
           <div class="code-block" style="padding-top: 44px">
             <button type="button" class="copy-btn" data-copy="mac-src">Copy</button>

@@ -56,27 +56,27 @@ import type { DetectedOS } from "./detect-os";
 export function detectedOsLine(lang: SiteLang, os: DetectedOS): string {
   const m = {
     en: {
-      windows: "Detected: Windows — showing MSI/EXE installers.",
-      linux: "Detected: Linux — showing .deb and build commands.",
-      macos: "Detected: macOS — showing local build steps.",
+      windows: "Detected: Windows — web installer plus optional MSI/Inno links.",
+      linux: "Detected: Linux — web installer, .deb, and build commands.",
+      macos: "Detected: macOS — web installer and local build steps.",
       unknown: "Could not detect your OS — defaulting to Windows.",
     },
     es: {
-      windows: "Detectado: Windows — te mostramos los instaladores MSI/EXE.",
-      linux: "Detectado: Linux — te mostramos .deb y comandos de compilación.",
-      macos: "Detectado: macOS — te mostramos la ruta de compilación local.",
+      windows: "Detectado: Windows — instalador web y enlaces MSI/Inno opcionales.",
+      linux: "Detectado: Linux — instalador web, .deb y comandos de compilación.",
+      macos: "Detectado: macOS — instalador web y compilación local.",
       unknown: "No pudimos detectar el SO — mostrando Windows por defecto.",
     },
     de: {
-      windows: "Erkannt: Windows — MSI/EXE-Installer werden angezeigt.",
-      linux: "Erkannt: Linux — .deb und Build-Befehle werden angezeigt.",
-      macos: "Erkannt: macOS — lokale Build-Schritte werden angezeigt.",
+      windows: "Erkannt: Windows — Web-Installer plus optionale MSI/Inno-Links.",
+      linux: "Erkannt: Linux — Web-Installer, .deb und Build-Befehle.",
+      macos: "Erkannt: macOS — Web-Installer und lokaler Build.",
       unknown: "Betriebssystem unbekannt — Standard: Windows.",
     },
     fr: {
-      windows: "Détecté : Windows — installateurs MSI/EXE affichés.",
-      linux: "Détecté : Linux — .deb et commandes de compilation affichés.",
-      macos: "Détecté : macOS — étapes de compilation locales affichées.",
+      windows: "Détecté : Windows — installateur web et liens MSI/Inno optionnels.",
+      linux: "Détecté : Linux — installateur web, .deb et compilation.",
+      macos: "Détecté : macOS — installateur web et build local.",
       unknown: "Système inconnu — affichage Windows par défaut.",
     },
   }[lang];
@@ -119,15 +119,18 @@ interface LandingStrings {
   panelWinTitle: string;
   panelWinP1: string;
   panelWinFoot: string;
+  winSetup: string;
   winMsi: string;
   winExe: string;
   panelLinuxTitle: string;
   panelLinuxP1: string;
+  linuxSetup: string;
   linuxDeb: string;
   linuxH4src: string;
   linuxH4user: string;
   panelMacTitle: string;
   panelMacP1: string;
+  macSetup: string;
   footer1: string;
   footer2: string;
   langSwitcher: string;
@@ -162,19 +165,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     downloadLead:
       "We highlight the option that matches your system. You can always switch tabs manually.",
     panelWinTitle: "Windows",
-    panelWinP1: "CI-built installers: MSI (enterprise / Intune) and EXE via Inno Setup.",
+    panelWinP1:
+      "One-click web installer: always downloads the newest Tonet from GitHub (silent MSI when possible, otherwise a per-user portable install).",
     panelWinFoot:
-      "After a release, files appear as Tonet-&lt;version&gt;-x64.msi and Tonet-Setup-&lt;version&gt;-x64.exe. The “latest” release page always lists current binaries.",
-    winMsi: "Download MSI (x64)",
-    winExe: "Download EXE (x64)",
+      "Advanced: this page also links the CI-built <code>Tonet-&lt;version&gt;-x64.msi</code> and <code>Tonet-Setup-&lt;version&gt;-x64.exe</code> when the embedded version matches the latest GitHub tag.",
+    winSetup: "Download Tonet (Windows)",
+    winMsi: "MSI (x64)",
+    winExe: "Inno Setup EXE (x64)",
     panelLinuxTitle: "Linux",
-    panelLinuxP1: ".deb package for amd64 (when the release workflow publishes it) or build from source.",
-    linuxDeb: "Open releases (.deb)",
+    panelLinuxP1:
+      "Web installer for amd64: fetches the latest release and installs the <code>.deb</code> when possible, or falls back to a user-local layout.",
+    linuxSetup: "Download Tonet (Linux)",
+    linuxDeb: "Debian package (.deb)",
     linuxH4src: "Build from the repository",
     linuxH4user: "Per-user install (desktop + binary)",
     panelMacTitle: "macOS",
     panelMacP1:
-      "A signed, notarized .app bundle is on the roadmap. Until then, build with stable Rust and Xcode Command Line Tools.",
+      "Web installer downloads the latest macOS tarball into <code>~/Applications/Tonet</code>. A signed <code>.app</code> bundle is still on the roadmap; you can also build from source.",
+    macSetup: "Download Tonet (macOS)",
     footer1: "usetonet.com — project",
     footer2: "Landing on Cloudflare Workers · Tonet engine under active development",
     langSwitcher: "Site language",
@@ -207,20 +215,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     downloadLead:
       "Detectamos tu sistema para resaltar la opción adecuada. Siempre puedes cambiar de pestaña manualmente.",
     panelWinTitle: "Windows",
-    panelWinP1: "Instaladores generados en CI: paquete MSI (empresas / InTune) y EXE con Inno Setup.",
+    panelWinP1:
+      "Instalador web en un clic: siempre descarga la última versión desde GitHub (MSI silencioso si se puede; si no, instalación portable por usuario).",
     panelWinFoot:
-      "Tras publicar un release, los archivos aparecen como Tonet-&lt;versión&gt;-x64.msi y Tonet-Setup-&lt;versión&gt;-x64.exe. La página de «latest» lista siempre los binarios vigentes.",
-    winMsi: "Descargar MSI (x64)",
-    winExe: "Descargar EXE (x64)",
+      "Avanzado: esta página enlaza también el <code>Tonet-&lt;versión&gt;-x64.msi</code> y el <code>Tonet-Setup-&lt;versión&gt;-x64.exe</code> generados en CI cuando la versión incrustada coincide con el último tag de GitHub.",
+    winSetup: "Descargar Tonet (Windows)",
+    winMsi: "MSI (x64)",
+    winExe: "EXE Inno Setup (x64)",
     panelLinuxTitle: "Linux",
     panelLinuxP1:
-      "Paquete .deb para amd64 (cuando el workflow de release lo publique) o compilación desde fuente.",
-    linuxDeb: "Abrir releases (.deb)",
+      "Instalador web para amd64: obtiene el último release e instala el <code>.deb</code> cuando es posible, o usa un despliegue local en tu carpeta de usuario.",
+    linuxSetup: "Descargar Tonet (Linux)",
+    linuxDeb: "Paquete Debian (.deb)",
     linuxH4src: "Compilar desde el repositorio",
     linuxH4user: "Instalación de usuario (desktop + binario)",
     panelMacTitle: "macOS",
     panelMacP1:
-      "El bundle .app firmado y notarizado está en la hoja de ruta. Mientras tanto puedes compilar con Rust estable y Xcode Command Line Tools.",
+      "El instalador web descarga el último tarball y coloca Tonet en <code>~/Applications/Tonet</code>. Un <code>.app</code> firmado sigue en la hoja de ruta; también puedes compilar desde fuente.",
+    macSetup: "Descargar Tonet (macOS)",
     footer1: "usetonet.com — proyecto",
     footer2: "Landing servida con Cloudflare Workers · Motor Tonet en desarrollo activo",
     langSwitcher: "Idioma del sitio",
@@ -253,19 +265,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     downloadLead:
       "Wir heben die passende Option für Ihr System hervor. Sie können die Registerkarten jederzeit manuell wechseln.",
     panelWinTitle: "Windows",
-    panelWinP1: "CI-erstellte Installer: MSI (Unternehmen / Intune) und EXE mit Inno Setup.",
+    panelWinP1:
+      "Web-Installer mit einem Klick: lädt stets die neueste Tonet-Version von GitHub (stilles MSI wenn möglich, sonst portable Installation im Benutzerprofil).",
     panelWinFoot:
-      "Nach einem Release erscheinen Dateien als Tonet-&lt;Version&gt;-x64.msi und Tonet-Setup-&lt;Version&gt;-x64.exe. Die „latest“-Seite listet stets aktuelle Binärdateien.",
-    winMsi: "MSI laden (x64)",
-    winExe: "EXE laden (x64)",
+      "Fortgeschritten: Diese Seite verlinkt außerdem die CI-Builds <code>Tonet-&lt;Version&gt;-x64.msi</code> und <code>Tonet-Setup-&lt;Version&gt;-x64.exe</code>, wenn die eingebettete Version mit dem neuesten GitHub-Tag übereinstimmt.",
+    winSetup: "Tonet herunterladen (Windows)",
+    winMsi: "MSI (x64)",
+    winExe: "Inno-Setup-EXE (x64)",
     panelLinuxTitle: "Linux",
-    panelLinuxP1: ".deb für amd64 (wenn der Release-Workflow es veröffentlicht) oder aus dem Quellcode bauen.",
-    linuxDeb: "Releases öffnen (.deb)",
+    panelLinuxP1:
+      "Web-Installer für amd64: holt das neueste Release und installiert die <code>.deb</code> wenn möglich, sonst eine benutzerlokale Installation.",
+    linuxSetup: "Tonet herunterladen (Linux)",
+    linuxDeb: "Debian-Paket (.deb)",
     linuxH4src: "Aus dem Repository bauen",
     linuxH4user: "Benutzerinstallation (Desktop + Binary)",
     panelMacTitle: "macOS",
     panelMacP1:
-      "Ein signiertes, notarisiertes .app-Bundle ist geplant. Bis dahin: Build mit stable Rust und Xcode Command Line Tools.",
+      "Der Web-Installer lädt das neueste macOS-Archiv und installiert nach <code>~/Applications/Tonet</code>. Ein signiertes <code>.app</code>-Bundle ist geplant; alternativ aus dem Quellcode bauen.",
+    macSetup: "Tonet herunterladen (macOS)",
     footer1: "usetonet.com — Projekt",
     footer2: "Landing auf Cloudflare Workers · Tonet-Engine in aktiver Entwicklung",
     langSwitcher: "Sprache der Website",
@@ -298,19 +315,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     downloadLead:
       "Nous mettons en avant l’option adaptée à votre système. Vous pouvez toujours changer d’onglet manuellement.",
     panelWinTitle: "Windows",
-    panelWinP1: "Installateurs produits en CI : MSI (entreprise / Intune) et EXE via Inno Setup.",
+    panelWinP1:
+      "Installateur web en un clic : télécharge toujours la dernière version depuis GitHub (MSI silencieux si possible, sinon installation portable par utilisateur).",
     panelWinFoot:
-      "Après une release, les fichiers apparaissent comme Tonet-&lt;version&gt;-x64.msi et Tonet-Setup-&lt;version&gt;-x64.exe. La page « latest » liste toujours les binaires à jour.",
-    winMsi: "Télécharger MSI (x64)",
-    winExe: "Télécharger EXE (x64)",
+      "Avancé : cette page lie aussi les artefacts CI <code>Tonet-&lt;version&gt;-x64.msi</code> et <code>Tonet-Setup-&lt;version&gt;-x64.exe</code> lorsque la version intégrée correspond au dernier tag GitHub.",
+    winSetup: "Télécharger Tonet (Windows)",
+    winMsi: "MSI (x64)",
+    winExe: "EXE Inno Setup (x64)",
     panelLinuxTitle: "Linux",
-    panelLinuxP1: "Paquet .deb pour amd64 (lorsque le workflow le publie) ou compilation depuis les sources.",
-    linuxDeb: "Ouvrir les releases (.deb)",
+    panelLinuxP1:
+      "Installateur web amd64 : récupère la dernière release et installe le <code>.deb</code> si possible, sinon une installation locale dans votre répertoire utilisateur.",
+    linuxSetup: "Télécharger Tonet (Linux)",
+    linuxDeb: "Paquet Debian (.deb)",
     linuxH4src: "Compiler depuis le dépôt",
     linuxH4user: "Installation utilisateur (bureau + binaire)",
     panelMacTitle: "macOS",
     panelMacP1:
-      "Un bundle .app signé et notarisé est prévu. En attendant, compilez avec Rust stable et Xcode Command Line Tools.",
+      "L’installateur web télécharge l’archive macOS la plus récente dans <code>~/Applications/Tonet</code>. Un <code>.app</code> signé est toujours prévu ; compilation depuis les sources possible.",
+    macSetup: "Télécharger Tonet (macOS)",
     footer1: "usetonet.com — projet",
     footer2: "Landing sur Cloudflare Workers · Moteur Tonet en développement actif",
     langSwitcher: "Langue du site",
@@ -359,15 +381,18 @@ export function applyLandingLocale(lang: SiteLang): void {
   setText("panel-win-h3", L.panelWinTitle);
   setText("panel-win-p1", L.panelWinP1);
   setHtml("panel-win-foot", L.panelWinFoot);
+  setText("win-setup", L.winSetup);
   setText("win-msi", L.winMsi);
   setText("win-exe", L.winExe);
   setText("panel-linux-h3", L.panelLinuxTitle);
-  setText("panel-linux-p1", L.panelLinuxP1);
+  setHtml("panel-linux-p1", L.panelLinuxP1);
+  setText("linux-setup", L.linuxSetup);
   setText("linux-deb", L.linuxDeb);
   setText("linux-h4-src", L.linuxH4src);
   setText("linux-h4-user", L.linuxH4user);
   setText("panel-mac-h3", L.panelMacTitle);
-  setText("panel-mac-p1", L.panelMacP1);
+  setHtml("panel-mac-p1", L.panelMacP1);
+  setText("mac-setup", L.macSetup);
   setText("footer-line1-prefix", L.footer1);
   setText("footer-line2", L.footer2);
   const swLabel = document.getElementById("lang-switcher-label");
@@ -412,7 +437,7 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Short guides for users and maintainers.",
     installH: "Installation",
     installP:
-      "See the <a href=\"/#download\">downloads section</a>. Windows offers MSI and EXE; Linux supports .deb and a user install script; macOS is local builds until a signed bundle ships.",
+      "See the <a href=\"/#download\">downloads section</a>. Primary downloads use the <strong>TonetSetup</strong> web installers (fixed URLs on GitHub <code>releases/latest/download</code>); optional MSI, Inno EXE, and <code>.deb</code> links are versioned. macOS also offers a tarball installer via TonetSetup.",
     updatesH: "In-browser updates",
     updatesP:
       "Tonet checks the GitHub Releases API (it does not install binaries for you). By default it checks on startup. In <strong>Settings (⚙)</strong> you can choose:",
@@ -448,7 +473,7 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Guías breves para usuarios y mantenedores del proyecto.",
     installH: "Instalación",
     installP:
-      "Consulta la <a href=\"/#download\">sección de descargas</a>. Windows ofrece MSI y EXE; Linux admite <code>.deb</code> y script de usuario; macOS, compilación local hasta que haya bundle firmado.",
+      "Consulta la <a href=\"/#download\">sección de descargas</a>. Las descargas principales usan los instaladores web <strong>TonetSetup</strong> (URLs fijas en <code>releases/latest/download</code> de GitHub); MSI, EXE Inno y <code>.deb</code> opcionales van versionados. En macOS también hay tarball vía TonetSetup.",
     updatesH: "Actualizaciones en el navegador",
     updatesP:
       "Tonet consulta la API de GitHub Releases (sin instalar binarios por ti). Por defecto comprueba al iniciar. En <strong>Ajustes (⚙)</strong> puedes elegir:",
@@ -483,7 +508,7 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Kurze Anleitungen für Nutzer und Maintainer.",
     installH: "Installation",
     installP:
-      "Siehe den <a href=\"/#download\">Download-Bereich</a>. Windows: MSI und EXE; Linux: <code>.deb</code> und Benutzer-Installationskript; macOS: lokaler Build, bis ein signiertes Bundle verfügbar ist.",
+      "Siehe den <a href=\"/#download\">Download-Bereich</a>. Haupt-Downloads nutzen die <strong>TonetSetup</strong>-Web-Installer (feste URLs unter GitHub <code>releases/latest/download</code>); optionale MSI-, Inno-EXE- und <code>.deb</code>-Links sind versionsgebunden. Für macOS gibt es zusätzlich ein Tarball-Setup über TonetSetup.",
     updatesH: "Updates in der App",
     updatesP:
       "Tonet nutzt die GitHub-Releases-API (installiert keine Binärdateien für Sie). Standard: Prüfung beim Start. Unter <strong>Einstellungen (⚙)</strong> wählen Sie:",
@@ -519,7 +544,7 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Guides courts pour les utilisateurs et les mainteneurs.",
     installH: "Installation",
     installP:
-      "Voir la <a href=\"/#download\">section téléchargements</a>. Windows : MSI et EXE ; Linux : <code>.deb</code> et script utilisateur ; macOS : compilation locale jusqu’à un bundle signé.",
+      "Voir la <a href=\"/#download\">section téléchargements</a>. Les téléchargements principaux passent par les installateurs web <strong>TonetSetup</strong> (URL fixes sur GitHub <code>releases/latest/download</code>) ; MSI, EXE Inno et <code>.deb</code> optionnels sont versionnés. macOS propose aussi une archive via TonetSetup.",
     updatesH: "Mises à jour dans le navigateur",
     updatesP:
       "Tonet interroge l’API GitHub Releases (sans installer les binaires à votre place). Par défaut : vérification au lancement. Dans <strong>Réglages (⚙)</strong> vous pouvez choisir :",
