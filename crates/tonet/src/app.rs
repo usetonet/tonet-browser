@@ -11,7 +11,7 @@ use crate::i18n::{self, Locale};
 use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext};
 use crate::parser::{extract_favicon_candidates, parse_html};
 use crate::renderer::render_nodes;
-use crate::settings::{AppSettings, UpdatePolicy};
+use crate::settings::{AppSettings, SearchEngine, UpdatePolicy};
 use crate::theme;
 use crate::tab::{HistoryEntry, NavigateIntent, PageFetchData, Tab, DEFAULT_HOME_URL};
 use crate::chrome::{show_chrome_toolbar, show_tab_bar};
@@ -39,8 +39,13 @@ fn url_encode_query(query: &str) -> String {
     encoded
 }
 
-fn duckduckgo_search_url(query: &str) -> String {
-    format!("https://duckduckgo.com/?q={}", url_encode_query(query))
+fn search_url_for_query(engine: SearchEngine, query: &str) -> String {
+    let q = url_encode_query(query);
+    match engine {
+        SearchEngine::Duckduckgo => format!("https://duckduckgo.com/?q={q}"),
+        SearchEngine::Google => format!("https://www.google.com/search?q={q}"),
+        SearchEngine::Brave => format!("https://search.brave.com/search?q={q}"),
+    }
 }
 
 fn favicon_cache_uri(page_url: &str, ext: &str) -> String {
@@ -76,7 +81,7 @@ fn consume_non_repeat(ctx: &egui::Context, key: egui::Key, need_command: bool) -
     })
 }
 
-fn resolve_omnibox_input(input: &str) -> String {
+fn resolve_omnibox_input(input: &str, search_engine: SearchEngine) -> String {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return String::new();
@@ -90,7 +95,7 @@ fn resolve_omnibox_input(input: &str) -> String {
     }
 
     if trimmed.chars().any(|c| c.is_whitespace()) {
-        return duckduckgo_search_url(trimmed);
+        return search_url_for_query(search_engine, trimmed);
     }
 
     let host_part = trimmed.split('/').next().unwrap_or(trimmed);
@@ -106,7 +111,7 @@ fn resolve_omnibox_input(input: &str) -> String {
         return format!("https://{trimmed}");
     }
 
-    duckduckgo_search_url(trimmed)
+    search_url_for_query(search_engine, trimmed)
 }
 
 #[derive(Debug)]
@@ -289,6 +294,7 @@ impl TonetApp {
     }
 
     fn start_fetch_with_intent(&mut self, intent: NavigateIntent) {
+        let search_engine = self.settings.search_engine;
         let tab = self.active_tab_mut();
         let trimmed = tab.url_input.trim().to_string();
         if trimmed.is_empty() {
@@ -297,7 +303,7 @@ impl TonetApp {
 
         let was_new_tab = tab.show_new_tab;
 
-        let resolved = resolve_omnibox_input(&trimmed);
+        let resolved = resolve_omnibox_input(&trimmed, search_engine);
         tab.url_input = resolved.clone();
         tab.show_new_tab = false;
 

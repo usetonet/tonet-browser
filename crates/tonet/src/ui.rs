@@ -5,7 +5,7 @@ use egui::{
 };
 
 use crate::i18n::{self, Locale};
-use crate::settings::{AppSettings, UpdatePolicy};
+use crate::settings::{AppSettings, SearchEngine, UpdatePolicy};
 use crate::theme;
 
 /// Stable [`Id`] for the omnibox so shortcuts can request focus and selection.
@@ -178,6 +178,36 @@ pub fn show_settings_window(
         settings.ui_language = lang;
 
         ui.add_space(16.0);
+        ui.separator();
+        ui.add_space(10.0);
+
+        ui.label(
+            RichText::new(i18n::settings_section_search(loc))
+                .size(17.0)
+                .strong()
+                .color(theme::SETTINGS_HEADING),
+        );
+        ui.label(
+            RichText::new(i18n::settings_search_help(loc))
+                .small()
+                .color(Color32::GRAY),
+        );
+        ui.add_space(10.0);
+
+        for engine in [
+            SearchEngine::Duckduckgo,
+            SearchEngine::Google,
+            SearchEngine::Brave,
+        ] {
+            let label = i18n::search_engine_label(loc, engine);
+            let help = i18n::search_engine_help(loc, engine);
+            ui.radio_value(&mut settings.search_engine, engine, label)
+                .on_hover_text(help);
+            ui.label(RichText::new(help).small().color(Color32::GRAY).italics());
+            ui.add_space(8.0);
+        }
+
+        ui.add_space(8.0);
         ui.separator();
         ui.add_space(10.0);
 

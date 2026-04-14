@@ -16,6 +16,16 @@ pub enum UpdatePolicy {
     ManualOnly,
 }
 
+/// Default web search used when omnibox input is not a URL (omnibox + New Tab search).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SearchEngine {
+    #[default]
+    Duckduckgo,
+    Google,
+    Brave,
+}
+
 fn default_ui_language() -> String {
     "auto".to_string()
 }
@@ -26,6 +36,8 @@ pub struct AppSettings {
     /// `auto` follows the OS locale; or `en`, `es`, `de`, `fr`.
     #[serde(default = "default_ui_language")]
     pub ui_language: String,
+    #[serde(default)]
+    pub search_engine: SearchEngine,
     pub update_policy: UpdatePolicy,
     #[serde(default)]
     pub last_update_check_unix: Option<i64>,
@@ -35,6 +47,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             ui_language: default_ui_language(),
+            search_engine: SearchEngine::default(),
             update_policy: UpdatePolicy::default(),
             last_update_check_unix: None,
         }
