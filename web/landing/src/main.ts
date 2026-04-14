@@ -69,6 +69,15 @@ async function main(): Promise<void> {
   const pill = document.getElementById("version-pill");
   if (pill) pill.textContent = `${versionPillPrefix(lang)} ${ver}`;
 
+  const latestDl =
+    "https://github.com/usetonet/tonet-browser/releases/latest/download";
+  const winSetup = document.getElementById("win-setup") as HTMLAnchorElement | null;
+  const linuxSetup = document.getElementById("linux-setup") as HTMLAnchorElement | null;
+  const macSetup = document.getElementById("mac-setup") as HTMLAnchorElement | null;
+  if (winSetup) winSetup.href = `${latestDl}/TonetSetup-x64.exe`;
+  if (linuxSetup) linuxSetup.href = `${latestDl}/TonetSetup-x86_64`;
+  if (macSetup) macSetup.href = `${latestDl}/TonetSetup-macos`;
+
   const tag = `v${ver}`;
   const base = `https://github.com/usetonet/tonet-browser/releases/download/${tag}`;
   const winMsi = document.getElementById("win-msi") as HTMLAnchorElement | null;
