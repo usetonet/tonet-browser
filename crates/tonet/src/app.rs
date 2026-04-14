@@ -15,7 +15,8 @@ use crate::internal_pages::{self, InternalRoute};
 use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext};
 use crate::parser::{extract_favicon_candidates, parse_html};
 use crate::renderer::render_nodes;
-use crate::settings::{AppSettings, SearchEngine, UpdatePolicy};
+use crate::session_snapshot::SessionSnapshot;
+use crate::settings::{AppSettings, SearchEngine, StartupPolicy, UpdatePolicy};
 use crate::theme;
 use crate::tab::{HistoryEntry, NavigateIntent, PageFetchData, Tab, DEFAULT_HOME_URL};
 use crate::chrome::{show_chrome_toolbar, show_tab_bar};
@@ -119,6 +120,33 @@ fn resolve_omnibox_input(input: &str, search_engine: SearchEngine) -> String {
     search_url_for_query(search_engine, trimmed)
 }
 
+const MAX_TABS: usize = 73;
+
+fn build_initial_tabs(settings: &AppSettings) -> (Vec<Tab>, usize) {
+    match settings.startup_policy {
+        StartupPolicy::NewTabPage => (vec![Tab::new(DEFAULT_HOME_URL)], 0),
+        StartupPolicy::RestoreSession => SessionSnapshot::load()
+            .and_then(|s| s.into_tabs(MAX_TABS))
+            .unwrap_or_else(|| (vec![Tab::new(DEFAULT_HOME_URL)], 0)),
+        StartupPolicy::OpenSpecificPages => {
+            let urls: Vec<String> = settings
+                .startup_urls
+                .lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty())
+                .map(|l| resolve_omnibox_input(l, settings.search_engine))
+                .filter(|u| !u.trim().is_empty())
+                .take(MAX_TABS)
+                .collect();
+            if urls.is_empty() {
+                (vec![Tab::new(DEFAULT_HOME_URL)], 0)
+            } else {
+                (urls.into_iter().map(Tab::new).collect(), 0)
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 enum UpdateJobResult {
     UpToDate,
@@ -165,6 +193,9 @@ pub struct TonetApp {
     internal_hist_selected: HashSet<u64>,
     confirm_clear_history: bool,
     confirm_clear_downloads: bool,
+
+    /// First frame after launch: load active tab if it has a URL (restore / specific pages).
+    pending_startup_fetch: bool,
 }
 
 impl TonetApp {
@@ -207,9 +238,10 @@ impl TonetApp {
 
         let settings = AppSettings::load();
         let integrated_title_chrome = window_chrome::integrated_title_chrome();
-        Self {
-            tabs: vec![Tab::new(DEFAULT_HOME_URL)],
-            active_tab: 0,
+        let (tabs, active_tab) = build_initial_tabs(&settings);
+        let mut this = Self {
+            tabs,
+            active_tab,
             window_title: "Tonet".to_string(),
             settings,
             settings_open: false,
@@ -232,7 +264,31 @@ impl TonetApp {
             internal_hist_selected: HashSet::new(),
             confirm_clear_history: false,
             confirm_clear_downloads: false,
+            pending_startup_fetch: true,
+        };
+        this.sync_window_title(&cc.egui_ctx);
+        this
+    }
+
+    fn persist_last_session(&self) {
+        let urls: Vec<String> = self.tabs.iter().map(|t| t.url_input.clone()).collect();
+        let snap = SessionSnapshot::from_app(self.active_tab, urls);
+        let _ = snap.save();
+    }
+
+    fn ensure_http_tab_loaded(&mut self, ctx: &egui::Context) {
+        let tab = self.active_tab_mut();
+        let u = tab.url_input.trim();
+        if tab.is_new_tab() {
+            return;
         }
+        if !(u.starts_with("http://") || u.starts_with("https://")) {
+            return;
+        }
+        if tab.loading || tab.fetch_rx.is_some() || !tab.dom.is_empty() {
+            return;
+        }
+        self.start_fetch_new(ctx);
     }
 
     fn loc(&self) -> Locale {
@@ -282,12 +338,11 @@ impl TonetApp {
         // Keep background fetches running; `poll_fetch` delivers results per tab.
         self.active_tab = idx;
         self.sync_window_title(ctx);
+        self.ensure_http_tab_loaded(ctx);
     }
 
-    const MAX_TABS: usize = 73;
-
     fn open_new_tab(&mut self, ctx: &egui::Context) {
-        if self.tabs.len() >= Self::MAX_TABS {
+        if self.tabs.len() >= MAX_TABS {
             if !self.max_tabs_overflow_spawned {
                 self.max_tabs_overflow_spawned = true;
                 if let Ok(exe) = std::env::current_exe() {
@@ -660,6 +715,14 @@ impl eframe::App for TonetApp {
 
         window_resize::maybe_begin_native_resize(ctx, self.integrated_title_chrome);
 
+        if self.pending_startup_fetch {
+            self.pending_startup_fetch = false;
+            let u = self.active_tab().url_input.trim();
+            if !u.is_empty() && !self.active_tab().is_new_tab() {
+                self.start_fetch_new(ctx);
+            }
+        }
+
         if let Some(url) = self.active_tab_mut().pending_link_navigation.take() {
             self.active_tab_mut().url_input = url;
             self.start_fetch_new(ctx);
@@ -1009,6 +1072,10 @@ impl eframe::App for TonetApp {
                 self.settings_open = true;
             }
         });
+
+        if ctx.input(|i| i.viewport().close_requested()) {
+            self.persist_last_session();
+        }
 
         window_resize::update_resize_hover_cursor(ctx, self.integrated_title_chrome);
     }

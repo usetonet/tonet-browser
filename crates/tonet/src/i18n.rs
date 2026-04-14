@@ -1072,6 +1072,41 @@ pub fn internal_settings_startup_heading(loc: Locale) -> &'static str {
     }
 }
 
+pub fn internal_settings_startup_urls_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Páginas al iniciar (una por línea)",
+        Locale::De => "Seiten beim Start (eine pro Zeile)",
+        Locale::Fr => "Pages au démarrage (une par ligne)",
+        Locale::En => "Pages to open on startup (one per line)",
+    }
+}
+
+pub fn internal_settings_startup_urls_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "URLs completas, tonet://… o texto de búsqueda. Guarda las preferencias al terminar."
+        }
+        Locale::De => {
+            "Volle URLs, tonet://… oder Suchtext. Änderungen mit „Einstellungen speichern“ sichern."
+        }
+        Locale::Fr => {
+            "URL complètes, tonet://… ou texte de recherche. Enregistrez avec « Enregistrer les préférences »."
+        }
+        Locale::En => {
+            "Full URLs, tonet://…, or search text. Use “Save preferences” after editing."
+        }
+    }
+}
+
+pub fn internal_settings_startup_urls_placeholder(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "https://example.org\ntonet://settings\nduck",
+        Locale::De => "https://example.org\ntonet://settings\nduck",
+        Locale::Fr => "https://example.org\ntonet://settings\nduck",
+        Locale::En => "https://example.org\ntonet://settings\nduck",
+    }
+}
+
 pub fn internal_settings_startup_label(loc: Locale, pol: StartupPolicy) -> &'static str {
     match (loc, pol) {
         (Locale::Es, StartupPolicy::NewTabPage) => "Abrir la página Nueva pestaña",
@@ -1095,14 +1130,30 @@ pub fn internal_settings_startup_help(loc: Locale, pol: StartupPolicy) -> &'stat
         (Locale::De, StartupPolicy::NewTabPage) => "Tonet-Standard-Startseite.",
         (Locale::Fr, StartupPolicy::NewTabPage) => "Page d’accueil par défaut de Tonet.",
         (Locale::En, StartupPolicy::NewTabPage) => "Tonet’s default home experience.",
-        (Locale::Es, StartupPolicy::RestoreSession) => "Aún no restaura pestañas; se guardará en una versión futura.",
-        (Locale::De, StartupPolicy::RestoreSession) => "Sitzungswiederherstellung folgt in einer späteren Version.",
-        (Locale::Fr, StartupPolicy::RestoreSession) => "La restauration de session arrive dans une version ultérieure.",
-        (Locale::En, StartupPolicy::RestoreSession) => "Session restore is not implemented yet.",
-        (Locale::Es, StartupPolicy::OpenSpecificPages) => "Aún no disponible.",
-        (Locale::De, StartupPolicy::OpenSpecificPages) => "Noch nicht verfügbar.",
-        (Locale::Fr, StartupPolicy::OpenSpecificPages) => "Pas encore disponible.",
-        (Locale::En, StartupPolicy::OpenSpecificPages) => "Not available yet.",
+        (Locale::Es, StartupPolicy::RestoreSession) => {
+            "Reabre las mismas pestañas y la pestaña activa de la última vez que cerraste Tonet."
+        }
+        (Locale::De, StartupPolicy::RestoreSession) => {
+            "Öffnet dieselben Tabs und den aktiven Tab wie beim letzten Schließen von Tonet."
+        }
+        (Locale::Fr, StartupPolicy::RestoreSession) => {
+            "Rouvre les mêmes onglets et l’onglet actif de la dernière fermeture de Tonet."
+        }
+        (Locale::En, StartupPolicy::RestoreSession) => {
+            "Reopens the same tabs and active tab from when you last closed Tonet."
+        }
+        (Locale::Es, StartupPolicy::OpenSpecificPages) => {
+            "Abre cada línea no vacía como pestaña (mismas reglas que la barra de direcciones)."
+        }
+        (Locale::De, StartupPolicy::OpenSpecificPages) => {
+            "Öffnet jede nicht leere Zeile als Tab (gleiche Regeln wie die Adressleiste)."
+        }
+        (Locale::Fr, StartupPolicy::OpenSpecificPages) => {
+            "Ouvre chaque ligne non vide comme onglet (mêmes règles que la barre d’adresse)."
+        }
+        (Locale::En, StartupPolicy::OpenSpecificPages) => {
+            "Opens each non-empty line as a tab (same rules as the address bar)."
+        }
     }
 }
 

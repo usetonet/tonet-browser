@@ -405,6 +405,27 @@ fn render_get_started(ui: &mut Ui, loc: Locale, settings: &mut AppSettings, form
         ui.label(RichText::new(help).small().color(theme::LOADING_MUTED).italics());
         ui.add_space(6.0);
     }
+    if settings.startup_policy == StartupPolicy::OpenSpecificPages {
+        ui.add_space(10.0);
+        ui.label(
+            RichText::new(i18n::internal_settings_startup_urls_label(loc))
+                .strong()
+                .color(theme::SETTINGS_HEADING),
+        );
+        ui.add_space(4.0);
+        ui.label(
+            RichText::new(i18n::internal_settings_startup_urls_hint(loc))
+                .small()
+                .color(theme::LOADING_MUTED),
+        );
+        ui.add_space(6.0);
+        ui.add(
+            egui::TextEdit::multiline(&mut settings.startup_urls)
+                .desired_width(ui.available_width())
+                .desired_rows(5)
+                .hint_text(i18n::internal_settings_startup_urls_placeholder(loc)),
+        );
+    }
 }
 
 fn render_system_page(
