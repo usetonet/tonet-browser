@@ -2,7 +2,7 @@
 
 use url::Url;
 
-use crate::settings::{AppSettings, UpdatePolicy};
+use crate::settings::{AppSettings, SearchEngine, UpdatePolicy};
 
 /// Active display locale resolved from settings + OS.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -441,6 +441,55 @@ pub fn settings_section_updates(loc: Locale) -> &'static str {
         Locale::De => "Aktualisierungen",
         Locale::Fr => "Mises à jour",
         Locale::En => "Updates",
+    }
+}
+
+pub fn settings_section_search(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Buscador predeterminado",
+        Locale::De => "Standard-Suchmaschine",
+        Locale::Fr => "Moteur de recherche par défaut",
+        Locale::En => "Default search engine",
+    }
+}
+
+pub fn settings_search_help(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Se usa cuando escribes texto en la barra de direcciones o en la búsqueda de «Nueva pestaña» y no es una URL.",
+        Locale::De => "Wird verwendet, wenn in Adresszeile oder „Neuer Tab“-Suche kein Link eingegeben wird.",
+        Locale::Fr => "Utilisé lorsque la barre d’adresse ou la recherche « Nouvel onglet » ne contient pas une URL.",
+        Locale::En => "Used when the address bar or New Tab search box contains text that is not a URL.",
+    }
+}
+
+pub fn search_engine_label(_loc: Locale, engine: SearchEngine) -> &'static str {
+    match engine {
+        SearchEngine::Duckduckgo => "DuckDuckGo",
+        SearchEngine::Google => "Google",
+        SearchEngine::Brave => "Brave Search",
+    }
+}
+
+pub fn search_engine_help(loc: Locale, engine: SearchEngine) -> &'static str {
+    match engine {
+        SearchEngine::Duckduckgo => match loc {
+            Locale::Es => "Privacidad por defecto en duckduckgo.com.",
+            Locale::De => "Datenschutzfokus auf duckduckgo.com.",
+            Locale::Fr => "Orientation confidentialité sur duckduckgo.com.",
+            Locale::En => "Privacy-focused results on duckduckgo.com.",
+        },
+        SearchEngine::Google => match loc {
+            Locale::Es => "Búsqueda en google.com (sujeta a políticas de Google).",
+            Locale::De => "Suche über google.com (unterliegt den Google-Richtlinien).",
+            Locale::Fr => "Recherche via google.com (politique Google).",
+            Locale::En => "Search via google.com (subject to Google’s policies).",
+        },
+        SearchEngine::Brave => match loc {
+            Locale::Es => "Búsqueda en search.brave.com.",
+            Locale::De => "Suche über search.brave.com.",
+            Locale::Fr => "Recherche sur search.brave.com.",
+            Locale::En => "Search via search.brave.com.",
+        },
     }
 }
 
