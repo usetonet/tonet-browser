@@ -9,6 +9,12 @@ use serde::{Deserialize, Serialize};
 const MAX_VISITS: usize = 5_000;
 const MAX_DOWNLOADS: usize = 2_000;
 
+fn is_internal_tonet_url(url: &str) -> bool {
+    url.trim()
+        .to_ascii_lowercase()
+        .starts_with("tonet://")
+}
+
 fn tonet_config_dir() -> Option<PathBuf> {
     dirs::config_dir().map(|d| d.join("tonet"))
 }
@@ -86,7 +92,12 @@ impl BrowserLog {
         fs::read_to_string(&path)
             .ok()
             .and_then(|s| serde_json::from_str::<VisitFile>(&s).ok())
-            .map(|f| f.visits)
+            .map(|f| {
+                f.visits
+                    .into_iter()
+                    .filter(|v| !is_internal_tonet_url(&v.url))
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
@@ -137,6 +148,9 @@ impl BrowserLog {
     }
 
     pub fn record_visit(&mut self, url: String, title: Option<String>) {
+        if is_internal_tonet_url(&url) {
+            return;
+        }
         let now = chrono::Utc::now().timestamp();
         let id = self.visit_next_id;
         self.visit_next_id = self.visit_next_id.saturating_add(1);
@@ -164,6 +178,9 @@ impl BrowserLog {
     }
 
     pub fn record_page_fetch(&mut self, url: &str, title: Option<String>) {
+        if is_internal_tonet_url(url) {
+            return;
+        }
         let now = chrono::Utc::now().timestamp();
         let display_name = title
             .clone()
