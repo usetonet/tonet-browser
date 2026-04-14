@@ -82,10 +82,10 @@
         <div id="panel-windows" class="os-panel" role="tabpanel">
           <h3 id="panel-win-h3">Windows</h3>
           <p id="panel-win-p1">
-            One-click web installer downloads the latest Tonet from GitHub and installs it (MSI when allowed, otherwise a per-user portable copy).
+            Primary download is the CI-built Inno Setup installer (EXE) for the version embedded on this site. MSI and other formats are linked below.
           </p>
           <p>
-            <a class="btn btn-primary" id="win-setup" href="https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x64.exe" target="_blank" rel="noopener"
+            <a class="btn btn-primary" id="win-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
               >Download Tonet (Windows)</a
             >
           </p>
@@ -106,11 +106,10 @@
         <div id="panel-linux" class="os-panel" role="tabpanel">
           <h3 id="panel-linux-h3">Linux</h3>
           <p id="panel-linux-p1">
-            Web installer for amd64: downloads the latest release and installs the <code>.deb</code> when possible, or falls back to a user-local
-            layout.
+            Primary download is the CI-built <code>.deb</code> for amd64 (Debian/Ubuntu) matching the version embedded on this site. Other layouts and source builds are below.
           </p>
           <p>
-            <a class="btn btn-primary" id="linux-setup" href="https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-x86_64" target="_blank" rel="noopener"
+            <a class="btn btn-primary" id="linux-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
               >Download Tonet (Linux)</a
             >
           </p>
@@ -139,12 +138,11 @@ chmod +x scripts/install-linux-user.sh
         <div id="panel-macos" class="os-panel" role="tabpanel">
           <h3 id="panel-mac-h3">macOS</h3>
           <p id="panel-mac-p1">
-            Web installer downloads the latest macOS tarball and places Tonet under <code>~/Applications/Tonet</code>. A signed <code>.app</code> bundle
-            is still on the roadmap; you can also build from source.
+            macOS binaries (tarball or TonetSetup) appear on GitHub Releases when published for a tag. Until then, build from source below. A signed <code>.app</code> bundle is on the roadmap.
           </p>
           <p>
-            <a class="btn btn-primary" id="mac-setup" href="https://github.com/usetonet/tonet-browser/releases/latest/download/TonetSetup-macos" target="_blank" rel="noopener"
-              >Download Tonet (macOS)</a
+            <a class="btn btn-primary" id="mac-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >GitHub releases (macOS)</a
             >
           </p>
           <div class="code-block" style="padding-top: 44px">
