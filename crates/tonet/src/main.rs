@@ -44,6 +44,7 @@ fn window_icon_from_svg() -> Option<egui::IconData> {
 
 fn main() -> eframe::Result<()> {
     let mut viewport = egui::ViewportBuilder::default()
+        .with_app_id("tonet")
         .with_title("Tonet")
         .with_inner_size([960.0, 640.0])
         .with_decorations(!window_chrome::integrated_title_chrome());
