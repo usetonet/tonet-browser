@@ -5,12 +5,15 @@
 
 mod app;
 mod branding;
+mod chrome;
 mod i18n;
 mod network;
+mod new_tab;
 mod parser;
 mod renderer;
 mod settings;
 mod tab;
+mod theme;
 mod ui;
 mod update;
 mod window_chrome;

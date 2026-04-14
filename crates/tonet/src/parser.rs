@@ -27,7 +27,7 @@ impl DomNodeType {
         }
     }
 
-    /// All kinds Tonet recognizes, in preferred detection order.
+    /// All kinds Tonet recognizes for body content, in preferred detection order.
     fn all() -> [DomNodeType; 5] {
         [
             DomNodeType::Title,
@@ -271,6 +271,127 @@ fn find_closing_tag(html: &str, from: usize, tag: &str) -> Option<usize> {
     None
 }
 
+/// Extract all favicon candidate URLs from `<link>` tags in the HTML `<head>`,
+/// followed by classic fallback paths. Returned in priority order.
+pub fn extract_favicon_candidates(html: &str, page_url: &str) -> Vec<String> {
+    let mut candidates = Vec::new();
+    let mut pos = 0usize;
+    let bytes = html.as_bytes();
+
+    while pos + 5 < bytes.len() {
+        if bytes[pos] != b'<' {
+            pos += 1;
+            continue;
+        }
+
+        if matches_tag_prefix(bytes, pos, b"link") {
+            if let Some(href) = extract_link_favicon_href(html, pos) {
+                if let Some(abs) = resolve_favicon_href(page_url, &href) {
+                    if !candidates.contains(&abs) {
+                        candidates.push(abs);
+                    }
+                }
+            }
+        }
+
+        if matches_tag_prefix(bytes, pos, b"/head")
+            || matches_tag_prefix(bytes, pos, b"body")
+        {
+            break;
+        }
+
+        pos += 1;
+    }
+
+    if let Ok(base) = Url::parse(page_url) {
+        let origin = base.origin().unicode_serialization();
+        for path in ["/favicon.ico", "/favicon.svg", "/apple-touch-icon.png"] {
+            let fallback = format!("{origin}{path}");
+            if !candidates.contains(&fallback) {
+                candidates.push(fallback);
+            }
+        }
+    }
+
+    candidates
+}
+
+fn matches_tag_prefix(bytes: &[u8], pos: usize, tag: &[u8]) -> bool {
+    let start = pos + 1;
+    if start + tag.len() > bytes.len() {
+        return false;
+    }
+    for (j, &expected) in tag.iter().enumerate() {
+        if bytes[start + j].to_ascii_lowercase() != expected {
+            return false;
+        }
+    }
+    let after = start + tag.len();
+    if after >= bytes.len() {
+        return false;
+    }
+    matches!(bytes[after], b'>' | b'/' | b' ' | b'\t' | b'\n' | b'\r')
+}
+
+fn extract_link_favicon_href(html: &str, open_idx: usize) -> Option<String> {
+    let gt = find_byte(html.as_bytes(), b'>', open_idx)?;
+    let open_tag = html.get(open_idx..=gt)?;
+    let lower = open_tag.to_ascii_lowercase();
+
+    if !lower.contains("rel") {
+        return None;
+    }
+
+    let is_icon = lower.contains("icon")
+        || lower.contains("shortcut")
+        || lower.contains("apple-touch-icon");
+    if !is_icon {
+        return None;
+    }
+
+    parse_attr_value(open_tag, "href")
+}
+
+fn parse_attr_value(tag: &str, attr: &str) -> Option<String> {
+    let lower: String = tag.chars().map(|c| c.to_ascii_lowercase()).collect();
+    let needle = attr;
+    let found = lower.find(needle)?;
+    let after_key = found + needle.len();
+    let rest = tag.get(after_key..)?.trim_start();
+    let rest = rest.strip_prefix('=')?;
+    let rest = rest.trim_start();
+
+    let val = if let Some(r) = rest.strip_prefix('"') {
+        r.split('"').next()?.trim().to_string()
+    } else if let Some(r) = rest.strip_prefix('\'') {
+        r.split('\'').next()?.trim().to_string()
+    } else {
+        let end = rest
+            .char_indices()
+            .find(|(_, c)| c.is_whitespace() || *c == '>')
+            .map(|(i, _)| i)
+            .unwrap_or(rest.len());
+        rest.get(..end)?.trim().to_string()
+    };
+
+    if val.is_empty() {
+        None
+    } else {
+        Some(val)
+    }
+}
+
+fn resolve_favicon_href(page_url: &str, href: &str) -> Option<String> {
+    let href = href.trim();
+    if href.is_empty() {
+        return None;
+    }
+    if href.starts_with("data:") {
+        return Some(href.to_string());
+    }
+    resolve_href(page_url, href)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -311,5 +432,17 @@ mod tests {
     fn resolve_href_protocol_relative() {
         let u = resolve_href("https://ex.com/a", "//cdn.ex.com/z").unwrap();
         assert_eq!(u, "https://cdn.ex.com/z");
+    }
+
+    #[test]
+    fn extracts_favicon_from_link_tag() {
+        let html = r#"<html><head>
+            <link rel="icon" type="image/png" href="/static/favicon-32.png">
+            <link rel="shortcut icon" href="/old-fav.ico">
+        </head><body></body></html>"#;
+        let cands = extract_favicon_candidates(html, "https://example.com/page");
+        assert!(cands[0].contains("favicon-32.png"));
+        assert!(cands[1].contains("old-fav.ico"));
+        assert!(cands.iter().any(|c| c.ends_with("/favicon.ico")));
     }
 }

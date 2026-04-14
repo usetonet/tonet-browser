@@ -4,7 +4,12 @@ use std::sync::mpsc;
 
 use crate::parser::{DomNode, DomNodeType};
 
-pub type FetchResult = Result<Vec<DomNode>, String>;
+pub struct PageFetchData {
+    pub nodes: Vec<DomNode>,
+    pub favicon_candidates: Vec<String>,
+}
+
+pub type FetchResult = Result<PageFetchData, String>;
 
 #[derive(Debug, Clone, Copy)]
 pub enum NavigateIntent {
@@ -18,8 +23,8 @@ pub struct HistoryEntry {
     pub nodes: Vec<DomNode>,
 }
 
-/// Default URL for a new tab (same as first-run home).
-pub const DEFAULT_HOME_URL: &str = "https://usetonet.com";
+/// New tabs start empty (shows the New Tab page).
+pub const DEFAULT_HOME_URL: &str = "";
 
 pub struct Tab {
     /// If set after rendering the page, navigate to this URL on the next frame.
@@ -32,11 +37,19 @@ pub struct Tab {
     pub history: Vec<HistoryEntry>,
     pub hist_index: usize,
     pub pending_nav: Option<(String, NavigateIntent)>,
+    /// Per-page favicon URI registered with egui. Empty means "no favicon yet".
+    pub favicon_uri: String,
+    /// Async favicon fetch result.
+    pub favicon_fetch_rx: Option<mpsc::Receiver<Option<Vec<u8>>>>,
+    /// True while this tab should display the New Tab page.
+    /// Cleared only when an actual navigation starts (Enter pressed).
+    pub show_new_tab: bool,
 }
 
 impl Tab {
     pub fn new(url: impl Into<String>) -> Self {
         let url = url.into();
+        let is_empty = url.is_empty();
         Self {
             pending_link_navigation: None,
             url_input: url,
@@ -47,12 +60,20 @@ impl Tab {
             history: Vec::new(),
             hist_index: 0,
             pending_nav: None,
+            favicon_uri: String::new(),
+            favicon_fetch_rx: None,
+            show_new_tab: is_empty,
         }
+    }
+
+    pub fn is_new_tab(&self) -> bool {
+        self.show_new_tab
     }
 
     /// Drop any in-flight fetch so results cannot apply to the wrong tab after switching.
     pub fn cancel_in_flight(&mut self) {
         self.fetch_rx = None;
+        self.favicon_fetch_rx = None;
         self.loading = false;
         self.pending_nav = None;
     }
