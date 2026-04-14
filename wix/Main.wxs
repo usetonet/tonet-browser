@@ -44,6 +44,8 @@
       <Directory Id="CommonProgramMenuFolder">
         <Directory Id="ApplicationProgramsFolder" Name="Tonet" />
       </Directory>
+      <!-- Escritorio «Todos los usuarios» (LGHT0094 si no se declara bajo TARGETDIR). -->
+      <Directory Id="CommonDesktopFolder" />
     </Directory>
   </Fragment>
 
