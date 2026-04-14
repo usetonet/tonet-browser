@@ -1,0 +1,218 @@
+# Tonet shortcut reference (Chromium-style; bindings vary by OS / keyboard layout)
+Back	Alt + Left · AltGr + Left
+Forward	Alt + Right · AltGr + Right
+Reload	Ctrl + R · F5
+Home	Alt + Home
+Stop	Esc
+Reload bypassing cache	Ctrl + Shift + R · Ctrl + F5 · Shift + F5
+Reload clearing cache	—
+New window	Ctrl + N
+New Private window	Ctrl + Shift + N
+Close window	Ctrl + Shift + W · Alt + F4
+New tab	Ctrl + T
+Close tab	Ctrl + W · Ctrl + F4
+Next tab	Ctrl + Tab · Ctrl + PageDown
+Previous tab	Ctrl + Shift + Tab · Ctrl + PageUp
+Select tab 0	Ctrl + 0 · Ctrl + Num0
+Select tab 1	Ctrl + 1 · Ctrl + Num1
+Select tab 2	Ctrl + 2 · Ctrl + Num2
+Select tab 3	Ctrl + 3 · Ctrl + Num3
+Select tab 4	Ctrl + 4 · Ctrl + Num4
+Select tab 5	Ctrl + 5 · Ctrl + Num5
+Select tab 6	Ctrl + 6 · Ctrl + Num6
+Select tab 7	Ctrl + 7 · Ctrl + Num7
+Select last tab	Ctrl + 9 · Ctrl + Num9
+Duplicate tab	—
+Reopen closed tab	Ctrl + Shift + T
+Show as tab	—
+Full screen	F11
+Exit	Alt + F4
+Move tab next	Ctrl + Shift + PageDown
+Move tab previous	Ctrl + Shift + PageUp
+Search	Ctrl + K · Ctrl + E
+Minimize window	—
+Maximize window	—
+Show all windows	—
+Name window…	—
+Open in PWA window	—
+Move tab to new window	—
+New split view with current tab	—
+Copy URL	—
+Open in default browser	—
+Web app settings	—
+Web app info	—
+Add new tab to group	Alt + Shift + C
+Create new tab group	Alt + Shift + P
+Focus next tab group	Alt + Shift + X
+Focus previous tab group	Alt + Shift + Z
+Close tab group	Alt + Shift + W
+Bookmark this tab…	Ctrl + D
+Bookmark all tabs…	Ctrl + Shift + D
+View source	Ctrl + U
+Print	Ctrl + P
+Save page as…	Ctrl + S
+Email page URL	—
+Basic print	Ctrl + Shift + P
+Translate…	—
+Route media	—
+Mute site	—
+Pin tab	—
+Group tab	—
+QR code generator	—
+Close tabs to the right	—
+Close other tabs	—
+New tab to the right	—
+Offers and rewards for page	—
+Sharing hub	—
+Sharing hub screenshot	Ctrl + Shift + S
+Show password manager	—
+Show payment methods	—
+Show addresses	—
+Open Guest profile	—
+Add new profile	—
+Cut	Ctrl + X
+Copy	Ctrl + C
+Paste	Ctrl + V
+Find…	Ctrl + F
+Find next	Ctrl + G · F3
+Find previous	Ctrl + Shift + G · Shift + F3
+Close find or stop	Escape
+Zoom in	Ctrl + = · Ctrl + Num+ · Ctrl + Shift + =
+Reset zoom	Ctrl + 0 · Ctrl + Num0
+Zoom out	Ctrl + - · Ctrl + Num- · Ctrl + Shift + -
+Focus toolbar	Alt + Shift + T
+Focus location	Ctrl + L · Alt + D
+Focus search	BrowserSearch · Ctrl + E · Ctrl + K
+Focus menu bar	F10 · AltGr · Alt
+Focus next pane	F6
+Focus previous pane	Shift + F6
+Focus bookmarks	Alt + Shift + B
+Focus inactive popup for accessibility	Alt + Shift + A
+Focus web contents pane	Ctrl + F6
+Open File	Ctrl + O
+Create shortcut	—
+Developer tools	Ctrl + Shift + I
+JavaScript console	Ctrl + Shift + J
+Inspect devices	—
+Report an issue	—
+Show bookmarks	Ctrl + Shift + B
+Show history	Ctrl + H
+Show bookmark manager	Ctrl + Shift + O
+Download history	Ctrl + J
+Delete browsing data	Ctrl + Shift + Delete
+Import settings	—
+Options	Ctrl + ,
+Edit search engines	—
+Password Manager	—
+About Tonet	—
+Show help	F1
+Show app menu	Alt + E · Alt + F
+Manage extensions	—
+Dev tools inspect	Ctrl + Shift + C
+Check for updates	—
+Show avatar menu	Ctrl + Shift + M
+Dev tools toggle	F12
+No tabs from other devices	—
+Take screenshot	—
+Toggle fullscreen toolbar	—
+Customize touch bar	—
+Toggle JavaScript Apple Events	—
+Install PWA	—
+Show management page	—
+Paste and go to URL	—
+Show full URLs	—
+Caret browsing toggle	F7
+What's New	—
+Show performance settings	—
+Task manager	Shift + Escape
+Open all bookmarks	—
+Bookmark bar open all in new window	—
+Bookmark bar open all in private window	—
+Open in Private window	—
+Bookmark bar open all new tab group	—
+Bookmark bar rename folder	—
+Bookmark bar edit	—
+Bookmark bar remove	—
+Bookmark bar undo	—
+Bookmark bar redo	—
+Bookmark bar add new bookmark	—
+Bookmark bar new folder	—
+Open Bookmarks Manager	—
+Bookmark bar always show	—
+Show apps shortcut	—
+Bookmark bar show managed bookmarks	—
+Bookmark bar add to bookmarks bar	—
+Bookmark bar remove from bookmarks bar	—
+Continue running in background	—
+Tab search	Ctrl + Shift + A
+Tab search close	—
+Debug toggle tablet mode	—
+Debug print view tree	—
+Toggle live captions	—
+New Tor connection for this site	—
+New private window with Tor	Alt + Shift + N
+Sync	—
+Wallet	—
+Toggle AI assistant	—
+Report a broken site	—
+Show wallet panel	—
+Close wallet panel	—
+Show VPN panel	—
+Toggle VPN toolbar button	—
+Send VPN feedback	—
+About VPN	—
+Manage VPN plan	—
+Toggle VPN	—
+Copy clean link	—
+Toggle tab mute	Ctrl + M
+Toggle sidebar position	—
+Toggle sidebar	—
+Force Paste	—
+Toggle vertical tabs window title	—
+Configure news feed	—
+Configure shortcuts	—
+Show video chat	—
+Toggle VPN tray icon	—
+Always show bookmark bar	—
+Show bookmark bar on NTP	—
+Hide bookmark bar	—
+Toggle shields	—
+Toggle JavaScript	—
+Show playlist bubble	—
+Group tabs on current origin	—
+Move group to new window	—
+Close duplicate tabs	—
+Close tabs to the left	—
+Close unpinned tabs	—
+Add all tabs to new group	—
+Toggle vertical tabs expanded	—
+Mute all tabs	—
+Mute other tabs	—
+Unmute all tabs	—
+Scroll tab to top	—
+Scroll tab to bottom	—
+Send tab to self	—
+Open AI Chat	—
+Toggle All bookmarks button visibility	—
+Quick commands	Ctrl + Space
+Group ungrouped tabs	—
+Ungroup current tab group	—
+Remove tab from current group	—
+Ungroup all tabs	—
+Name this group	—
+New tab in group	—
+Toggle group expanded	—
+Close ungrouped tabs	—
+Close tabs not in current group	—
+Close group	—
+Export all bookmarks	—
+Bring all tabs to this window	—
+New split view	—
+Open in split view	—
+Unsplit tabs	—
+Swap tab positions	—
+Show Wayback Machine bubble	—
+Show apps	—
+New Email Alias	—
+Email Aliases	—
+Paste and go	—
