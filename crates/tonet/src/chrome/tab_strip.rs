@@ -1,4 +1,4 @@
-//! Tab strip row -- Chrome/Brave-style: [favicon + title] tabs, "+" button, caption controls.
+//! Tab strip row: [favicon + title] tabs, “+” button, caption controls.
 //!
 //! This component draws NO background frame of its own; the parent TopPanel provides
 //! the unified `CHROME_BG` fill.

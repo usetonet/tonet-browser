@@ -5,6 +5,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod document_url;
 pub mod limits;
 pub mod navigation;
 pub mod policy;
