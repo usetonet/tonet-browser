@@ -9,6 +9,8 @@ Tonet is a **from-scratch** desktop browser: its own networking, parsing, and re
 
 Early MVP: HTTP(S) fetch with strict limits, minimal HTML extraction, and a lightweight UI (toolbar, history, settings). See the [landing](https://usetonet.com) and [documentation](web/landing/docs.html) for downloads and packaging notes.
 
+**Long-term direction, quality gates, and measurable phases:** [`TONET_VISION.md`](TONET_VISION.md) (fill in TBD baselines on the reference machine as you measure them).
+
 ## Build (desktop)
 
 Requires a recent **stable Rust** toolchain.
@@ -16,6 +18,8 @@ Requires a recent **stable Rust** toolchain.
 ```bash
 cargo build --release -p tonet
 ```
+
+Workspace tests (engine + browser + corpus smoke): `cargo test --workspace`. Avoid `cargo test --workspace --all-targets` on Windows: the installer binary (`tonet-setup`) is not meant as a test harness.
 
 The binary is at `target/release/tonet` (or `tonet.exe` on Windows).
 
@@ -27,6 +31,9 @@ When a commit lands on **`main`** and the version in [`crates/tonet/Cargo.toml`]
 
 | Path | Purpose |
 |------|---------|
+| [`TONET_VISION.md`](TONET_VISION.md) | Product vision, phases (incl. JS roadmap), quality gates, metrics placeholders. |
+| `corpus/` | Frozen fixtures for corpus smoke tests and future conformance runs. |
+| `crates/tonet-engine` | Engine contracts: limits, navigation policy, size checks (no UI). |
 | `crates/tonet` | Desktop application (Rust, `eframe` / `egui`). |
 | `web/landing` | Marketing site and docs (Vite + Cloudflare Workers). |
 | `packaging/` | Debian and other packaging helpers. |

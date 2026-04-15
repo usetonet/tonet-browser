@@ -11,6 +11,8 @@ build = "build.rs"
 [[bin]]
 name = "TonetSetup"
 path = "src/main.rs"
+# Avoid `cargo test` building a test harness for the GUI installer (Windows elevation / CI noise).
+test = false
 
 [dependencies]
 eframe = "0.29"
