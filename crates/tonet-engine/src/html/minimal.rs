@@ -1,11 +1,16 @@
-//! Subset HTML scanner for Tonet’s read-only view (not a full HTML5 tree builder yet).
+//! Subset HTML read model for Tonet’s read-only view.
 //!
-//! Extracts, in document order, `<title>`, `<h1>`, `<h2>`, `<p>`, and `<a href="…">` (`http`/`https`
-//! after resolution). Skips HTML comments and treats `<script>` / `<style>` as opaque text so
-//! markup-like tokens inside do not create false positives — a small step toward spec-aligned
-//! parsing.
+//! [`parse_html`] runs the in-house tokenizer + tree builder, then flattens to [`DomNode`]s in
+//! document order (`<title>`, `<h1>`, `<h2>`, `<p>`, `<a href>` with `http`/`https` after resolution).
+//! A legacy linear scanner is kept as [`parse_html_scan`] for regression checks.
+//!
+//! HTML comments are ignored in the tree path; `<script>` / `<style>` use rawtext tokenization so
+//! markup-like tokens inside do not become elements.
 
 use url::Url;
+
+use crate::html::tokenizer;
+use crate::html::tree_builder::{self, ElementNode, Node};
 
 /// Semantic kind of a node extracted from the document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -82,8 +87,13 @@ pub fn resolve_href(page_url: &str, href: &str) -> Option<String> {
         .map(|u| u.to_string())
 }
 
-/// Very limited HTML parse: returns detected nodes in order. `page_url` resolves relative links.
+/// Parse HTML via tokenizer → tree → [`DomNode`] stream. `page_url` resolves relative links.
 pub fn parse_html(html: &str, page_url: &str) -> Vec<DomNode> {
+    parse_html_from_tree(html, page_url)
+}
+
+/// Legacy linear scanner over raw HTML (kept for tests and diffing).
+pub fn parse_html_scan(html: &str, page_url: &str) -> Vec<DomNode> {
     let mut out = Vec::new();
     let mut pos = 0usize;
 
@@ -126,6 +136,86 @@ pub fn parse_html(html: &str, page_url: &str) -> Vec<DomNode> {
     }
 
     out
+}
+
+/// Tokenizer + tree builder → same [`DomNode`] shape as [`parse_html`].
+pub fn parse_html_from_tree(html: &str, page_url: &str) -> Vec<DomNode> {
+    let tokens = tokenizer::tokenize(html);
+    let fragment = tree_builder::build_fragment(&tokens);
+    let mut out = Vec::new();
+    for n in &fragment.children {
+        walk_tree_to_dom(n, page_url, &mut out);
+    }
+    out
+}
+
+fn walk_tree_to_dom(node: &Node, page_url: &str, out: &mut Vec<DomNode>) {
+    let Node::Element(el) = node else {
+        return;
+    };
+    if el.name == "script" || el.name == "style" {
+        return;
+    }
+    match el.name.as_str() {
+        "title" => emit_dom_block(DomNodeType::Title, el, out),
+        "h1" => emit_dom_block(DomNodeType::H1, el, out),
+        "h2" => emit_dom_block(DomNodeType::H2, el, out),
+        "p" => emit_dom_block(DomNodeType::Paragraph, el, out),
+        "a" => emit_dom_link(el, page_url, out),
+        _ => {
+            for c in &el.children {
+                walk_tree_to_dom(c, page_url, out);
+            }
+        }
+    }
+}
+
+fn emit_dom_block(kind: DomNodeType, el: &ElementNode, out: &mut Vec<DomNode>) {
+    let cleaned = normalize_whitespace(&collect_element_text(el));
+    if !cleaned.is_empty() {
+        out.push(DomNode {
+            kind,
+            text: cleaned,
+            href: None,
+        });
+    }
+}
+
+fn emit_dom_link(el: &ElementNode, page_url: &str, out: &mut Vec<DomNode>) {
+    let href_raw = el
+        .attrs
+        .iter()
+        .find(|a| a.name == "href")
+        .map(|a| a.value.as_str())
+        .unwrap_or("");
+    let Some(href_abs) = resolve_href(page_url, href_raw) else {
+        return;
+    };
+    let mut label = normalize_whitespace(&collect_element_text(el));
+    if label.is_empty() {
+        label = href_raw.to_string();
+    }
+    out.push(DomNode {
+        kind: DomNodeType::Link,
+        text: label,
+        href: Some(href_abs),
+    });
+}
+
+fn collect_element_text(el: &ElementNode) -> String {
+    let mut s = String::new();
+    for c in &el.children {
+        match c {
+            Node::Text(t) => s.push_str(t),
+            Node::Element(child) => {
+                if child.name == "script" || child.name == "style" {
+                    continue;
+                }
+                s.push_str(&collect_element_text(child));
+            }
+        }
+    }
+    s
 }
 
 /// Strips HTML tags from a fragment, keeping approximate visible text.

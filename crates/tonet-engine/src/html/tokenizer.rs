@@ -93,13 +93,24 @@ pub fn tokenize(input: &str) -> Vec<Token> {
             Some(ch) if ch.is_ascii_alphabetic() || ch == '?' => {
                 let name = read_tag_name(&mut it);
                 let (self_closing, attrs_raw) = read_until_tag_close(&mut it);
-                if !name.is_empty() {
-                    let attrs = parse_attributes(&attrs_raw);
-                    out.push(Token::StartTag {
-                        name,
-                        self_closing,
-                        attrs,
-                    });
+                if name.is_empty() {
+                    continue;
+                }
+                let attrs = parse_attributes(&attrs_raw);
+                let tag = Token::StartTag {
+                    name: name.clone(),
+                    self_closing,
+                    attrs,
+                };
+                if (name == "script" || name == "style") && !self_closing {
+                    out.push(tag);
+                    let inner = consume_rawtext_until_close_tag(&mut it, &name);
+                    if !inner.is_empty() {
+                        out.push(Token::Text(inner));
+                    }
+                    out.push(Token::EndTag { name });
+                } else {
+                    out.push(tag);
                 }
             }
             _ => {
@@ -148,6 +159,57 @@ fn skip_to_gt(it: &mut std::iter::Peekable<std::str::Chars<'_>>) {
             break;
         }
     }
+}
+
+/// Consume until a matching `</tag>` end tag (ASCII‑case‑insensitive name, optional whitespace before `>`).
+/// Does **not** decode character references inside the body (script/style data).
+fn consume_rawtext_until_close_tag(it: &mut std::iter::Peekable<std::str::Chars<'_>>, tag: &str) -> String {
+    let mut buf = String::new();
+    while let Some(&c) = it.peek() {
+        if c == '<' {
+            let mut probe = it.clone();
+            probe.next(); // '<'
+            if probe.next() != Some('/') {
+                buf.push(it.next().unwrap());
+                continue;
+            }
+            let mut name_ok = true;
+            for tc in tag.chars() {
+                let Some(nc) = probe.next() else {
+                    name_ok = false;
+                    break;
+                };
+                if !nc.eq_ignore_ascii_case(&tc) {
+                    name_ok = false;
+                    break;
+                }
+            }
+            if !name_ok {
+                buf.push(it.next().unwrap());
+                continue;
+            }
+            while probe.peek().map_or(false, |x| x.is_ascii_whitespace()) {
+                probe.next();
+            }
+            if probe.peek() != Some(&'>') {
+                buf.push(it.next().unwrap());
+                continue;
+            }
+            // Matched closing tag: consume it on the real iterator.
+            it.next(); // '<'
+            it.next(); // '/'
+            for _ in 0..tag.len() {
+                it.next();
+            }
+            while it.peek().map_or(false, |x| x.is_ascii_whitespace()) {
+                it.next();
+            }
+            it.next(); // '>'
+            break;
+        }
+        buf.push(it.next().unwrap());
+    }
+    buf
 }
 
 #[cfg(test)]
@@ -262,6 +324,22 @@ mod tests {
         assert_eq!(
             st.iter().find(|a| a.name == "title").map(|a| a.value.as_str()),
             Some("a\"b")
+        );
+    }
+
+    #[test]
+    fn script_rawtext_keeps_markup_as_text() {
+        let html = r#"<body><script>var s = "<p>inside</p>";</script><p>after</p>"#;
+        let t = tokenize(html);
+        let has_script_text = t.windows(3).any(|w| {
+            matches!(&w[0], Token::StartTag { name, .. } if name == "script")
+                && matches!(&w[1], Token::Text(s) if s.contains("<p>inside</p>"))
+                && matches!(&w[2], Token::EndTag { name } if name == "script")
+        });
+        assert!(has_script_text, "{t:?}");
+        assert!(
+            t.iter().any(|x| matches!(x, Token::StartTag { name, .. } if name == "p")),
+            "outer p only after script"
         );
     }
 
