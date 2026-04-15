@@ -3,10 +3,13 @@
 //! [`parse_html`] runs the in-house tokenizer + tree builder, then flattens to [`DomNode`]s in
 //! document order (`<title>`, `<h1>`, `<h2>`, `<p>`, `<a href>` with `http`/`https` after resolution).
 //! Relative `href`s use the document URL, then the first `<base href>` in tree order when present.
+//! [`extract_stylesheet_candidates`] lists linked author stylesheets for a future fetch/cascade path.
 //! A legacy linear scanner is kept as [`parse_html_scan`] for regression checks.
 //!
 //! HTML comments are ignored in the tree path; `<script>` / `<style>` use rawtext tokenization so
 //! markup-like tokens inside do not become elements.
+
+use std::collections::HashSet;
 
 use url::Url;
 
@@ -63,7 +66,8 @@ pub fn resolve_href(page_url: &str, href: &str) -> Option<String> {
         return None;
     }
     let lower = href.to_ascii_lowercase();
-    if lower.starts_with("javascript:") || lower.starts_with("mailto:") || lower.starts_with("tel:") {
+    if lower.starts_with("javascript:") || lower.starts_with("mailto:") || lower.starts_with("tel:")
+    {
         return None;
     }
 
@@ -106,7 +110,9 @@ pub fn parse_html_scan(html: &str, page_url: &str) -> Vec<DomNode> {
         let tag = kind.tag_name();
 
         if kind == DomNodeType::Link {
-            if let Some((href_abs, label, end_after_close)) = extract_anchor_link(html, idx, page_url) {
+            if let Some((href_abs, label, end_after_close)) =
+                extract_anchor_link(html, idx, page_url)
+            {
                 out.push(DomNode {
                     kind: DomNodeType::Link,
                     text: label,
@@ -143,7 +149,8 @@ pub fn parse_html_scan(html: &str, page_url: &str) -> Vec<DomNode> {
 pub fn parse_html_from_tree(html: &str, page_url: &str) -> Vec<DomNode> {
     let tokens = tokenizer::tokenize(html);
     let fragment = tree_builder::build_fragment(&tokens);
-    let link_base = first_base_href_resolved(&fragment.children, page_url).unwrap_or_else(|| page_url.to_string());
+    let link_base = first_base_href_resolved(&fragment.children, page_url)
+        .unwrap_or_else(|| page_url.to_string());
     let mut out = Vec::new();
     for n in &fragment.children {
         walk_tree_to_dom(n, &link_base, &mut out);
@@ -158,7 +165,12 @@ fn first_base_href_resolved(nodes: &[Node], page_url: &str) -> Option<String> {
             continue;
         };
         if el.name == "base" {
-            if let Some(raw) = el.attrs.iter().find(|a| a.name == "href").map(|a| a.value.as_str()) {
+            if let Some(raw) = el
+                .attrs
+                .iter()
+                .find(|a| a.name == "href")
+                .map(|a| a.value.as_str())
+            {
                 if let Some(abs) = resolve_href(page_url, raw) {
                     return Some(abs);
                 }
@@ -240,6 +252,63 @@ fn collect_element_text(el: &ElementNode) -> String {
     s
 }
 
+/// Absolute `http`/`https` URLs for `<link rel="…stylesheet…" href="…">` in document order, deduplicated.
+///
+/// Uses the same URL base as [`parse_html_from_tree`] (document URL + first `<base href>`). Not
+/// wired to network or layout yet.
+pub fn extract_stylesheet_candidates(html: &str, page_url: &str) -> Vec<String> {
+    let tokens = tokenizer::tokenize(html);
+    let fragment = tree_builder::build_fragment(&tokens);
+    let link_base = first_base_href_resolved(&fragment.children, page_url)
+        .unwrap_or_else(|| page_url.to_string());
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    collect_stylesheet_hrefs(&fragment.children, &link_base, &mut seen, &mut out);
+    out
+}
+
+fn rel_token_includes_stylesheet(rel: &str) -> bool {
+    rel.split(|c: char| c.is_whitespace() || c == ',')
+        .filter(|t| !t.is_empty())
+        .any(|tok| tok.eq_ignore_ascii_case("stylesheet"))
+}
+
+fn collect_stylesheet_hrefs(
+    nodes: &[Node],
+    link_base: &str,
+    seen: &mut HashSet<String>,
+    out: &mut Vec<String>,
+) {
+    for n in nodes {
+        let Node::Element(el) = n else {
+            continue;
+        };
+        if el.name == "link" {
+            let rel = el
+                .attrs
+                .iter()
+                .find(|a| a.name == "rel")
+                .map(|a| a.value.as_str())
+                .unwrap_or("");
+            if rel_token_includes_stylesheet(rel) {
+                if let Some(href_raw) = el
+                    .attrs
+                    .iter()
+                    .find(|a| a.name == "href")
+                    .map(|a| a.value.as_str())
+                {
+                    if let Some(abs) = resolve_href(link_base, href_raw) {
+                        if seen.insert(abs.clone()) {
+                            out.push(abs);
+                        }
+                    }
+                }
+            }
+        }
+        collect_stylesheet_hrefs(&el.children, link_base, seen, out);
+    }
+}
+
 /// Strips HTML tags from a fragment, keeping approximate visible text.
 fn strip_html_tags(fragment: &str) -> String {
     let mut out = String::with_capacity(fragment.len());
@@ -260,7 +329,11 @@ fn normalize_whitespace(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-fn extract_anchor_link(html: &str, open_idx: usize, page_url: &str) -> Option<(String, String, usize)> {
+fn extract_anchor_link(
+    html: &str,
+    open_idx: usize,
+    page_url: &str,
+) -> Option<(String, String, usize)> {
     let bytes = html.as_bytes();
     let gt = find_byte(bytes, b'>', open_idx)?;
     let open_tag = html.get(open_idx..=gt)?;
@@ -310,7 +383,11 @@ fn skip_after_html_comment(html: &str, i: usize) -> Option<usize> {
     if i + 3 >= b.len() {
         return None;
     }
-    if b[i] != b'<' || b.get(i + 1) != Some(&b'!') || b.get(i + 2) != Some(&b'-') || b.get(i + 3) != Some(&b'-') {
+    if b[i] != b'<'
+        || b.get(i + 1) != Some(&b'!')
+        || b.get(i + 2) != Some(&b'-')
+        || b.get(i + 3) != Some(&b'-')
+    {
         return None;
     }
     let mut j = i + 4;
@@ -386,7 +463,10 @@ fn open_tag_matches(html: &str, idx: usize, tag: &str) -> bool {
     }
     let after = idx + pattern.len();
     let c = html.as_bytes().get(after).copied();
-    matches!(c, Some(b'>') | Some(b'/') | Some(b' ') | Some(b'\t') | Some(b'\n') | Some(b'\r'))
+    matches!(
+        c,
+        Some(b'>') | Some(b'/') | Some(b' ') | Some(b'\t') | Some(b'\n') | Some(b'\r')
+    )
 }
 
 fn eq_ignore_ascii_case_prefix(a: &str, b: &str) -> bool {
@@ -398,7 +478,11 @@ fn eq_ignore_ascii_case_prefix(a: &str, b: &str) -> bool {
 
 /// Extracts inner HTML between the open tag at `open_idx` and `</tag>`.
 /// Returns (raw inner, index after the closing `>`).
-fn extract_inner_until_close<'a>(html: &'a str, open_idx: usize, tag: &str) -> Option<(&'a str, usize)> {
+fn extract_inner_until_close<'a>(
+    html: &'a str,
+    open_idx: usize,
+    tag: &str,
+) -> Option<(&'a str, usize)> {
     let bytes = html.as_bytes();
     let gt = find_byte(bytes, b'>', open_idx)?;
     let inner_start = gt + 1;
@@ -410,7 +494,10 @@ fn extract_inner_until_close<'a>(html: &'a str, open_idx: usize, tag: &str) -> O
 }
 
 fn find_byte(bytes: &[u8], needle: u8, from: usize) -> Option<usize> {
-    bytes[from..].iter().position(|&b| b == needle).map(|p| from + p)
+    bytes[from..]
+        .iter()
+        .position(|&b| b == needle)
+        .map(|p| from + p)
 }
 
 /// Finds `</tag>` (ASCII case-insensitive) starting at `from`.
@@ -456,9 +543,7 @@ pub fn extract_favicon_candidates(html: &str, page_url: &str) -> Vec<String> {
             }
         }
 
-        if matches_tag_prefix(bytes, pos, b"/head")
-            || matches_tag_prefix(bytes, pos, b"body")
-        {
+        if matches_tag_prefix(bytes, pos, b"/head") || matches_tag_prefix(bytes, pos, b"body") {
             break;
         }
 
@@ -504,9 +589,8 @@ fn extract_link_favicon_href(html: &str, open_idx: usize) -> Option<String> {
         return None;
     }
 
-    let is_icon = lower.contains("icon")
-        || lower.contains("shortcut")
-        || lower.contains("apple-touch-icon");
+    let is_icon =
+        lower.contains("icon") || lower.contains("shortcut") || lower.contains("apple-touch-icon");
     if !is_icon {
         return None;
     }
@@ -562,15 +646,22 @@ mod tests {
     fn parses_title_and_paragraph() {
         let html = "<html><title>Hello</title><body><p>World text</p></body>";
         let nodes = parse_html(html, "https://example.com/");
-        assert!(nodes.iter().any(|n| n.kind == DomNodeType::Title && n.text == "Hello"));
-        assert!(nodes.iter().any(|n| n.kind == DomNodeType::Paragraph && n.text == "World text"));
+        assert!(nodes
+            .iter()
+            .any(|n| n.kind == DomNodeType::Title && n.text == "Hello"));
+        assert!(nodes
+            .iter()
+            .any(|n| n.kind == DomNodeType::Paragraph && n.text == "World text"));
     }
 
     #[test]
     fn resolves_relative_link() {
         let html = r#"<a href="/path">Go</a>"#;
         let nodes = parse_html(html, "https://example.com/page");
-        let link = nodes.iter().find(|n| n.kind == DomNodeType::Link).expect("link");
+        let link = nodes
+            .iter()
+            .find(|n| n.kind == DomNodeType::Link)
+            .expect("link");
         assert_eq!(link.href.as_deref(), Some("https://example.com/path"));
         assert_eq!(link.text, "Go");
     }
@@ -582,7 +673,10 @@ mod tests {
             <base href="https://ignore.example/">
             </head><body><a href="page.html">x</a></body></html>"#;
         let nodes = parse_html(html, "https://origin.example.com/dir/doc.html");
-        let link = nodes.iter().find(|n| n.kind == DomNodeType::Link).expect("link");
+        let link = nodes
+            .iter()
+            .find(|n| n.kind == DomNodeType::Link)
+            .expect("link");
         assert_eq!(
             link.href.as_deref(),
             Some("https://cdn.example.com/assets/page.html")
@@ -627,10 +721,15 @@ mod tests {
         let html = "<body><!-- <p>ghost</p> --><p>real</p>";
         let nodes = parse_html(html, "https://example.com/");
         assert_eq!(
-            nodes.iter().filter(|n| n.kind == DomNodeType::Paragraph).count(),
+            nodes
+                .iter()
+                .filter(|n| n.kind == DomNodeType::Paragraph)
+                .count(),
             1
         );
-        assert!(nodes.iter().any(|n| n.kind == DomNodeType::Paragraph && n.text == "real"));
+        assert!(nodes
+            .iter()
+            .any(|n| n.kind == DomNodeType::Paragraph && n.text == "real"));
     }
 
     #[test]
@@ -638,9 +737,38 @@ mod tests {
         let html = r#"<body><script>var s = "<p>inside</p>";</script><p>after</p>"#;
         let nodes = parse_html(html, "https://example.com/");
         assert_eq!(
-            nodes.iter().filter(|n| n.kind == DomNodeType::Paragraph).count(),
+            nodes
+                .iter()
+                .filter(|n| n.kind == DomNodeType::Paragraph)
+                .count(),
             1
         );
-        assert!(nodes.iter().any(|n| n.kind == DomNodeType::Paragraph && n.text == "after"));
+        assert!(nodes
+            .iter()
+            .any(|n| n.kind == DomNodeType::Paragraph && n.text == "after"));
+    }
+
+    #[test]
+    fn extract_stylesheet_absolute_href() {
+        let html = r#"<head><link rel="stylesheet" href="https://cdn.example.com/a.css"></head>"#;
+        let v = extract_stylesheet_candidates(html, "https://page.com/");
+        assert_eq!(v, vec!["https://cdn.example.com/a.css".to_string()]);
+    }
+
+    #[test]
+    fn extract_stylesheet_respects_base_href() {
+        let html = r#"<head>
+            <base href="https://cdn.example.com/app/">
+            <link rel="stylesheet" href="main.css">
+            </head>"#;
+        let v = extract_stylesheet_candidates(html, "https://origin.example.com/dir/page.html");
+        assert_eq!(v, vec!["https://cdn.example.com/app/main.css".to_string()]);
+    }
+
+    #[test]
+    fn extract_stylesheet_skips_icon_link() {
+        let html = r#"<head><link rel="icon" href="/f.ico"></head>"#;
+        let v = extract_stylesheet_candidates(html, "https://example.com/");
+        assert!(v.is_empty());
     }
 }
