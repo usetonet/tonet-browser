@@ -152,7 +152,7 @@ Suggested order (already agreed in planning):
 2. **`tonet-engine`** crate — **done**: limits (`EngineLimits::STANDARD`), `policy::check_document_size`, navigation helpers; `tonet` uses it for HTTP/fetch budgets and **explicit redirect policy** (`max_http_redirects`, default 10).
 3. **Corpus CI** — **done**: `corpus/fixtures/*.html` + `tonet-engine` integration tests; **`.github/workflows/ci.yml`** runs `cargo test --workspace` on Ubuntu and Windows; `tonet-setup` built separately.
 4. **HTML static read path** — **in progress**: tokenizer + tree builder; `DomNode` flattening; rawtext `script`/`style`; `<base href>` for link resolution; **`<link rel=stylesheet>` URL discovery** (`extract_stylesheet_candidates`) for a future fetch path. Full HTML5 tree construction remains a §5 milestone.
-5. **CSS (author)** — **in progress**: minimal **syntax tokenizer** in `tonet-engine` (`css::syntax`); the desktop shell **fetches** linked stylesheets after navigation (same size/HTTP rules as HTML) and stores bodies on the tab for a future cascade—**not** applied to layout yet. Next: cascade + box model per §5.
+5. **CSS (author)** — **in progress**: minimal **syntax tokenizer** in `tonet-engine` (`css::syntax`); the desktop shell **fetches** linked stylesheets after navigation and **tokenizes** them into `Tab.loaded_stylesheet_tokens`—**not** applied to layout yet. Next: cascade + box model per §5.
 6. **Appearance (light/dark)** — **partially met**: `tonet` uses a thread-local `UiTheme` and `theme.rs` so chrome, settings, and page chrome colors track the same palette; extend when layout needs author-driven constraints.
 7. **Next (gates / measurement):** **cookie/cache** persistence design (**Gate C**); grow HTML/CSS corpora; fill §4 **TBD** budgets on the reference machine (§9).
 
@@ -166,5 +166,6 @@ Suggested order (already agreed in planning):
 | 2026-04-14 | Marked engine + corpus CI steps done; noted redirect cap; next steps for Appearance / conformance / storage. |
 | 2026-04-15 | Documented HTML read path + stylesheet discovery + first CSS syntax tokenizer; clarified Appearance status and Gate C / metrics next steps. |
 | 2026-04-16 | Stylesheet GET after navigation (capped per `EngineLimits`); vision note on fetch vs apply. |
+| 2026-04-17 | Tokenize fetched stylesheet bodies on the tab (`tokenize_stylesheet_bundle`). |
 
 Update this file when phases complete, budgets change, or the reference machine changes.

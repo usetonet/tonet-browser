@@ -6,4 +6,4 @@
 
 pub mod syntax;
 
-pub use syntax::{tokenize_css, CssToken};
+pub use syntax::{tokenize_css, tokenize_stylesheet_bundle, CssToken};

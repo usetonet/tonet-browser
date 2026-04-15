@@ -124,6 +124,14 @@ pub fn tokenize_css(input: &str) -> Vec<CssToken> {
     out
 }
 
+/// Tokenize each `(url, css_text)` pair from a linked stylesheet fetch (order preserved).
+pub fn tokenize_stylesheet_bundle(sheets: &[(String, String)]) -> Vec<(String, Vec<CssToken>)> {
+    sheets
+        .iter()
+        .map(|(url, text)| (url.clone(), tokenize_css(text)))
+        .collect()
+}
+
 /// Whether `chars[i]` can start a CSS identifier (`-a`, `--foo`, `body`, …).
 fn could_start_name(chars: &[char], i: usize) -> bool {
     match chars.get(i).copied() {
@@ -221,5 +229,18 @@ mod tests {
         assert!(t
             .iter()
             .any(|x| matches!(x, CssToken::Ident(s) if s == "--bg")));
+    }
+
+    #[test]
+    fn tokenize_stylesheet_bundle_preserves_urls() {
+        let sheets = vec![
+            ("https://a.test/1.css".into(), "a { x: 1; }".into()),
+            ("https://a.test/2.css".into(), "b { y: 2; }".into()),
+        ];
+        let b = tokenize_stylesheet_bundle(&sheets);
+        assert_eq!(b.len(), 2);
+        assert_eq!(b[0].0, "https://a.test/1.css");
+        assert!(b[0].1.iter().any(|t| matches!(t, CssToken::Ident(s) if s == "a")));
+        assert_eq!(b[1].0, "https://a.test/2.css");
     }
 }
