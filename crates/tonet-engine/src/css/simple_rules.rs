@@ -154,6 +154,16 @@ fn prelude_to_display(tokens: &[CssToken]) -> String {
     s.trim().to_string()
 }
 
+/// Run [`parse_top_level_qualified_rules`] on each `(url, token stream)` (e.g. output of [`super::syntax::tokenize_stylesheet_bundle`]).
+pub fn parse_stylesheet_bundle_to_rules(
+    tokenized: &[(String, Vec<CssToken>)],
+) -> Vec<(String, Vec<SimpleQualifiedRule>)> {
+    tokenized
+        .iter()
+        .map(|(url, tokens)| (url.clone(), parse_top_level_qualified_rules(tokens)))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,5 +193,17 @@ mod tests {
         let rules = parse_top_level_qualified_rules(&t);
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].prelude_display, "div");
+    }
+
+    #[test]
+    fn bundle_to_rules_per_url() {
+        use crate::css::syntax::tokenize_stylesheet_bundle;
+        let sheets = vec![("https://ex/a.css".into(), "p { a:1; }".into())];
+        let tok = tokenize_stylesheet_bundle(&sheets);
+        let rules = parse_stylesheet_bundle_to_rules(&tok);
+        assert_eq!(rules.len(), 1);
+        assert_eq!(rules[0].0, "https://ex/a.css");
+        assert_eq!(rules[0].1.len(), 1);
+        assert_eq!(rules[0].1[0].prelude_display, "p");
     }
 }
