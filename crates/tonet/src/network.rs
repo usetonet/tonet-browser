@@ -76,6 +76,30 @@ pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
     Ok(text)
 }
 
+/// Fetch linked author stylesheets in document order (blocking, sequential GETs).
+///
+/// Each response must be **200 OK** and within [`EngineLimits::max_document_bytes`]. Skips
+/// failures and responses that look like HTML documents. At most
+/// [`EngineLimits::max_stylesheets_per_document`] URLs are requested.
+pub fn fetch_stylesheets_from_urls(urls: &[String]) -> Vec<(String, String)> {
+    let cap = LIMITS.max_stylesheets_per_document;
+    let mut out = Vec::new();
+    for url in urls.iter().take(cap) {
+        let Ok(text) = fetch_url(url) else {
+            continue;
+        };
+        let trimmed = text.trim_start();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if looks_like_html(trimmed.as_bytes()) {
+            continue;
+        }
+        out.push((url.clone(), text));
+    }
+    out
+}
+
 /// Try to fetch a favicon by probing a list of candidate URLs in order.
 ///
 /// Candidates are typically extracted from `<link rel="icon">` tags in the page

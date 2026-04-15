@@ -13,6 +13,8 @@ pub struct EngineLimits {
     pub favicon_request_timeout_secs: u64,
     /// Maximum HTTP redirects to follow for a navigation (`0` means do not follow redirects).
     pub max_http_redirects: u32,
+    /// Cap on `<link rel=stylesheet>` fetches after a navigation (each obeys [`Self::max_document_bytes`]).
+    pub max_stylesheets_per_document: usize,
 }
 
 impl EngineLimits {
@@ -24,6 +26,7 @@ impl EngineLimits {
         favicon_request_timeout_secs: 8,
         // Explicit cap (reqwest previously followed up to 10 by default; now centralized here).
         max_http_redirects: 10,
+        max_stylesheets_per_document: 16,
     };
 }
 
