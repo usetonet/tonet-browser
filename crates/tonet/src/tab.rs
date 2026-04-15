@@ -7,6 +7,8 @@ use crate::parser::{DomNode, DomNodeType};
 pub struct PageFetchData {
     pub nodes: Vec<DomNode>,
     pub favicon_candidates: Vec<String>,
+    /// Absolute author stylesheet URLs from `<link rel=stylesheet>` (not fetched yet).
+    pub stylesheet_candidates: Vec<String>,
     /// Raw UTF-8 HTML from the network (used for optional on-disk snapshots).
     pub raw_html: String,
 }
@@ -23,6 +25,7 @@ pub enum NavigateIntent {
 pub struct HistoryEntry {
     pub url: String,
     pub nodes: Vec<DomNode>,
+    pub stylesheet_urls: Vec<String>,
 }
 
 /// New tabs start empty (shows the New Tab page).
@@ -43,6 +46,8 @@ pub struct Tab {
     pub favicon_uri: String,
     /// Async favicon fetch result.
     pub favicon_fetch_rx: Option<mpsc::Receiver<Option<Vec<u8>>>>,
+    /// Last successfully parsed author stylesheet URLs for this document (empty until a fetch completes).
+    pub stylesheet_urls: Vec<String>,
     /// True while this tab should display the New Tab page.
     /// Cleared only when an actual navigation starts (Enter pressed).
     pub show_new_tab: bool,
@@ -64,6 +69,7 @@ impl Tab {
             pending_nav: None,
             favicon_uri: String::new(),
             favicon_fetch_rx: None,
+            stylesheet_urls: Vec::new(),
             show_new_tab: is_empty,
         }
     }
@@ -94,23 +100,40 @@ impl Tab {
             return;
         };
 
+        let stylesheet_urls = self.stylesheet_urls.clone();
         self.dom = nodes.clone();
 
         match intent {
             NavigateIntent::Reload => {
                 if self.history.is_empty() {
-                    self.history.push(HistoryEntry { url, nodes });
+                    self.history.push(HistoryEntry {
+                        url,
+                        nodes,
+                        stylesheet_urls,
+                    });
                     self.hist_index = 0;
                 } else if self.hist_index < self.history.len() {
-                    self.history[self.hist_index] = HistoryEntry { url, nodes };
+                    self.history[self.hist_index] = HistoryEntry {
+                        url,
+                        nodes,
+                        stylesheet_urls,
+                    };
                 } else {
-                    self.history.push(HistoryEntry { url, nodes });
+                    self.history.push(HistoryEntry {
+                        url,
+                        nodes,
+                        stylesheet_urls,
+                    });
                     self.hist_index = self.history.len() - 1;
                 }
             }
             NavigateIntent::NewPage => {
                 self.history.truncate(self.hist_index.saturating_add(1));
-                self.history.push(HistoryEntry { url, nodes });
+                self.history.push(HistoryEntry {
+                    url,
+                    nodes,
+                    stylesheet_urls,
+                });
                 self.hist_index = self.history.len().saturating_sub(1);
             }
         }

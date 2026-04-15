@@ -13,7 +13,7 @@ use crate::browser_log::BrowserLog;
 use crate::i18n::{self, Locale};
 use crate::internal_pages::{self, InternalRoute};
 use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext};
-use crate::parser::{extract_favicon_candidates, parse_html};
+use crate::parser::{extract_favicon_candidates, extract_stylesheet_candidates, parse_html};
 use crate::renderer::render_nodes;
 use crate::session_snapshot::SessionSnapshot;
 use crate::settings::{AppSettings, SearchEngine, StartupPolicy, UiTheme, UpdatePolicy};
@@ -416,11 +416,13 @@ impl TonetApp {
             tab.favicon_fetch_rx = None;
             tab.favicon_uri.clear();
             tab.dom.clear();
+            tab.stylesheet_urls.clear();
             tab.url_input = canonical.clone();
             if was_new_tab && matches!(intent, NavigateIntent::NewPage) {
                 tab.history.push(HistoryEntry {
                     url: String::new(),
                     nodes: Vec::new(),
+                    stylesheet_urls: Vec::new(),
                 });
                 tab.hist_index = 0;
             }
@@ -440,6 +442,7 @@ impl TonetApp {
             tab.history.push(HistoryEntry {
                 url: String::new(),
                 nodes: Vec::new(),
+                stylesheet_urls: Vec::new(),
             });
             tab.hist_index = 0;
         }
@@ -448,6 +451,7 @@ impl TonetApp {
         tab.error_message = None;
         tab.favicon_uri.clear();
         tab.favicon_fetch_rx = None;
+        tab.stylesheet_urls.clear();
         if matches!(intent, NavigateIntent::NewPage) {
             tab.dom.clear();
         }
@@ -464,9 +468,11 @@ impl TonetApp {
                 let raw_html = html.clone();
                 let nodes = parse_html(&html, &page_url);
                 let favicon_candidates = extract_favicon_candidates(&html, &page_url);
+                let stylesheet_candidates = extract_stylesheet_candidates(&html, &page_url);
                 Ok(PageFetchData {
                     nodes,
                     favicon_candidates,
+                    stylesheet_candidates,
                     raw_html,
                 })
             })();
@@ -492,6 +498,7 @@ impl TonetApp {
         tab.show_new_tab = e.url.is_empty() && e.nodes.is_empty();
         tab.url_input = e.url;
         tab.dom = e.nodes;
+        tab.stylesheet_urls = e.stylesheet_urls;
         tab.error_message = None;
         self.sync_window_title(ctx);
     }
@@ -506,6 +513,7 @@ impl TonetApp {
         tab.show_new_tab = e.url.is_empty() && e.nodes.is_empty();
         tab.url_input = e.url;
         tab.dom = e.nodes;
+        tab.stylesheet_urls = e.stylesheet_urls;
         tab.error_message = None;
         self.sync_window_title(ctx);
     }
@@ -543,6 +551,7 @@ impl TonetApp {
                     tab.loading = false;
                     tab.fetch_rx = None;
                     let favicon_candidates = data.favicon_candidates;
+                    tab.stylesheet_urls = data.stylesheet_candidates;
                     tab.apply_successful_navigation(data.nodes);
 
                     let page_url = tab.url_input.trim().to_string();
@@ -580,6 +589,7 @@ impl TonetApp {
                     tab.loading = false;
                     tab.fetch_rx = None;
                     tab.pending_nav = None;
+                    tab.stylesheet_urls.clear();
                     if i == active {
                         reset_window_title = true;
                     }
@@ -592,6 +602,7 @@ impl TonetApp {
                     tab.loading = false;
                     tab.fetch_rx = None;
                     tab.pending_nav = None;
+                    tab.stylesheet_urls.clear();
                     tab.error_message = Some(i18n::err_fetch_disconnected(loc).to_string());
                     ctx.request_repaint();
                 }
