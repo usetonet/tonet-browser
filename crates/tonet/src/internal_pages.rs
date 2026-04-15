@@ -360,6 +360,38 @@ fn reveal_path_in_shell(path: &Path) {
     }
 }
 
+/// Reveal a saved file in the system file manager when possible.
+fn reveal_in_file_manager(path: &Path) {
+    #[cfg(windows)]
+    {
+        if path.is_file() {
+            let sel = format!("/select,{}", path.display());
+            let _ = Command::new("explorer").arg(sel).spawn();
+        } else if path.is_dir() {
+            let _ = Command::new("explorer").arg(path).spawn();
+        }
+        return;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if path.is_file() {
+            let _ = Command::new("open").arg("-R").arg(path).spawn();
+        } else {
+            let _ = Command::new("open").arg(path).spawn();
+        }
+        return;
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let target = if path.is_file() {
+            path.parent().unwrap_or(path)
+        } else {
+            path
+        };
+        let _ = Command::new("xdg-open").arg(target).spawn();
+    }
+}
+
 fn render_download_prefs(
     ui: &mut Ui,
     loc: Locale,
@@ -998,6 +1030,12 @@ fn filter_downloads<'a>(
         }
         d.display_name.to_ascii_lowercase().contains(&q)
             || d.url.to_ascii_lowercase().contains(&q)
+            || d
+                .saved_path
+                .as_deref()
+                .unwrap_or("")
+                .to_ascii_lowercase()
+                .contains(&q)
     })
 }
 
@@ -1095,20 +1133,39 @@ fn download_row(
                         .small()
                         .color(theme::LOADING_MUTED),
                     );
+                    if let Some(ref sp) = d.saved_path {
+                        ui.label(
+                            RichText::new(format!(
+                                "{} {}",
+                                i18n::internal_saved_snapshot_label(loc),
+                                sp
+                            ))
+                            .small()
+                            .monospace()
+                            .color(theme::LOADING_MUTED),
+                        );
+                    }
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.small_button("✕").on_hover_text(i18n::internal_remove_row(loc)).clicked()
                     {
                         log.remove_downloads(&[d.id]);
                     }
-                    let _ = ui
-                        .small_button("📁")
+                    let folder_btn = ui
+                        .add_enabled(
+                            d.saved_path.is_some(),
+                            egui::Button::new("📁").small(),
+                        )
                         .on_hover_text(format!(
                             "{}\n{}",
                             i18n::internal_open_folder(loc),
                             i18n::internal_open_folder_hint(loc)
-                        ))
-                        .clicked();
+                        ));
+                    if folder_btn.clicked() {
+                        if let Some(ref sp) = d.saved_path {
+                            reveal_in_file_manager(Path::new(sp));
+                        }
+                    }
                     if ui.small_button("🔗").on_hover_text(i18n::internal_copy_link(loc)).clicked()
                     {
                         ctx.copy_text(d.url.clone());

@@ -115,7 +115,7 @@ pub struct AppSettings {
     /// When [`StartupPolicy::OpenSpecificPages`]: one URL or search per line (same rules as the omnibox).
     #[serde(default = "default_startup_urls")]
     pub startup_urls: String,
-    /// Preferred download folder when Tonet saves files to disk (future); must exist if set.
+    /// Preferred download folder for on-disk HTML snapshots; must exist if set.
     #[serde(default)]
     pub download_directory: Option<String>,
     #[serde(default)]

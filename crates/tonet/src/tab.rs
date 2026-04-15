@@ -7,6 +7,8 @@ use crate::parser::{DomNode, DomNodeType};
 pub struct PageFetchData {
     pub nodes: Vec<DomNode>,
     pub favicon_candidates: Vec<String>,
+    /// Raw UTF-8 HTML from the network (used for optional on-disk snapshots).
+    pub raw_html: String,
 }
 
 pub type FetchResult = Result<PageFetchData, String>;

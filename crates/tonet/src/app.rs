@@ -435,9 +435,14 @@ impl TonetApp {
         std::thread::spawn(move || {
             let outcome = (|| {
                 let html = fetch_url(&page_url).map_err(|e| e.to_string())?;
+                let raw_html = html.clone();
                 let nodes = parse_html(&html, &page_url);
                 let favicon_candidates = extract_favicon_candidates(&html, &page_url);
-                Ok(PageFetchData { nodes, favicon_candidates })
+                Ok(PageFetchData {
+                    nodes,
+                    favicon_candidates,
+                    raw_html,
+                })
             })();
             let _ = tx.send(outcome);
         });
@@ -500,7 +505,7 @@ impl TonetApp {
         let active = self.active_tab;
         let mut title_dirty = false;
         let mut reset_window_title = false;
-        let mut visit_queue: Vec<(String, Option<String>)> = Vec::new();
+        let mut visit_queue: Vec<(String, Option<String>, Option<String>)> = Vec::new();
 
         for (i, tab) in self.tabs.iter_mut().enumerate() {
             let Some(rx) = &tab.fetch_rx else {
@@ -517,7 +522,18 @@ impl TonetApp {
                     let page_url = tab.url_input.trim().to_string();
                     if page_url.starts_with("http://") || page_url.starts_with("https://") {
                         let title = tab.doc_title_trimmed().map(|s| s.to_string());
-                        visit_queue.push((page_url, title));
+                        let saved_path = self
+                            .settings
+                            .resolved_download_directory()
+                            .and_then(|root| {
+                                crate::browser_log::save_page_html_snapshot(
+                                    &root,
+                                    &page_url,
+                                    &data.raw_html,
+                                )
+                            })
+                            .map(|p| p.display().to_string());
+                        visit_queue.push((page_url, title, saved_path));
                     }
 
                     if !favicon_candidates.is_empty() {
@@ -556,9 +572,10 @@ impl TonetApp {
             }
         }
 
-        for (page_url, title) in visit_queue {
+        for (page_url, title, saved_path) in visit_queue {
             self.browser_log.record_visit(page_url.clone(), title.clone());
-            self.browser_log.record_page_fetch(&page_url, title);
+            self.browser_log
+                .record_page_fetch(&page_url, title, saved_path);
         }
 
         if reset_window_title {
