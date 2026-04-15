@@ -5,12 +5,12 @@ use crate::i18n;
 use crate::i18n::Locale;
 use crate::parser::{DomNode, DomNodeType};
 use crate::theme;
-use egui::{RichText, Ui};
+use egui::{Color32, RichText, Ui};
 
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
-/// When `author_hints` is `Some` and has the same length as `nodes`, `color` / `font-size` from author
-/// stylesheets (simple type selectors) override the built-in theme defaults per node.
+/// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
+/// `font-weight`, and `font-style` override or extend the built-in typography per node.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -38,7 +38,7 @@ pub fn render_nodes(
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
                 ui.add_space(4.0);
-                ui.label(RichText::new(&node.text).strong().size(size).color(color));
+                ui.label(styled_rich_text(node, hint, size, color));
                 ui.add_space(8.0);
             }
             DomNodeType::H1 => {
@@ -46,7 +46,7 @@ pub fn render_nodes(
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
                 ui.add_space(6.0);
-                ui.label(RichText::new(&node.text).strong().size(size).color(color));
+                ui.label(styled_rich_text(node, hint, size, color));
                 ui.add_space(4.0);
             }
             DomNodeType::H2 => {
@@ -54,14 +54,14 @@ pub fn render_nodes(
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
                 ui.add_space(4.0);
-                ui.label(RichText::new(&node.text).strong().size(size).color(color));
+                ui.label(styled_rich_text(node, hint, size, color));
                 ui.add_space(2.0);
             }
             DomNodeType::Paragraph => {
                 let (def_size, def_color) = (15.0, theme::body_text());
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
-                ui.label(RichText::new(&node.text).size(size).color(color));
+                ui.label(styled_rich_text(node, hint, size, color));
                 ui.add_space(6.0);
             }
             DomNodeType::Link => {
@@ -72,17 +72,42 @@ pub fn render_nodes(
                 };
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
+                let rt = styled_rich_text(node, hint, size, color);
                 if let Some(ref href) = node.href {
-                    let r = ui.link(RichText::new(&node.text).size(size).color(color));
+                    let r = ui.link(rt);
                     if r.clicked() {
                         *link_target = Some(href.clone());
                     }
                     r.on_hover_text(href);
                 } else {
-                    ui.label(RichText::new(&node.text).size(size).color(color));
+                    ui.label(rt);
                 }
                 ui.add_space(4.0);
             }
         }
     }
+}
+
+/// Title / headings default to bold (`strong`); body text does not. Author `font-weight` / `font-style` override.
+fn styled_rich_text(
+    node: &DomNode,
+    hint: Option<DomNodePaintHints>,
+    size: f32,
+    color: Color32,
+) -> RichText {
+    let default_bold = matches!(
+        node.kind,
+        DomNodeType::Title | DomNodeType::H1 | DomNodeType::H2
+    );
+    let default_weight = if default_bold { 700u16 } else { 400u16 };
+    let weight = hint.and_then(|h| h.font_weight).unwrap_or(default_weight);
+
+    let mut rt = RichText::new(&node.text).size(size).color(color);
+    if weight >= 600 {
+        rt = rt.strong();
+    }
+    if matches!(hint.and_then(|h| h.font_style_italic), Some(true)) {
+        rt = rt.italics();
+    }
+    rt
 }

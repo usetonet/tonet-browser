@@ -1,4 +1,5 @@
-//! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`).
+//! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
+//! `font-weight`, `font-style`).
 
 use egui::Color32;
 use tonet_engine::css::{cascade_element_rules, ParsedQualifiedRule};
@@ -10,6 +11,10 @@ use crate::parser::DomNode;
 pub struct DomNodePaintHints {
     pub color: Option<Color32>,
     pub font_size: Option<f32>,
+    /// Resolved CSS weight (`100`…`900`) when `font-weight` was set.
+    pub font_weight: Option<u16>,
+    /// When `Some(true)` / `Some(false)`, mirrors author `font-style` italic vs normal.
+    pub font_style_italic: Option<bool>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -135,6 +140,38 @@ fn clamp_font(px: f32) -> f32 {
     px.clamp(6.0, 256.0)
 }
 
+/// Parse `font-weight` keywords and numeric `100`…`900`.
+pub fn parse_font_weight(value: &str) -> Option<u16> {
+    let s = trim_css_ascii_whitespace(value);
+    if s.is_empty() {
+        return None;
+    }
+    let lower = s.to_ascii_lowercase();
+    match lower.as_str() {
+        "normal" => Some(400),
+        "bold" | "bolder" => Some(700),
+        "lighter" => Some(300),
+        _ => {
+            let n: f32 = s.parse().ok()?;
+            if !n.is_finite() || n <= 0.0 {
+                return None;
+            }
+            let w = n.round() as u16;
+            Some(w.clamp(100, 900))
+        }
+    }
+}
+
+/// Parse `font-style`: italic / oblique → `true`, normal → `false`.
+pub fn parse_font_style(value: &str) -> Option<bool> {
+    let t = trim_css_ascii_whitespace(value).to_ascii_lowercase();
+    match t.as_str() {
+        "italic" | "oblique" => Some(true),
+        "normal" => Some(false),
+        _ => None,
+    }
+}
+
 /// Build one [`DomNodePaintHints`] per DOM node from `bundle` (same order as `nodes`).
 pub fn compute_dom_paint_hints(
     nodes: &[DomNode],
@@ -155,7 +192,14 @@ pub fn compute_dom_paint_hints(
                 .get("font-size")
                 .and_then(|v| parse_font_size_px(v, ROOT_PX))
                 .map(clamp_font);
-            DomNodePaintHints { color, font_size }
+            let font_weight = m.get("font-weight").and_then(|v| parse_font_weight(v));
+            let font_style_italic = m.get("font-style").and_then(|v| parse_font_style(v));
+            DomNodePaintHints {
+                color,
+                font_size,
+                font_weight,
+                font_style_italic,
+            }
         })
         .collect()
 }
@@ -184,6 +228,42 @@ mod tests {
     fn font_em() {
         let px = parse_font_size_px("1.5em", 16.0).unwrap();
         assert!((px - 24.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn font_weight_bold_keyword() {
+        assert_eq!(parse_font_weight("bold"), Some(700));
+        assert_eq!(parse_font_weight("normal"), Some(400));
+        assert_eq!(parse_font_weight("600"), Some(600));
+    }
+
+    #[test]
+    fn font_style_italic() {
+        assert_eq!(parse_font_style("italic"), Some(true));
+        assert_eq!(parse_font_style("normal"), Some(false));
+    }
+
+    #[test]
+    fn hints_font_weight_on_heading() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::H1,
+            text: "T".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "h1".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "font-weight".into(),
+                    value_display: "400".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].font_weight, Some(400));
     }
 
     #[test]

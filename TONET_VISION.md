@@ -152,13 +152,13 @@ Suggested order (already agreed in planning):
 2. **`tonet-engine`** crate — **done**: limits (`EngineLimits::STANDARD`), `policy::check_document_size`, navigation helpers; `tonet` uses it for HTTP/fetch budgets and **explicit redirect policy** (`max_http_redirects`, default 10).
 3. **Corpus CI** — **done**: `corpus/fixtures/*.html` + `tonet-engine` integration tests; **`.github/workflows/ci.yml`** runs `cargo test --workspace` on Ubuntu and Windows; `tonet-setup` built separately.
 4. **HTML static read path** — **in progress**: tokenizer + tree builder; `DomNode` flattening; rawtext `script`/`style`; `<base href>` for link resolution; **`<link rel=stylesheet>` URL discovery** (`extract_stylesheet_candidates`) for a future fetch path. Full HTML5 tree construction remains a §5 milestone.
-5. **CSS (author)** — **in progress**: **tokenizer** + **top-level rule split** + **declarations** + **simple selector cascade** (`css::author_cascade`: type / `.class` / `#id`, specificity + order); the shell **fetches** sheets, parses rules, and the desktop UI applies a **tiny paint subset** (`color`, `font-size` → egui `RichText`) using `DomNode`’s HTML `class`/`id`. **No** full box model, combinators, inheritance, or pseudo-classes yet. Next: broader selectors + layout per §5.
+5. **CSS (author)** — **in progress**: **tokenizer** + **top-level rule split** + **declarations** + **simple selector cascade** (`css::author_cascade`: type / `.class` / `#id`, specificity + order); the shell **fetches** sheets, parses rules, and the desktop UI applies a **tiny paint subset** (`color`, `font-size`, `font-weight`, `font-style` → egui `RichText`) using `DomNode`’s HTML `class`/`id`. **No** full box model, combinators, inheritance, or pseudo-classes yet. Next: broader selectors + layout per §5.
 6. **Appearance (light/dark)** — **partially met**: `tonet` uses a thread-local `UiTheme` and `theme.rs` so chrome, settings, and page chrome colors track the same palette; extend when layout needs author-driven constraints.
 7. **Next (gates / measurement):** **cookie/cache** persistence design (**Gate C**); grow HTML/CSS corpora; fill §4 **TBD** budgets on the reference machine (§9).
 
 ### When does author CSS paint the page?
 
-**Partially, for a deliberate subset.** The read path still uses Tonet’s layout model, but **author** `color` and `font-size` from **simple selectors**—one token: type (`p`), class (`.lead`), or id (`#main`)—are resolved after fetch + parse and applied when drawing `DomNode` text in egui. Specificity is **id > class > type**; ties use source order (including duplicate properties in one block). There is **no** inheritance, combinators, pseudo-classes, or box properties yet. Broader “CSS drives layout” still needs **§5 layers 3–4** (full cascade + box model).
+**Partially, for a deliberate subset.** The read path still uses Tonet’s layout model, but **author** `color`, `font-size`, `font-weight`, and `font-style` from **simple selectors**—one token: type (`p`), class (`.lead`), or id (`#main`)—are resolved after fetch + parse and applied when drawing `DomNode` text in egui. Specificity is **id > class > type**; ties use source order (including duplicate properties in one block). There is **no** inheritance, combinators, pseudo-classes, or box properties yet. Broader “CSS drives layout” still needs **§5 layers 3–4** (full cascade + box model).
 
 ---
 
@@ -177,5 +177,6 @@ Suggested order (already agreed in planning):
 | 2026-04-21 | `ParsedQualifiedRule` + `Tab.loaded_stylesheet_parsed` filled after fetch (parallel to qualified rules). |
 | 2026-04-22 | `css::author_cascade` (simple type selectors, last-wins); desktop applies author `color` / `font-size` in `render_nodes`; `DomNodeType::tag_name` public. |
 | 2026-04-23 | `DomNode` carries `class`/`id`; cascade supports `.class` / `#id` with id > class > type specificity. |
+| 2026-04-24 | Author `font-weight` / `font-style` → `RichText` strong/italics; headings default to weight 700 unless overridden. |
 
 Update this file when phases complete, budgets change, or the reference machine changes.
