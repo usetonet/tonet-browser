@@ -9,7 +9,10 @@ pub mod declarations;
 pub mod simple_rules;
 pub mod syntax;
 
-pub use declarations::{declarations_for_rule, parse_declaration_block, SimpleDeclaration};
+pub use declarations::{
+    declarations_for_rule, parse_declaration_block, parse_qualified_rules_declarations,
+    parse_stylesheet_bundle_rule_declarations, ParsedQualifiedRule, SimpleDeclaration,
+};
 pub use simple_rules::{
     parse_stylesheet_bundle_to_rules, parse_top_level_qualified_rules, SimpleQualifiedRule,
 };

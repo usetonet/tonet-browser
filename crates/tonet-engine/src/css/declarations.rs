@@ -71,6 +71,39 @@ pub fn declarations_for_rule(rule: &SimpleQualifiedRule) -> Vec<SimpleDeclaratio
     parse_declaration_block(&rule.block)
 }
 
+/// One qualified rule with its parsed declaration list (no selector engine yet).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParsedQualifiedRule {
+    pub prelude_display: String,
+    pub declarations: Vec<SimpleDeclaration>,
+}
+
+/// Map each [`SimpleQualifiedRule`] to prelude + declarations.
+pub fn parse_qualified_rules_declarations(rules: &[SimpleQualifiedRule]) -> Vec<ParsedQualifiedRule> {
+    rules
+        .iter()
+        .map(|r| ParsedQualifiedRule {
+            prelude_display: r.prelude_display.clone(),
+            declarations: declarations_for_rule(r),
+        })
+        .collect()
+}
+
+/// Per-stylesheet URL: rules with parsed declaration blocks.
+pub fn parse_stylesheet_bundle_rule_declarations(
+    bundle: &[(String, Vec<SimpleQualifiedRule>)],
+) -> Vec<(String, Vec<ParsedQualifiedRule>)> {
+    bundle
+        .iter()
+        .map(|(url, rules)| {
+            (
+                url.clone(),
+                parse_qualified_rules_declarations(rules),
+            )
+        })
+        .collect()
+}
+
 fn slice_display(tokens: &[CssToken]) -> String {
     let mut s = String::new();
     let mut need_space = false;
@@ -145,5 +178,18 @@ mod tests {
         assert_eq!(d.len(), 2);
         assert_eq!(d[0].property, "font-size");
         assert_eq!(d[1].property, "color");
+    }
+
+    #[test]
+    fn bundle_rule_declarations() {
+        let t = tokenize_css("p { margin: 0 } h1 { font-weight: bold }");
+        let rules = crate::css::parse_top_level_qualified_rules(&t);
+        let bundle = vec![("https://x/a.css".into(), rules)];
+        let parsed = parse_stylesheet_bundle_rule_declarations(&bundle);
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].1.len(), 2);
+        assert_eq!(parsed[0].1[0].prelude_display, "p");
+        assert_eq!(parsed[0].1[0].declarations.len(), 1);
+        assert_eq!(parsed[0].1[1].prelude_display, "h1");
     }
 }
