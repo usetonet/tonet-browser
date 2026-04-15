@@ -1730,12 +1730,12 @@ stub_settings_page!(
 );
 
 stub_settings_page!(
-    internal_settings_shields_title,
-    internal_settings_shields_body,
-    "Escudos",
-    "Shields",
-    "Boucliers",
-    "Shields",
+    internal_settings_privacy_filters_title,
+    internal_settings_privacy_filters_body,
+    "Filtros de privacidad",
+    "Datenschutzfilter",
+    "Filtres de confidentialité",
+    "Privacy filters",
     "Bloqueo de rastreadores y anuncios: próximamente.",
     "Tracker- und Werbeblockierung: demnächst.",
     "Blocage des traqueurs et publicités : bientôt.",
@@ -1756,12 +1756,12 @@ stub_settings_page!(
 );
 
 stub_settings_page!(
-    internal_settings_web3_title,
-    internal_settings_web3_body,
-    "Web3",
-    "Web3",
-    "Web3",
-    "Web3",
+    internal_settings_onchain_title,
+    internal_settings_onchain_body,
+    "Aplicaciones on-chain",
+    "On-Chain-Apps",
+    "Applications on-chain",
+    "On-chain apps",
     "Cartera y dApps: no disponible en esta versión.",
     "Wallet und dApps: in dieser Version nicht verfügbar.",
     "Portefeuille et dApps : non disponible pour l’instant.",
@@ -1769,12 +1769,12 @@ stub_settings_page!(
 );
 
 stub_settings_page!(
-    internal_settings_leo_title,
-    internal_settings_leo_body,
-    "Leo",
-    "Leo",
-    "Leo",
-    "Leo",
+    internal_settings_assistant_title,
+    internal_settings_assistant_body,
+    "Asistente",
+    "Assistent",
+    "Assistant",
+    "Assistant",
     "Asistente de IA: no integrado aún.",
     "KI-Assistent: noch nicht integriert.",
     "Assistant IA : pas encore intégré.",

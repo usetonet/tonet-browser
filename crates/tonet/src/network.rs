@@ -4,6 +4,7 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
+use tonet_engine::document_url;
 use tonet_engine::policy;
 use tonet_engine::EngineLimits;
 use url::Url;
@@ -26,7 +27,8 @@ fn reqwest_redirect_policy() -> reqwest::redirect::Policy {
 /// - Follows at most [`EngineLimits::max_http_redirects`] redirects, then expects **200 OK** on the final response (other status codes return a clear error).
 /// - Bodies over 1 MB are rejected (Purity filter).
 pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
-    let parsed = Url::parse(url).with_context(|| format!("Invalid URL: {url}"))?;
+    let url = document_url::normalize_document_url_for_http_get(url).map_err(|e| anyhow!(e))?;
+    let parsed = Url::parse(&url).with_context(|| format!("Invalid URL: {url}"))?;
     let scheme = parsed.scheme();
     if scheme != "http" && scheme != "https" {
         return Err(anyhow!(

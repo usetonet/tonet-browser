@@ -53,7 +53,7 @@ fn main() -> eframe::Result<()> {
         .with_inner_size([960.0, 640.0])
         .with_decorations(!window_chrome::integrated_title_chrome());
     if window_chrome::integrated_title_chrome() {
-        // Brave-like minimum: roughly phone width × chrome-only height.
+        // Compact minimum when using integrated title chrome (narrow layout).
         viewport = viewport.with_min_inner_size([340.0, 200.0]);
     }
     if let Some(icon) = window_icon_from_svg() {

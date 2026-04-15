@@ -1,4 +1,4 @@
-//! Internal `tonet://` pages (Settings, Downloads, History) — Brave-style chrome pages.
+//! Internal `tonet://` pages (Settings, Downloads, History) — in-app chrome pages.
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -46,10 +46,16 @@ impl ParsedTonet {
         match self.route {
             InternalRoute::History | InternalRoute::Downloads => self.route.canonical_url().to_string(),
             InternalRoute::Settings => {
-                if self.settings_path == "/" {
+                let path = match self.settings_path.as_str() {
+                    "/shields" => "/privacy-filters",
+                    "/web3" => "/onchain",
+                    "/leo" => "/ai-companion",
+                    p => p,
+                };
+                if path == "/" {
                     "tonet://settings".to_string()
                 } else {
-                    format!("tonet://settings{}", self.settings_path)
+                    format!("tonet://settings{path}")
                 }
             }
         }
@@ -135,10 +141,13 @@ pub enum SettingsNav {
     GetStarted,
     Appearance,
     Content,
-    Shields,
+    /// Tracker / ad filtering (Tonet-specific; not named after other browsers).
+    PrivacyFilters,
     PrivacySecurity,
-    Web3,
-    Leo,
+    /// Wallet and on-chain apps.
+    Onchain,
+    /// Built-in AI helper (when available).
+    AiCompanion,
     Sync,
     SearchEngine,
     Extensions,
@@ -158,10 +167,10 @@ pub fn settings_nav_from_path(path: &str) -> SettingsNav {
         "/" | "/get-started" | "/general" => SettingsNav::GetStarted,
         "/appearance" => SettingsNav::Appearance,
         "/content" => SettingsNav::Content,
-        "/shields" => SettingsNav::Shields,
+        "/privacy-filters" | "/shields" => SettingsNav::PrivacyFilters,
         "/privacy-security" => SettingsNav::PrivacySecurity,
-        "/web3" => SettingsNav::Web3,
-        "/leo" => SettingsNav::Leo,
+        "/onchain" | "/web3" => SettingsNav::Onchain,
+        "/ai-companion" | "/leo" => SettingsNav::AiCompanion,
         "/sync" => SettingsNav::Sync,
         "/search-engine" | "/search" => SettingsNav::SearchEngine,
         "/extensions" => SettingsNav::Extensions,
@@ -191,22 +200,22 @@ fn settings_sidebar_label(loc: Locale, nav: SettingsNav) -> &'static str {
         (Locale::De, Content) => "Inhalt",
         (Locale::Fr, Content) => "Contenu",
         (Locale::En, Content) => "Content",
-        (Locale::Es, Shields) => "Escudos",
-        (Locale::De, Shields) => "Shields",
-        (Locale::Fr, Shields) => "Boucliers",
-        (Locale::En, Shields) => "Shields",
+        (Locale::Es, PrivacyFilters) => "Filtros de privacidad",
+        (Locale::De, PrivacyFilters) => "Datenschutzfilter",
+        (Locale::Fr, PrivacyFilters) => "Filtres de confidentialité",
+        (Locale::En, PrivacyFilters) => "Privacy filters",
         (Locale::Es, PrivacySecurity) => "Privacidad y seguridad",
         (Locale::De, PrivacySecurity) => "Datenschutz und Sicherheit",
         (Locale::Fr, PrivacySecurity) => "Confidentialité et sécurité",
         (Locale::En, PrivacySecurity) => "Privacy and security",
-        (Locale::Es, Web3) => "Web3",
-        (Locale::De, Web3) => "Web3",
-        (Locale::Fr, Web3) => "Web3",
-        (Locale::En, Web3) => "Web3",
-        (Locale::Es, Leo) => "Leo",
-        (Locale::De, Leo) => "Leo",
-        (Locale::Fr, Leo) => "Leo",
-        (Locale::En, Leo) => "Leo",
+        (Locale::Es, Onchain) => "On-chain",
+        (Locale::De, Onchain) => "On-Chain",
+        (Locale::Fr, Onchain) => "On-chain",
+        (Locale::En, Onchain) => "On-chain",
+        (Locale::Es, AiCompanion) => "Asistente",
+        (Locale::De, AiCompanion) => "Assistent",
+        (Locale::Fr, AiCompanion) => "Assistant",
+        (Locale::En, AiCompanion) => "Assistant",
         (Locale::Es, Sync) => "Sincronización",
         (Locale::De, Sync) => "Synchronisation",
         (Locale::Fr, Sync) => "Synchronisation",
@@ -251,10 +260,10 @@ pub fn settings_page_url(nav: SettingsNav) -> String {
         SettingsNav::GetStarted => return "tonet://settings".to_string(),
         SettingsNav::Appearance => "/appearance",
         SettingsNav::Content => "/content",
-        SettingsNav::Shields => "/shields",
+        SettingsNav::PrivacyFilters => "/privacy-filters",
         SettingsNav::PrivacySecurity => "/privacy-security",
-        SettingsNav::Web3 => "/web3",
-        SettingsNav::Leo => "/leo",
+        SettingsNav::Onchain => "/onchain",
+        SettingsNav::AiCompanion => "/ai-companion",
         SettingsNav::Sync => "/sync",
         SettingsNav::SearchEngine => "/search-engine",
         SettingsNav::Extensions => "/extensions",
@@ -290,10 +299,10 @@ fn settings_sidebar(
                         SettingsNav::GetStarted,
                         SettingsNav::Appearance,
                         SettingsNav::Content,
-                        SettingsNav::Shields,
+                        SettingsNav::PrivacyFilters,
                         SettingsNav::PrivacySecurity,
-                        SettingsNav::Web3,
-                        SettingsNav::Leo,
+                        SettingsNav::Onchain,
+                        SettingsNav::AiCompanion,
                         SettingsNav::Sync,
                         SettingsNav::SearchEngine,
                         SettingsNav::Extensions,
@@ -992,11 +1001,11 @@ pub fn show_settings_page(
                                                 i18n::internal_settings_content_title(loc),
                                                 i18n::internal_settings_content_body(loc),
                                             ),
-                                            SettingsNav::Shields => settings_placeholder(
+                                            SettingsNav::PrivacyFilters => settings_placeholder(
                                                 ui,
                                                 loc,
-                                                i18n::internal_settings_shields_title(loc),
-                                                i18n::internal_settings_shields_body(loc),
+                                                i18n::internal_settings_privacy_filters_title(loc),
+                                                i18n::internal_settings_privacy_filters_body(loc),
                                             ),
                                             SettingsNav::PrivacySecurity => settings_placeholder(
                                                 ui,
@@ -1004,17 +1013,17 @@ pub fn show_settings_page(
                                                 i18n::internal_settings_privacy_title(loc),
                                                 i18n::internal_settings_privacy_body(loc),
                                             ),
-                                            SettingsNav::Web3 => settings_placeholder(
+                                            SettingsNav::Onchain => settings_placeholder(
                                                 ui,
                                                 loc,
-                                                i18n::internal_settings_web3_title(loc),
-                                                i18n::internal_settings_web3_body(loc),
+                                                i18n::internal_settings_onchain_title(loc),
+                                                i18n::internal_settings_onchain_body(loc),
                                             ),
-                                            SettingsNav::Leo => settings_placeholder(
+                                            SettingsNav::AiCompanion => settings_placeholder(
                                                 ui,
                                                 loc,
-                                                i18n::internal_settings_leo_title(loc),
-                                                i18n::internal_settings_leo_body(loc),
+                                                i18n::internal_settings_assistant_title(loc),
+                                                i18n::internal_settings_assistant_body(loc),
                                             ),
                                             SettingsNav::Sync => settings_placeholder(
                                                 ui,
@@ -1544,5 +1553,15 @@ mod tests {
         assert_eq!(deep.route, InternalRoute::Settings);
         assert_eq!(deep.settings_path, "/system/shortcuts");
         assert_eq!(deep.normalized_url(), "tonet://settings/system/shortcuts");
+
+        assert_eq!(settings_nav_from_path("/shields"), SettingsNav::PrivacyFilters);
+        assert_eq!(settings_nav_from_path("/privacy-filters"), SettingsNav::PrivacyFilters);
+        assert_eq!(settings_nav_from_path("/web3"), SettingsNav::Onchain);
+        assert_eq!(
+            parse_tonet_url("tonet://settings/shields")
+                .unwrap()
+                .normalized_url(),
+            "tonet://settings/privacy-filters"
+        );
     }
 }
