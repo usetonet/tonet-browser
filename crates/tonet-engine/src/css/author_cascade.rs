@@ -1,26 +1,69 @@
-//! Minimal **author stylesheet** cascade: single **type** selectors only (`p`, `h1`, …).
+//! Minimal **author stylesheet** cascade: one **simple selector** per prelude (`p`, `.lead`, `#x`).
 //!
-//! No combinators, classes, IDs, or pseudo-classes. Matched rules apply in source order; the last
-//! declaration wins per property name (ASCII-lowercased), across all stylesheets in `bundle` order.
+//! No combinators or pseudo-classes. When several rules set the same property, the winner is the
+//! higher **specificity** (`#id` > `.class` > type); ties break by **document order** (later rule).
 
 use std::collections::HashMap;
 
 use super::declarations::ParsedQualifiedRule;
 
-/// `true` when `prelude` is one ASCII type-like token equal to `element_tag_lower` (already lowercased).
-pub fn prelude_matches_simple_type(prelude: &str, element_tag_lower: &str) -> bool {
+/// Parsed single-token prelude (type, class, or id).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SimpleSelectorPrelude {
+    Type { tag: String },
+    Class { name: String },
+    Id { name: String },
+}
+
+fn specificity(p: &SimpleSelectorPrelude) -> (u8, u8, u32) {
+    match p {
+        SimpleSelectorPrelude::Type { .. } => (0, 0, 1),
+        SimpleSelectorPrelude::Class { .. } => (0, 1, 0),
+        SimpleSelectorPrelude::Id { .. } => (1, 0, 0),
+    }
+}
+
+/// Parse a single-selector prelude after trimming internal runs of whitespace to one token.
+pub fn parse_simple_prelude(prelude: &str) -> Option<SimpleSelectorPrelude> {
     let mut parts = prelude.split_whitespace();
-    let Some(first) = parts.next() else {
+    let first = parts.next()?;
+    if parts.next().is_some() {
+        return None;
+    }
+    let s = first;
+    if let Some(rest) = s.strip_prefix('#') {
+        if rest.is_empty() || !is_simple_ident(rest) {
+            return None;
+        }
+        return Some(SimpleSelectorPrelude::Id {
+            name: rest.to_string(),
+        });
+    }
+    if let Some(rest) = s.strip_prefix('.') {
+        if rest.is_empty() || !is_simple_ident(rest) {
+            return None;
+        }
+        return Some(SimpleSelectorPrelude::Class {
+            name: rest.to_string(),
+        });
+    }
+    if s.is_empty() || !selector_token_is_simple_type(s) {
+        return None;
+    }
+    Some(SimpleSelectorPrelude::Type {
+        tag: s.to_ascii_lowercase(),
+    })
+}
+
+fn is_simple_ident(s: &str) -> bool {
+    let mut it = s.bytes().enumerate();
+    let Some((_, b0)) = it.next() else {
         return false;
     };
-    if parts.next().is_some() {
+    if !(b0.is_ascii_alphabetic() || b0 == b'_' || b0 == b'-') {
         return false;
     }
-    let sel = first;
-    if sel.is_empty() || !selector_token_is_simple_type(sel) {
-        return false;
-    }
-    sel.eq_ignore_ascii_case(element_tag_lower)
+    it.all(|(_, b)| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
 }
 
 fn selector_token_is_simple_type(sel: &str) -> bool {
@@ -42,23 +85,74 @@ fn selector_token_is_simple_type(sel: &str) -> bool {
     it.all(|b| b.is_ascii_alphanumeric() || b == b'-')
 }
 
-/// For one element tag, collect declarations from every matching simple-type rule; **last wins** per property.
+fn subject_matches(
+    subj: &SimpleSelectorPrelude,
+    element_tag_lower: &str,
+    classes: &[String],
+    element_id: Option<&str>,
+) -> bool {
+    match subj {
+        SimpleSelectorPrelude::Type { tag } => tag == element_tag_lower,
+        SimpleSelectorPrelude::Class { name } => classes.iter().any(|c| c == name),
+        SimpleSelectorPrelude::Id { name } => element_id.is_some_and(|id| id == name.as_str()),
+    }
+}
+
+/// `true` when `prelude` is one ASCII type-like token equal to `element_tag_lower` (already lowercased).
+pub fn prelude_matches_simple_type(prelude: &str, element_tag_lower: &str) -> bool {
+    matches!(
+        parse_simple_prelude(prelude),
+        Some(SimpleSelectorPrelude::Type { ref tag }) if tag == element_tag_lower
+    )
+}
+
+/// Cascade for one element: `element_tag_lower` is the HTML tag (`p`, `h1`, …).
+///
+/// `classes` are tokens from the HTML `class` attribute (case-sensitive, per HTML). `element_id`
+/// is the trimmed `id` attribute when present.
+pub fn cascade_element_rules(
+    bundle: &[(String, Vec<ParsedQualifiedRule>)],
+    element_tag_lower: &str,
+    classes: &[String],
+    element_id: Option<&str>,
+) -> HashMap<String, String> {
+    // Tie-break: specificity first, then document position (rule + declaration index).
+    let mut best: HashMap<String, ((u8, u8, u32), u32, String)> = HashMap::new();
+    let mut order = 0u32;
+    for (_url, rules) in bundle {
+        for rule in rules {
+            if let Some(subj) = parse_simple_prelude(&rule.prelude_display) {
+                if subject_matches(&subj, element_tag_lower, classes, element_id) {
+                    let spec = specificity(&subj);
+                    for (di, d) in rule.declarations.iter().enumerate() {
+                        let key = d.property.to_ascii_lowercase();
+                        let tie = order.saturating_mul(4096).saturating_add(di as u32);
+                        let cand_val = d.value_display.clone();
+                        match best.get(&key) {
+                            None => {
+                                best.insert(key, (spec, tie, cand_val));
+                            }
+                            Some((ex_spec, ex_tie, _)) => {
+                                if (spec, tie) > (*ex_spec, *ex_tie) {
+                                    best.insert(key, (spec, tie, cand_val));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            order = order.saturating_add(1);
+        }
+    }
+    best.into_iter().map(|(k, (_, _, v))| (k, v)).collect()
+}
+
+/// For one element tag with **no** classes or id (same as [`cascade_element_rules`] with empty `class`/`id`).
 pub fn cascade_simple_type_rules(
     bundle: &[(String, Vec<ParsedQualifiedRule>)],
     element_tag_lower: &str,
 ) -> HashMap<String, String> {
-    let mut out = HashMap::new();
-    for (_url, rules) in bundle {
-        for rule in rules {
-            if prelude_matches_simple_type(&rule.prelude_display, element_tag_lower) {
-                for d in &rule.declarations {
-                    let key = d.property.to_ascii_lowercase();
-                    out.insert(key, d.value_display.clone());
-                }
-            }
-        }
-    }
-    out
+    cascade_element_rules(bundle, element_tag_lower, &[], None)
 }
 
 #[cfg(test)]
@@ -114,5 +208,55 @@ mod tests {
         ];
         let m = cascade_simple_type_rules(&bundle, "h1");
         assert_eq!(m.get("font-size").map(String::as_str), Some("20px"));
+    }
+
+    #[test]
+    fn class_beats_type_by_specificity() {
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule("p", vec![("color", "red")]),
+                rule(".lead", vec![("color", "blue")]),
+            ],
+        )];
+        let m = cascade_element_rules(&bundle, "p", &["lead".into()], None);
+        assert_eq!(m.get("color").map(String::as_str), Some("blue"));
+    }
+
+    #[test]
+    fn id_beats_class() {
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule(".lead", vec![("color", "red")]),
+                rule("#main", vec![("color", "green")]),
+            ],
+        )];
+        let m = cascade_element_rules(&bundle, "p", &["lead".into()], Some("main"));
+        assert_eq!(m.get("color").map(String::as_str), Some("green"));
+    }
+
+    #[test]
+    fn type_loses_to_later_type_same_order_conflict() {
+        // same specificity: second rule wins
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule("p", vec![("color", "red")]),
+                rule("p", vec![("color", "navy")]),
+            ],
+        )];
+        let m = cascade_element_rules(&bundle, "p", &["x".into()], None);
+        assert_eq!(m.get("color").map(String::as_str), Some("navy"));
+    }
+
+    #[test]
+    fn same_rule_duplicate_property_last_declaration_wins() {
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![rule("p", vec![("color", "red"), ("color", "green")])],
+        )];
+        let m = cascade_element_rules(&bundle, "p", &[], None);
+        assert_eq!(m.get("color").map(String::as_str), Some("green"));
     }
 }

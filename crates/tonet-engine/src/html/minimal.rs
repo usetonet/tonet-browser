@@ -2,6 +2,7 @@
 //!
 //! [`parse_html`] runs the in-house tokenizer + tree builder, then flattens to [`DomNode`]s in
 //! document order (`<title>`, `<h1>`, `<h2>`, `<p>`, `<a href>` with `http`/`https` after resolution).
+//! Each node carries HTML `class` tokens and `id` (when present) for author-style matching.
 //! Relative `href`s use the document URL, then the first `<base href>` in tree order when present.
 //! [`extract_stylesheet_candidates`] lists linked author stylesheets for a future fetch/cascade path.
 //! A legacy linear scanner is kept as [`parse_html_scan`] for regression checks.
@@ -57,6 +58,10 @@ pub struct DomNode {
     pub text: String,
     /// Absolute `http`/`https` URL when [`DomNodeType::Link`]; otherwise `None`.
     pub href: Option<String>,
+    /// Tokens from the source element’s HTML `class` attribute (ASCII whitespace split).
+    pub classes: Vec<String>,
+    /// Trimmed `id` attribute when present.
+    pub element_id: Option<String>,
 }
 
 /// Resolve `href` against `page_url` for navigation. Returns `None` for unsupported schemes or fragments-only.
@@ -117,6 +122,8 @@ pub fn parse_html_scan(html: &str, page_url: &str) -> Vec<DomNode> {
                     kind: DomNodeType::Link,
                     text: label,
                     href: Some(href_abs),
+                    classes: Vec::new(),
+                    element_id: None,
                 });
                 pos = end_after_close;
             } else {
@@ -136,6 +143,8 @@ pub fn parse_html_scan(html: &str, page_url: &str) -> Vec<DomNode> {
                 kind,
                 text: cleaned,
                 href: None,
+                classes: Vec::new(),
+                element_id: None,
             });
         }
 
@@ -204,13 +213,46 @@ fn walk_tree_to_dom(node: &Node, link_base: &str, out: &mut Vec<DomNode>) {
     }
 }
 
+fn is_html_ascii_whitespace_char(c: char) -> bool {
+    matches!(c, '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{000D}' | ' ')
+}
+
+fn parse_class_list(value: &str) -> Vec<String> {
+    value
+        .split(is_html_ascii_whitespace_char)
+        .filter(|t| !t.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+fn element_classes(el: &ElementNode) -> Vec<String> {
+    el.attrs
+        .iter()
+        .find(|a| a.name == "class")
+        .map(|a| parse_class_list(&a.value))
+        .unwrap_or_default()
+}
+
+fn element_id_attr(el: &ElementNode) -> Option<String> {
+    let v = el.attrs.iter().find(|a| a.name == "id")?.value.trim();
+    if v.is_empty() {
+        None
+    } else {
+        Some(v.to_string())
+    }
+}
+
 fn emit_dom_block(kind: DomNodeType, el: &ElementNode, out: &mut Vec<DomNode>) {
     let cleaned = normalize_whitespace(&collect_element_text(el));
     if !cleaned.is_empty() {
+        let classes = element_classes(el);
+        let element_id = element_id_attr(el);
         out.push(DomNode {
             kind,
             text: cleaned,
             href: None,
+            classes,
+            element_id,
         });
     }
 }
@@ -229,10 +271,14 @@ fn emit_dom_link(el: &ElementNode, link_base: &str, out: &mut Vec<DomNode>) {
     if label.is_empty() {
         label = href_raw.to_string();
     }
+    let classes = element_classes(el);
+    let element_id = element_id_attr(el);
     out.push(DomNode {
         kind: DomNodeType::Link,
         text: label,
         href: Some(href_abs),
+        classes,
+        element_id,
     });
 }
 
@@ -652,6 +698,19 @@ mod tests {
         assert!(nodes
             .iter()
             .any(|n| n.kind == DomNodeType::Paragraph && n.text == "World text"));
+    }
+
+    #[test]
+    fn parses_class_and_id_on_paragraph() {
+        let html = r#"<p class=" intro  lead " id="Main">Text</p>"#;
+        let nodes = parse_html(html, "https://example.com/");
+        let p = nodes
+            .iter()
+            .find(|n| n.kind == DomNodeType::Paragraph)
+            .expect("p");
+        assert_eq!(p.text, "Text");
+        assert_eq!(p.classes, vec!["intro", "lead"]);
+        assert_eq!(p.element_id.as_deref(), Some("Main"));
     }
 
     #[test]
