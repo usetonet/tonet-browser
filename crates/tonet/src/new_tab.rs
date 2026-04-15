@@ -9,15 +9,6 @@ use crate::settings::{
 };
 use crate::theme;
 
-const CARD_BG: Color32 = Color32::from_rgb(38, 40, 48);
-const CARD_STROKE: Color32 = Color32::from_rgb(52, 55, 62);
-const TILE_BG: Color32 = Color32::from_rgb(48, 50, 58);
-const TILE_HOVER: Color32 = Color32::from_rgb(58, 61, 70);
-const TILE_DISABLED: Color32 = Color32::from_rgb(42, 44, 50);
-const SEARCH_BG: Color32 = Color32::from_rgb(30, 32, 38);
-const SEARCH_STROKE: Color32 = Color32::from_rgb(60, 63, 72);
-const LABEL_MUTED: Color32 = Color32::from_rgb(155, 158, 168);
-
 const GRID_COLS: usize = 5;
 const TILE_SIZE: f32 = 80.0;
 const TILE_GAP: f32 = 12.0;
@@ -97,20 +88,20 @@ pub fn show_new_tab_page(
             Layout::left_to_right(Align::Center),
             |ui| {
                 egui::Frame::none()
-                    .fill(SEARCH_BG)
-                    .stroke(Stroke::new(1.0, SEARCH_STROKE))
+                    .fill(theme::nt_search_bg())
+                    .stroke(Stroke::new(1.0, theme::nt_search_stroke()))
                     .rounding(22.0)
                     .inner_margin(egui::Margin::symmetric(16.0, 8.0))
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 8.0;
-                            ui.label(RichText::new("🔍").size(14.0).color(LABEL_MUTED));
-                            ui.label(RichText::new("🌐").size(14.0).color(LABEL_MUTED));
+                            ui.label(RichText::new("🔍").size(14.0).color(theme::nt_label_muted()));
+                            ui.label(RichText::new("🌐").size(14.0).color(theme::nt_label_muted()));
 
                             let te = egui::TextEdit::singleline(url_input)
                                 .id(egui::Id::new("new_tab_search"))
                                 .frame(false)
-                                .text_color(theme::OMNIBOX_TEXT)
+                                .text_color(theme::omnibox_text())
                                 .hint_text(i18n::new_tab_search_hint(loc))
                                 .desired_rows(1)
                                 .desired_width(ui.available_width() - 24.0);
@@ -123,7 +114,7 @@ pub fn show_new_tab_page(
                                 action.navigate_to = Some(url_input.clone());
                             }
 
-                            ui.label(RichText::new("🎤").size(14.0).color(LABEL_MUTED));
+                            ui.label(RichText::new("🎤").size(14.0).color(theme::nt_label_muted()));
                         });
                     });
             },
@@ -137,8 +128,8 @@ pub fn show_new_tab_page(
             Layout::top_down(Align::Center),
             |ui| {
                 egui::Frame::none()
-                    .fill(CARD_BG)
-                    .stroke(Stroke::new(1.0, CARD_STROKE))
+                    .fill(theme::nt_card_bg())
+                    .stroke(Stroke::new(1.0, theme::nt_card_stroke()))
                     .rounding(16.0)
                     .inner_margin(egui::Margin::symmetric(20.0, 20.0))
                     .show(ui, |ui| {
@@ -232,7 +223,11 @@ fn draw_link_tile(
 ) {
     let (rect, resp) = ui.allocate_exact_size(Vec2::splat(size), Sense::click());
 
-    let bg = if resp.hovered() { TILE_HOVER } else { TILE_BG };
+    let bg = if resp.hovered() {
+        theme::nt_tile_hover()
+    } else {
+        theme::nt_tile_bg()
+    };
     ui.painter().rect_filled(rect, 12.0, bg);
 
     let icon_rect_size = 36.0;
@@ -240,14 +235,14 @@ fn draw_link_tile(
     ui.painter().rect_filled(
         egui::Rect::from_center_size(icon_center, Vec2::splat(icon_rect_size)),
         8.0,
-        Color32::from_rgb(58, 61, 70),
+        theme::nt_tile_icon_bg(),
     );
     ui.painter().text(
         icon_center,
         Align2::CENTER_CENTER,
         shortcut.icon.as_str(),
         FontId::proportional(18.0),
-        Color32::from_rgb(200, 203, 215),
+        theme::nt_tile_icon_fg(),
     );
 
     let label_pos = rect.center_top() + egui::vec2(0.0, 8.0 + icon_rect_size + 8.0);
@@ -256,7 +251,7 @@ fn draw_link_tile(
         Align2::CENTER_TOP,
         shortcut.label.as_str(),
         FontId::proportional(10.5),
-        LABEL_MUTED,
+        theme::nt_label_muted(),
     );
 
     if resp.clicked() && is_allowed_new_tab_url(&shortcut.url) {
@@ -282,11 +277,11 @@ fn draw_add_tile(
 ) {
     let (rect, resp) = ui.allocate_exact_size(Vec2::splat(size), Sense::click());
     let bg = if !enabled {
-        TILE_DISABLED
+        theme::nt_tile_disabled()
     } else if resp.hovered() {
-        TILE_HOVER
+        theme::nt_tile_hover()
     } else {
-        TILE_BG
+        theme::nt_tile_bg()
     };
     ui.painter().rect_filled(rect, 12.0, bg);
 
@@ -295,14 +290,14 @@ fn draw_add_tile(
     ui.painter().rect_filled(
         egui::Rect::from_center_size(icon_center, Vec2::splat(icon_rect_size)),
         8.0,
-        Color32::from_rgb(58, 61, 70),
+        theme::nt_tile_icon_bg(),
     );
     ui.painter().text(
         icon_center,
         Align2::CENTER_CENTER,
         "+",
         FontId::proportional(18.0),
-        Color32::from_rgb(200, 203, 215),
+        theme::nt_tile_icon_fg(),
     );
 
     let label = i18n::new_tab_add_tile_label(loc);
@@ -312,7 +307,7 @@ fn draw_add_tile(
         Align2::CENTER_TOP,
         label,
         FontId::proportional(10.5),
-        LABEL_MUTED,
+        theme::nt_label_muted(),
     );
 
     if enabled {
@@ -348,7 +343,7 @@ fn show_add_shortcut_window(
             ui.label(
                 RichText::new(i18n::new_tab_add_intro(loc))
                     .small()
-                    .color(theme::LOADING_MUTED),
+                    .color(theme::loading_muted()),
             );
             ui.add_space(10.0);
 

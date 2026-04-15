@@ -35,9 +35,9 @@ fn draw_tab(
     max_w: f32,
 ) {
     let tab_bg = if selected {
-        theme::TAB_SELECTED
+        theme::tab_selected()
     } else {
-        theme::TAB_IDLE
+        theme::tab_idle()
     };
     let rounding = egui::Rounding {
         nw: 8.0,
@@ -82,9 +82,9 @@ fn draw_tab(
 
                     if show_title {
                         let text_color = if selected {
-                            theme::TAB_TEXT
+                            theme::tab_text()
                         } else {
-                            theme::TAB_TEXT_MUTED
+                            theme::tab_text_muted()
                         };
                         let close_w = if show_close { 18.0 + theme::SP } else { 0.0 };
                         ui.scope(|ui| {
@@ -109,7 +109,7 @@ fn draw_tab(
                             egui::Button::new(
                                 RichText::new("×")
                                     .size(14.0)
-                                    .color(theme::TAB_TEXT_MUTED),
+                                    .color(theme::tab_text_muted()),
                             )
                             .frame(false),
                         );
@@ -191,7 +191,7 @@ fn draw_tab(
     if !selected && hovered {
         ui.painter().set(
             hover_idx,
-            Shape::rect_filled(tab_rect, rounding, theme::TAB_HOVER),
+            Shape::rect_filled(tab_rect, rounding, theme::tab_hover()),
         );
     }
 }
@@ -267,7 +267,7 @@ pub fn show_tab_bar(
                             egui::Button::new(
                                 RichText::new("+")
                                     .size(18.0)
-                                    .color(theme::TAB_TEXT_MUTED),
+                                    .color(theme::tab_text_muted()),
                             )
                             .frame(false),
                         )

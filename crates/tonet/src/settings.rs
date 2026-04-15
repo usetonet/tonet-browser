@@ -26,6 +26,15 @@ pub enum StartupPolicy {
     OpenSpecificPages,
 }
 
+/// Chrome and page palette (persisted).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum UiTheme {
+    #[default]
+    Dark,
+    Light,
+}
+
 /// Energy saver sub-mode (UI only until a power backend exists).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -187,6 +196,8 @@ pub struct AppSettings {
     #[serde(default = "default_ui_language")]
     pub ui_language: String,
     #[serde(default)]
+    pub ui_theme: UiTheme,
+    #[serde(default)]
     pub search_engine: SearchEngine,
     pub update_policy: UpdatePolicy,
     #[serde(default)]
@@ -209,6 +220,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             ui_language: default_ui_language(),
+            ui_theme: UiTheme::default(),
             search_engine: SearchEngine::default(),
             update_policy: UpdatePolicy::default(),
             last_update_check_unix: None,
