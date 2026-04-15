@@ -17,7 +17,7 @@ use crate::html::tokenizer;
 use crate::html::tree_builder::{self, ElementNode, Node};
 
 /// Semantic kind of a node extracted from the document.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DomNodeType {
     Title,
     H1,
@@ -28,7 +28,7 @@ pub enum DomNodeType {
 
 impl DomNodeType {
     /// Lowercase HTML tag name for this kind.
-    fn tag_name(self) -> &'static str {
+    pub fn tag_name(self) -> &'static str {
         match self {
             DomNodeType::Title => "title",
             DomNodeType::H1 => "h1",

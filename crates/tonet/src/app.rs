@@ -10,28 +10,27 @@ use eframe::egui::{self, Color32, ViewportCommand};
 
 use crate::branding;
 use crate::browser_log::BrowserLog;
+use crate::chrome::{show_chrome_toolbar, show_tab_bar};
+use crate::css_resolve::compute_dom_paint_hints;
 use crate::i18n::{self, Locale};
 use crate::internal_pages::{self, InternalRoute};
 use crate::network::{
     fetch_favicon_from_candidates, fetch_stylesheets_from_urls, fetch_url, guess_favicon_ext,
 };
 use crate::parser::{extract_favicon_candidates, extract_stylesheet_candidates, parse_html};
+use crate::renderer::render_nodes;
+use crate::session_snapshot::SessionSnapshot;
+use crate::settings::{AppSettings, SearchEngine, StartupPolicy, UiTheme, UpdatePolicy};
+use crate::tab::{HistoryEntry, NavigateIntent, PageFetchData, Tab, DEFAULT_HOME_URL};
+use crate::theme;
+use crate::ui::{show_error_panel, show_loading, show_settings_window, show_update_banner};
+use crate::update;
+use crate::window_chrome;
+use crate::window_resize;
 use tonet_engine::css::{
     parse_stylesheet_bundle_rule_declarations, parse_stylesheet_bundle_to_rules,
     tokenize_stylesheet_bundle,
 };
-use crate::renderer::render_nodes;
-use crate::session_snapshot::SessionSnapshot;
-use crate::settings::{AppSettings, SearchEngine, StartupPolicy, UiTheme, UpdatePolicy};
-use crate::theme;
-use crate::tab::{HistoryEntry, NavigateIntent, PageFetchData, Tab, DEFAULT_HOME_URL};
-use crate::chrome::{show_chrome_toolbar, show_tab_bar};
-use crate::ui::{
-    show_error_panel, show_loading, show_settings_window, show_update_banner,
-};
-use crate::update;
-use crate::window_chrome;
-use crate::window_resize;
 
 fn url_encode_query(query: &str) -> String {
     let mut encoded = String::with_capacity(query.len() * 3);
@@ -217,7 +216,8 @@ impl TonetApp {
         integration_pixels_per_point: f32,
     ) {
         theme::set_active_ui_theme(settings.ui_theme);
-        let ppp = (integration_pixels_per_point.max(0.01) * settings.clamped_ui_scale()).clamp(0.25, 8.0);
+        let ppp =
+            (integration_pixels_per_point.max(0.01) * settings.clamped_ui_scale()).clamp(0.25, 8.0);
         ctx.set_pixels_per_point(ppp);
         let mut visuals = match settings.ui_theme {
             UiTheme::Dark => egui::Visuals::dark(),
@@ -542,13 +542,14 @@ impl TonetApp {
     fn sync_window_title(&mut self, ctx: &egui::Context) {
         let tab = self.active_tab();
         let loc = self.loc();
-        let new_title: String = if let Some(p) = internal_pages::parse_tonet_url(tab.url_input.trim()) {
-            internal_pages::tab_title(p.route, loc).to_string()
-        } else if let Some(t) = tab.doc_title_trimmed() {
-            t.to_string()
-        } else {
-            i18n::app_name(loc).to_string()
-        };
+        let new_title: String =
+            if let Some(p) = internal_pages::parse_tonet_url(tab.url_input.trim()) {
+                internal_pages::tab_title(p.route, loc).to_string()
+            } else if let Some(t) = tab.doc_title_trimmed() {
+                t.to_string()
+            } else {
+                i18n::app_name(loc).to_string()
+            };
         if new_title != self.window_title {
             self.window_title = new_title;
             ctx.send_viewport_cmd(ViewportCommand::Title(self.window_title.clone()));
@@ -660,7 +661,8 @@ impl TonetApp {
         }
 
         for (page_url, title, saved_path) in visit_queue {
-            self.browser_log.record_visit(page_url.clone(), title.clone());
+            self.browser_log
+                .record_visit(page_url.clone(), title.clone());
             self.browser_log
                 .record_page_fetch(&page_url, title, saved_path);
         }
@@ -865,8 +867,7 @@ impl eframe::App for TonetApp {
         self.maybe_schedule_update_checks(ctx);
 
         if ctx.input(|i| {
-            i.key_pressed(egui::Key::F5)
-                || (i.modifiers.command && i.key_pressed(egui::Key::R))
+            i.key_pressed(egui::Key::F5) || (i.modifiers.command && i.key_pressed(egui::Key::R))
         }) && !self.active_tab().loading
         {
             self.reload_page(ctx);
@@ -892,13 +893,27 @@ impl eframe::App for TonetApp {
             let n = self.tabs.len();
             if n > 1 {
                 let next = if ctx.input(|i| i.modifiers.shift) {
-                    if self.active_tab == 0 { n - 1 } else { self.active_tab - 1 }
+                    if self.active_tab == 0 {
+                        n - 1
+                    } else {
+                        self.active_tab - 1
+                    }
                 } else {
                     (self.active_tab + 1) % n
                 };
                 self.set_active_tab(next, ctx);
             }
-            ctx.input_mut(|i| i.events.retain(|e| !matches!(e, egui::Event::Key { key: egui::Key::Tab, .. })));
+            ctx.input_mut(|i| {
+                i.events.retain(|e| {
+                    !matches!(
+                        e,
+                        egui::Event::Key {
+                            key: egui::Key::Tab,
+                            ..
+                        }
+                    )
+                })
+            });
         }
 
         {
@@ -924,8 +939,7 @@ impl eframe::App for TonetApp {
             }
         }
 
-        if !self.settings_open
-            && ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::L))
+        if !self.settings_open && ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::L))
         {
             self.omnibox_focus_select_all = true;
         }
@@ -935,7 +949,17 @@ impl eframe::App for TonetApp {
             let omnibox_has_focus = ctx.memory(|m| m.has_focus(crate::ui::omnibox_id()));
             if !omnibox_has_focus {
                 self.omnibox_focus_select_all = true;
-                ctx.input_mut(|i| i.events.retain(|e| !matches!(e, egui::Event::Key { key: egui::Key::Tab, .. })));
+                ctx.input_mut(|i| {
+                    i.events.retain(|e| {
+                        !matches!(
+                            e,
+                            egui::Event::Key {
+                                key: egui::Key::Tab,
+                                ..
+                            }
+                        )
+                    })
+                });
             }
         }
 
@@ -1148,10 +1172,13 @@ impl eframe::App for TonetApp {
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
                         if !tab.loading && tab.error_message.is_none() {
+                            let author_hints =
+                                compute_dom_paint_hints(&tab.dom, &tab.loaded_stylesheet_parsed);
                             render_nodes(
                                 ui,
                                 loc,
                                 &tab.dom,
+                                Some(&author_hints),
                                 &mut tab.pending_link_navigation,
                             );
                         } else if !tab.loading && tab.error_message.is_some() {

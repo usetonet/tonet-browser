@@ -152,13 +152,13 @@ Suggested order (already agreed in planning):
 2. **`tonet-engine`** crate — **done**: limits (`EngineLimits::STANDARD`), `policy::check_document_size`, navigation helpers; `tonet` uses it for HTTP/fetch budgets and **explicit redirect policy** (`max_http_redirects`, default 10).
 3. **Corpus CI** — **done**: `corpus/fixtures/*.html` + `tonet-engine` integration tests; **`.github/workflows/ci.yml`** runs `cargo test --workspace` on Ubuntu and Windows; `tonet-setup` built separately.
 4. **HTML static read path** — **in progress**: tokenizer + tree builder; `DomNode` flattening; rawtext `script`/`style`; `<base href>` for link resolution; **`<link rel=stylesheet>` URL discovery** (`extract_stylesheet_candidates`) for a future fetch path. Full HTML5 tree construction remains a §5 milestone.
-5. **CSS (author)** — **in progress**: **tokenizer** + **top-level rule split** (`css::simple_rules`) + **declarations** (`css::declarations`, `property: value` inside blocks); the shell **fetches** sheets and fills `Tab.loaded_stylesheet_rules` plus `Tab.loaded_stylesheet_parsed` (prelude + declaration lists)—**not** applied to layout yet. Next: selector matching + cascade + box model per §5.
+5. **CSS (author)** — **in progress**: **tokenizer** + **top-level rule split** + **declarations** + **simple type-selector cascade** (`css::author_cascade`, last-wins per property); the shell **fetches** sheets, parses rules, and the desktop UI applies a **tiny paint subset** (`color`, `font-size` → egui `RichText`) for matching `p` / `h1` / `h2` / `a` / `title`. **No** full box model, combinators, classes, or inheritance yet. Next: broader selectors + real cascade + layout per §5.
 6. **Appearance (light/dark)** — **partially met**: `tonet` uses a thread-local `UiTheme` and `theme.rs` so chrome, settings, and page chrome colors track the same palette; extend when layout needs author-driven constraints.
 7. **Next (gates / measurement):** **cookie/cache** persistence design (**Gate C**); grow HTML/CSS corpora; fill §4 **TBD** budgets on the reference machine (§9).
 
 ### When does author CSS paint the page?
 
-**Not yet.** Pixels still come from Tonet’s fixed **theme** and `DomNode` rendering in egui. Author CSS becomes visible only after **§5 layers 2–4** exist in a useful form: **cascade** (specificity + inheritance → computed values), then **layout/paint** that consumes those values. A realistic **first visual** milestone is a **deliberately tiny** subset (for example `color` / `font-size` on `p` / headings) wired from matched rules to existing widgets—after selector matching and cascade, with strict caps so complexity stays bounded.
+**Partially, for a deliberate subset.** The read path still uses Tonet’s layout model, but **author** `color` and `font-size` from **simple type selectors** (e.g. `p { color: navy }`) are resolved after fetch + parse and applied when drawing `DomNode` text in egui. There is **no** inheritance, specificity beyond “last rule wins”, combinators, `class`/`id`, or box properties yet. Broader “CSS drives layout” still needs **§5 layers 3–4** (full cascade + box model).
 
 ---
 
@@ -175,5 +175,6 @@ Suggested order (already agreed in planning):
 | 2026-04-19 | Desktop: `parse_stylesheet_bundle_to_rules` wired after stylesheet fetch. |
 | 2026-04-20 | `css::declarations` for `property: value`; vision FAQ on when author CSS reaches pixels. |
 | 2026-04-21 | `ParsedQualifiedRule` + `Tab.loaded_stylesheet_parsed` filled after fetch (parallel to qualified rules). |
+| 2026-04-22 | `css::author_cascade` (simple type selectors, last-wins); desktop applies author `color` / `font-size` in `render_nodes`; `DomNodeType::tag_name` public. |
 
 Update this file when phases complete, budgets change, or the reference machine changes.
