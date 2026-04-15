@@ -199,11 +199,20 @@ pub struct TonetApp {
 
     /// First frame after launch: load active tab if it has a URL (restore / specific pages).
     pending_startup_fetch: bool,
+
+    /// Native `pixels_per_point` from egui at startup (HiDPI baseline before user UI scale).
+    integration_pixels_per_point: f32,
 }
 
 impl TonetApp {
-    fn apply_egui_visuals(ctx: &egui::Context, settings: &AppSettings) {
+    fn apply_egui_visuals(
+        ctx: &egui::Context,
+        settings: &AppSettings,
+        integration_pixels_per_point: f32,
+    ) {
         theme::set_active_ui_theme(settings.ui_theme);
+        let ppp = (integration_pixels_per_point.max(0.01) * settings.clamped_ui_scale()).clamp(0.25, 8.0);
+        ctx.set_pixels_per_point(ppp);
         let mut visuals = match settings.ui_theme {
             UiTheme::Dark => egui::Visuals::dark(),
             UiTheme::Light => egui::Visuals::light(),
@@ -236,7 +245,8 @@ impl TonetApp {
         );
 
         let settings = AppSettings::load();
-        Self::apply_egui_visuals(&cc.egui_ctx, &settings);
+        let integration_pixels_per_point = cc.egui_ctx.pixels_per_point().max(0.01);
+        Self::apply_egui_visuals(&cc.egui_ctx, &settings, integration_pixels_per_point);
 
         cc.egui_ctx.style_mut(|s| {
             s.spacing.button_padding = egui::vec2(6.0, 4.0);
@@ -280,6 +290,7 @@ impl TonetApp {
             confirm_clear_downloads: false,
             new_tab_add: crate::new_tab::NewTabAddState::default(),
             pending_startup_fetch: true,
+            integration_pixels_per_point,
         };
         this.sync_window_title(&cc.egui_ctx);
         this
@@ -729,7 +740,7 @@ impl TonetApp {
 
 impl eframe::App for TonetApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        Self::apply_egui_visuals(ctx, &self.settings);
+        Self::apply_egui_visuals(ctx, &self.settings, self.integration_pixels_per_point);
 
         #[cfg(not(windows))]
         let _ = frame;

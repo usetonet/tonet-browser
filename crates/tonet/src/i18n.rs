@@ -1899,15 +1899,55 @@ pub fn internal_settings_dl_invalid_override(loc: Locale) -> &'static str {
     }
 }
 
-stub_settings_page!(
-    internal_settings_a11y_title,
-    internal_settings_a11y_body,
-    "Accesibilidad",
-    "Bedienungshilfen",
-    "Accessibilité",
-    "Accessibility",
-    "Opciones de accesibilidad: próximamente.",
-    "Barrierefreiheit: demnächst.",
-    "Options d’accessibilité : bientôt.",
-    "Accessibility options: coming soon."
-);
+pub fn internal_settings_a11y_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Accesibilidad",
+        Locale::De => "Bedienungshilfen",
+        Locale::Fr => "Accessibilité",
+        Locale::En => "Accessibility",
+    }
+}
+
+pub fn internal_settings_a11y_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "Ajusta el tamaño de la interfaz respecto a la escala nativa de la ventana. Pulsa Guardar preferencias para conservar."
+        }
+        Locale::De => {
+            "Skaliert die Oberfläche relativ zur nativen Fensterskala. Zum Speichern auf Einstellungen speichern klicken."
+        }
+        Locale::Fr => {
+            "Ajuste l’interface par rapport à l’échelle native de la fenêtre. Cliquez sur Enregistrer les préférences pour conserver."
+        }
+        Locale::En => {
+            "Scales the interface on top of the window’s native DPI. Click Save preferences to persist."
+        }
+    }
+}
+
+pub fn internal_settings_ui_scale_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Escala de la interfaz",
+        Locale::De => "Oberflächenskalierung",
+        Locale::Fr => "Échelle de l’interface",
+        Locale::En => "Interface scale",
+    }
+}
+
+pub fn internal_settings_ui_scale_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Rango: 75 % a 200 %. El valor 1,0× equivale al tamaño predeterminado del sistema.",
+        Locale::De => "Bereich 75 % bis 200 %. 1,0× entspricht der Systemvorgabe.",
+        Locale::Fr => "Plage 75 % à 200 %. 1,0× correspond au réglage système.",
+        Locale::En => "Range 75%–200%. 1.0× matches the default system size.",
+    }
+}
+
+pub fn internal_settings_ui_scale_reset(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Restablecer a 100 %",
+        Locale::De => "Auf 100 % zurücksetzen",
+        Locale::Fr => "Réinitialiser à 100 %",
+        Locale::En => "Reset to 100%",
+    }
+}
