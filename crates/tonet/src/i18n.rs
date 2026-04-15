@@ -876,10 +876,18 @@ pub fn internal_confirm_clear_history(loc: Locale) -> &'static str {
 
 pub fn internal_confirm_clear_downloads(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "¿Borrar la lista de descargas (solo registro, no archivos en disco)?",
-        Locale::De => "Download-Liste löschen? (nur Protokoll, keine Dateien auf der Festplatte)",
-        Locale::Fr => "Effacer la liste des téléchargements (journal seulement, pas les fichiers) ?",
-        Locale::En => "Clear the downloads list? (log only; no files on disk are removed.)",
+        Locale::Es => {
+            "¿Borrar la lista de descargas? (solo el registro en Tonet; las instantáneas HTML guardadas no se eliminan.)"
+        }
+        Locale::De => {
+            "Download-Liste löschen? (nur das Tonet-Protokoll; gespeicherte HTML-Momentaufnahmen bleiben.)"
+        }
+        Locale::Fr => {
+            "Effacer la liste des téléchargements ? (journal Tonet seul ; les instantanés HTML conservés restent sur le disque.)"
+        }
+        Locale::En => {
+            "Clear the downloads list? (Tonet log only; saved HTML snapshots on disk are not deleted.)"
+        }
     }
 }
 
@@ -948,10 +956,27 @@ pub fn internal_open_folder(loc: Locale) -> &'static str {
 
 pub fn internal_open_folder_hint(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "Tonet aún no guarda archivos en disco desde esta lista.",
-        Locale::De => "Tonet speichert aus dieser Liste noch keine Dateien auf der Festplatte.",
-        Locale::Fr => "Tonet n’enregistre pas encore de fichiers sur le disque depuis cette liste.",
-        Locale::En => "Tonet does not save files to disk from this list yet.",
+        Locale::Es => {
+            "Abre el HTML guardado en el gestor de archivos cuando esta visita tuvo instantánea en disco."
+        }
+        Locale::De => {
+            "Öffnet die gespeicherte HTML-Datei im Dateimanager, falls für diesen Eintrag eine Momentaufnahme existiert."
+        }
+        Locale::Fr => {
+            "Ouvre le fichier HTML enregistré dans le gestionnaire de fichiers lorsqu’un instantané existe pour cette entrée."
+        }
+        Locale::En => {
+            "Opens the saved HTML snapshot in the file manager when this row has a file on disk."
+        }
+    }
+}
+
+pub fn internal_saved_snapshot_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Instantánea:",
+        Locale::De => "Momentaufnahme:",
+        Locale::Fr => "Instantané :",
+        Locale::En => "Snapshot:",
     }
 }
 
@@ -1020,10 +1045,18 @@ pub fn internal_settings_nav_updates(loc: Locale) -> &'static str {
 
 pub fn internal_downloads_intro(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "Páginas cargadas recientemente (registro). No es un gestor de archivos descargados todavía.",
-        Locale::De => "Kürzlich geladene Seiten (Protokoll). Noch kein klassischer Datei-Download-Manager.",
-        Locale::Fr => "Pages récemment chargées (journal). Pas encore un gestionnaire de fichiers.",
-        Locale::En => "Recently loaded pages (log). Not a classic file download manager yet.",
+        Locale::Es => {
+            "Páginas cargadas recientemente (registro). El HTML de cada visita HTTP(S) se puede guardar bajo «Descargas efectivas»/Tonet/page-snapshots cuando hay carpeta de destino válida."
+        }
+        Locale::De => {
+            "Kürzlich geladene Seiten (Protokoll). HTML jeder HTTP(S)-Ladung kann unter dem effektiven Download-Ordner in Tonet/page-snapshots gespeichert werden, sofern ein gültiger Zielordner existiert."
+        }
+        Locale::Fr => {
+            "Pages récemment chargées (journal). Le HTML de chaque chargement HTTP(S) peut être enregistré sous le dossier de téléchargement effectif, dans Tonet/page-snapshots, si un dossier cible valide est disponible."
+        }
+        Locale::En => {
+            "Recently loaded pages (log). Each HTTP(S) visit can save HTML under your effective download folder in Tonet/page-snapshots when a valid destination directory is available."
+        }
     }
 }
 

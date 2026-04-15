@@ -1,10 +1,11 @@
 //! Persistent visit and download-style activity log (JSON under the Tonet config dir).
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 const MAX_VISITS: usize = 5_000;
 const MAX_DOWNLOADS: usize = 2_000;
@@ -41,6 +42,9 @@ pub struct DownloadRecord {
     pub url: String,
     pub display_name: String,
     pub finished_at_unix: i64,
+    /// Full path to a saved HTML snapshot, when writing to disk succeeded.
+    #[serde(default)]
+    pub saved_path: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -177,7 +181,12 @@ impl BrowserLog {
         let _ = self.write_visits();
     }
 
-    pub fn record_page_fetch(&mut self, url: &str, title: Option<String>) {
+    pub fn record_page_fetch(
+        &mut self,
+        url: &str,
+        title: Option<String>,
+        saved_path: Option<String>,
+    ) {
         if is_internal_tonet_url(url) {
             return;
         }
@@ -193,6 +202,7 @@ impl BrowserLog {
             url: url.to_string(),
             display_name,
             finished_at_unix: now,
+            saved_path,
         });
         if self.downloads.len() > MAX_DOWNLOADS {
             let drop = self.downloads.len() - MAX_DOWNLOADS;
@@ -213,7 +223,7 @@ impl BrowserLog {
 }
 
 fn display_name_from_url(url: &str) -> String {
-    url::Url::parse(url)
+    Url::parse(url)
         .ok()
         .and_then(|u| {
             u.path_segments()
@@ -221,4 +231,58 @@ fn display_name_from_url(url: &str) -> String {
                 .filter(|s| !s.is_empty())
         })
         .unwrap_or_else(|| "document".to_string())
+}
+
+fn filename_stem_from_url(url: &str) -> String {
+    let host = Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(|h| h.to_string()))
+        .unwrap_or_else(|| "page".to_string());
+    let slug: String = host
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let slug = slug.trim_matches('_');
+    if slug.is_empty() {
+        "page".to_string()
+    } else {
+        slug.chars().take(48).collect()
+    }
+}
+
+/// Writes UTF-8 HTML under `{download_root}/Tonet/page-snapshots/`.
+pub fn save_page_html_snapshot(download_root: &Path, url: &str, html: &str) -> Option<PathBuf> {
+    let snap_dir = download_root.join("Tonet").join("page-snapshots");
+    fs::create_dir_all(&snap_dir).ok()?;
+    let stem = filename_stem_from_url(url);
+    let ts = chrono::Utc::now().format("%Y%m%d-%H%M%S");
+    let mut path = snap_dir.join(format!("{ts}_{stem}.html"));
+    if path.exists() {
+        path = snap_dir.join(format!("{ts}_{stem}_{}.html", std::process::id()));
+    }
+    fs::write(&path, html.as_bytes()).ok()?;
+    Some(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn snapshot_stem_and_write() {
+        let tmp = std::env::temp_dir().join(format!("tonet_snap_test_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        let url = "https://example.com/foo/bar?x=1";
+        let p = save_page_html_snapshot(&tmp, url, "<html/>").expect("save");
+        assert!(p.to_string_lossy().contains("example"));
+        assert_eq!(p.extension().and_then(|e| e.to_str()), Some("html"));
+        assert_eq!(fs::read_to_string(&p).unwrap(), "<html/>");
+        let _ = fs::remove_dir_all(&tmp);
+    }
 }
