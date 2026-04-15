@@ -16,8 +16,8 @@ pub fn omnibox_id() -> Id {
 
 pub fn show_error_panel(ui: &mut Ui, loc: Locale, message: &str) {
     egui::Frame::default()
-        .fill(theme::ERROR_BG)
-        .stroke(Stroke::new(1.0, theme::ERROR_STROKE))
+        .fill(theme::error_bg())
+        .stroke(Stroke::new(1.0, theme::error_stroke()))
         .inner_margin(egui::Margin::symmetric(18.0, 14.0))
         .rounding(12.0)
         .show(ui, |ui| {
@@ -26,7 +26,7 @@ pub fn show_error_panel(ui: &mut Ui, loc: Locale, message: &str) {
                     RichText::new("!")
                         .strong()
                         .size(20.0)
-                        .color(theme::ERROR_TITLE),
+                        .color(theme::error_title()),
                 );
                 ui.add_space(10.0);
                 ui.with_layout(Layout::top_down(Align::Min), |ui| {
@@ -34,13 +34,13 @@ pub fn show_error_panel(ui: &mut Ui, loc: Locale, message: &str) {
                         RichText::new(i18n::error_title(loc))
                             .strong()
                             .size(15.0)
-                            .color(theme::ERROR_TITLE),
+                            .color(theme::error_title()),
                     );
                     ui.add_space(6.0);
                     ui.label(
                         RichText::new(message)
                             .size(14.0)
-                            .color(theme::ERROR_BODY),
+                            .color(theme::error_body()),
                     );
                 });
             });
@@ -51,8 +51,8 @@ pub fn show_loading(ui: &mut Ui, loc: Locale) {
     ui.vertical_centered(|ui| {
         ui.add_space(28.0);
         egui::Frame::default()
-            .fill(theme::OMNIBOX_FILL)
-            .stroke(Stroke::new(1.0, theme::OMNIBOX_STROKE))
+            .fill(theme::omnibox_fill())
+            .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
             .inner_margin(egui::Margin::symmetric(28.0, 22.0))
             .rounding(14.0)
             .show(ui, |ui| {
@@ -63,13 +63,13 @@ pub fn show_loading(ui: &mut Ui, loc: Locale) {
                         RichText::new(i18n::loading_title(loc))
                             .size(17.0)
                             .strong()
-                            .color(theme::TAB_TEXT),
+                            .color(theme::tab_text()),
                     );
                     ui.add_space(6.0);
                     ui.label(
                         RichText::new(i18n::loading_sub(loc))
                             .small()
-                            .color(theme::LOADING_MUTED),
+                            .color(theme::loading_muted()),
                     );
                 });
             });
@@ -84,8 +84,8 @@ pub fn show_update_banner(
     on_dismiss: impl FnOnce(),
 ) {
     egui::Frame::default()
-        .fill(theme::UPDATE_BANNER_BG)
-        .stroke(Stroke::new(1.0, theme::UPDATE_BANNER_STROKE))
+        .fill(theme::update_banner_bg())
+        .stroke(Stroke::new(1.0, theme::update_banner_stroke()))
         .inner_margin(14.0)
         .rounding(10.0)
         .show(ui, |ui| {
@@ -93,12 +93,12 @@ pub fn show_update_banner(
                 ui.label(
                     RichText::new(i18n::update_banner_title(loc))
                         .strong()
-                        .color(theme::SETTINGS_HEADING),
+                        .color(theme::settings_heading()),
                 );
                 ui.label(
                     RichText::new(version_label)
                         .strong()
-                        .color(theme::UPDATE_ACCENT_LABEL),
+                        .color(theme::update_accent_label()),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     if ui.button(i18n::update_dismiss(loc)).clicked() {
@@ -108,7 +108,7 @@ pub fn show_update_banner(
                         .add(
                             egui::Button::new(RichText::new(i18n::update_download(loc)).strong())
                                 .rounding(7.0)
-                                .fill(theme::PRIMARY_BTN),
+                                .fill(theme::primary_btn()),
                         )
                         .clicked()
                     {
@@ -130,7 +130,7 @@ pub fn render_settings_language_section(
         RichText::new(i18n::settings_section_language(loc))
             .size(17.0)
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.label(
         RichText::new(i18n::settings_language_help(loc))
@@ -170,7 +170,7 @@ pub fn render_settings_search_section(
         RichText::new(i18n::settings_section_search(loc))
             .size(17.0)
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.label(
         RichText::new(i18n::settings_search_help(loc))
@@ -214,7 +214,7 @@ pub fn render_settings_updates_section(
         RichText::new(i18n::settings_section_updates(loc))
             .size(17.0)
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(6.0);
     ui.label(
@@ -275,11 +275,11 @@ pub fn render_settings_updates_section(
     ui.add_space(8.0);
     if !status_line.is_empty() {
         egui::Frame::default()
-            .fill(theme::SETTINGS_STATUS_BG)
+            .fill(theme::settings_status_bg())
             .inner_margin(10.0)
             .rounding(8.0)
             .show(ui, |ui| {
-                ui.label(RichText::new(status_line).color(theme::CHIP));
+                ui.label(RichText::new(status_line).color(theme::chip()));
             });
     }
 }
@@ -356,7 +356,7 @@ pub fn show_settings_window(
         .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .frame(
             egui::Frame::window(&ctx.style())
-                .fill(theme::SETTINGS_WINDOW_BG)
+                .fill(theme::settings_window_bg())
                 .rounding(12.0),
         );
 

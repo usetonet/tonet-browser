@@ -16,7 +16,7 @@ use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext
 use crate::parser::{extract_favicon_candidates, parse_html};
 use crate::renderer::render_nodes;
 use crate::session_snapshot::SessionSnapshot;
-use crate::settings::{AppSettings, SearchEngine, StartupPolicy, UpdatePolicy};
+use crate::settings::{AppSettings, SearchEngine, StartupPolicy, UiTheme, UpdatePolicy};
 use crate::theme;
 use crate::tab::{HistoryEntry, NavigateIntent, PageFetchData, Tab, DEFAULT_HOME_URL};
 use crate::chrome::{show_chrome_toolbar, show_tab_bar};
@@ -202,6 +202,32 @@ pub struct TonetApp {
 }
 
 impl TonetApp {
+    fn apply_egui_visuals(ctx: &egui::Context, settings: &AppSettings) {
+        theme::set_active_ui_theme(settings.ui_theme);
+        let mut visuals = match settings.ui_theme {
+            UiTheme::Dark => egui::Visuals::dark(),
+            UiTheme::Light => egui::Visuals::light(),
+        };
+        visuals.panel_fill = theme::chrome_bg();
+        visuals.window_fill = theme::content_bg();
+        visuals.widgets.noninteractive.bg_fill = theme::content_bg();
+        visuals.extreme_bg_color = theme::omnibox_fill();
+        visuals.faint_bg_color = theme::chrome_bg();
+        visuals.selection.bg_fill = match settings.ui_theme {
+            UiTheme::Dark => Color32::from_rgb(55, 85, 135),
+            UiTheme::Light => Color32::from_rgb(190, 215, 250),
+        };
+        visuals.selection.stroke = egui::Stroke::new(1.0, theme::accent());
+        visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        visuals.widgets.active.bg_stroke = egui::Stroke::new(1.5, theme::accent());
+        let r = egui::Rounding::same(6.0);
+        visuals.widgets.inactive.rounding = r;
+        visuals.widgets.hovered.rounding = r;
+        visuals.widgets.active.rounding = r;
+        visuals.widgets.open.rounding = r;
+        ctx.set_visuals(visuals);
+    }
+
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         egui_extras::install_image_loaders(&cc.egui_ctx);
         cc.egui_ctx.include_bytes(
@@ -209,22 +235,8 @@ impl TonetApp {
             egui::load::Bytes::Static(branding::TONET_SVG),
         );
 
-        let mut visuals = egui::Visuals::dark();
-        visuals.panel_fill = theme::CHROME_BG;
-        visuals.window_fill = theme::CONTENT_BG;
-        visuals.widgets.noninteractive.bg_fill = theme::CONTENT_BG;
-        visuals.extreme_bg_color = theme::OMNIBOX_FILL;
-        visuals.faint_bg_color = theme::CHROME_BG;
-        visuals.selection.bg_fill = Color32::from_rgb(55, 85, 135);
-        visuals.selection.stroke = egui::Stroke::new(1.0, theme::ACCENT);
-        visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
-        visuals.widgets.active.bg_stroke = egui::Stroke::new(1.5, theme::ACCENT);
-        let r = egui::Rounding::same(6.0);
-        visuals.widgets.inactive.rounding = r;
-        visuals.widgets.hovered.rounding = r;
-        visuals.widgets.active.rounding = r;
-        visuals.widgets.open.rounding = r;
-        cc.egui_ctx.set_visuals(visuals);
+        let settings = AppSettings::load();
+        Self::apply_egui_visuals(&cc.egui_ctx, &settings);
 
         cc.egui_ctx.style_mut(|s| {
             s.spacing.button_padding = egui::vec2(6.0, 4.0);
@@ -239,7 +251,6 @@ impl TonetApp {
             );
         });
 
-        let settings = AppSettings::load();
         let integrated_title_chrome = window_chrome::integrated_title_chrome();
         let (tabs, active_tab) = build_initial_tabs(&settings);
         let mut this = Self {
@@ -718,6 +729,8 @@ impl TonetApp {
 
 impl eframe::App for TonetApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        Self::apply_egui_visuals(ctx, &self.settings);
+
         #[cfg(not(windows))]
         let _ = frame;
 
@@ -854,7 +867,7 @@ impl eframe::App for TonetApp {
         egui::TopBottomPanel::top("tonet_top")
             .frame(
                 egui::Frame::none()
-                    .fill(theme::CHROME_BG)
+                    .fill(theme::chrome_bg())
                     .inner_margin(egui::Margin {
                         left: 0.0,
                         right: 0.0,
@@ -906,7 +919,7 @@ impl eframe::App for TonetApp {
                 ui.painter().hline(
                     r.x_range(),
                     r.top(),
-                    egui::Stroke::new(1.0, theme::SEPARATOR),
+                    egui::Stroke::new(1.0, theme::separator()),
                 );
                 ui.add_space(1.0);
 
@@ -1046,7 +1059,7 @@ impl eframe::App for TonetApp {
                             ui.label(
                                 egui::RichText::new(i18n::suggestion_fix_url(loc))
                                     .italics()
-                                    .color(theme::LOADING_MUTED),
+                                    .color(theme::loading_muted()),
                             );
                         }
                     });

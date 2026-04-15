@@ -1672,18 +1672,49 @@ macro_rules! stub_settings_page {
     };
 }
 
-stub_settings_page!(
-    internal_settings_appearance_title,
-    internal_settings_appearance_body,
-    "Aspecto",
-    "Darstellung",
-    "Apparence",
-    "Appearance",
-    "Temas y modo claro/oscuro: próximamente.",
-    "Themes und Hell/Dunkel: demnächst.",
-    "Thèmes et mode clair/sombre : bientôt.",
-    "Themes and light/dark mode: coming soon."
-);
+pub fn internal_settings_appearance_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Aspecto",
+        Locale::De => "Darstellung",
+        Locale::Fr => "Apparence",
+        Locale::En => "Appearance",
+    }
+}
+
+pub fn internal_settings_appearance_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "Elige si Tonet usa una paleta oscura o clara. Pulsa Guardar preferencias para conservarla."
+        }
+        Locale::De => {
+            "Wähle, ob Tonet eine dunkle oder helle Palette verwendet. Zum Speichern auf Einstellungen speichern klicken."
+        }
+        Locale::Fr => {
+            "Choisissez si Tonet utilise une palette sombre ou claire. Cliquez sur Enregistrer les préférences pour conserver."
+        }
+        Locale::En => {
+            "Choose whether Tonet uses a dark or light palette. Click Save preferences to persist."
+        }
+    }
+}
+
+pub fn internal_settings_theme_dark(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Oscuro",
+        Locale::De => "Dunkel",
+        Locale::Fr => "Sombre",
+        Locale::En => "Dark",
+    }
+}
+
+pub fn internal_settings_theme_light(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Claro",
+        Locale::De => "Hell",
+        Locale::Fr => "Clair",
+        Locale::En => "Light",
+    }
+}
 
 stub_settings_page!(
     internal_settings_content_title,

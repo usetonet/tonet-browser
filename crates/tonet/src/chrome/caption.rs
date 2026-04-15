@@ -32,9 +32,9 @@ pub fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
 
     if cap_btn(
         ui,
-        RichText::new("−").size(14.0).color(theme::CAPTION_GLYPH),
+        RichText::new("−").size(14.0).color(theme::caption_glyph()),
         i18n::window_minimize(loc),
-        theme::TAB_HOVER,
+        theme::tab_hover(),
     ) {
         ctx.send_viewport_cmd(ViewportCommand::Minimized(true));
     }
@@ -47,9 +47,9 @@ pub fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
     };
     if cap_btn(
         ui,
-        RichText::new(glyph).size(12.0).color(theme::CAPTION_GLYPH),
+        RichText::new(glyph).size(12.0).color(theme::caption_glyph()),
         tip,
-        theme::TAB_HOVER,
+        theme::tab_hover(),
     ) {
         ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized));
     }
@@ -65,11 +65,11 @@ pub fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
         let glyph_color = if close.hovered() {
             ui.painter().set(
                 close_hover_idx,
-                Shape::rect_filled(close.rect, 0.0, theme::CAPTION_CLOSE_HOVER),
+                Shape::rect_filled(close.rect, 0.0, theme::caption_close_hover()),
             );
             Color32::WHITE
         } else {
-            theme::CAPTION_CLOSE
+            theme::caption_close()
         };
         ui.painter().text(
             close.rect.center(),

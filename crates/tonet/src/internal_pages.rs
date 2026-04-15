@@ -9,12 +9,10 @@ use egui::{Color32, RichText, ScrollArea, Stroke, TextEdit, Ui, Vec2};
 
 use crate::browser_log::{BrowserLog, DownloadRecord, VisitRecord};
 use crate::i18n::{self, Locale};
-use crate::settings::{AppSettings, EnergySaverMode, StartupPolicy};
+use crate::settings::{AppSettings, EnergySaverMode, StartupPolicy, UiTheme};
 use crate::shortcut_catalog;
 use crate::theme;
 
-const CARD: Color32 = Color32::from_rgb(38, 40, 48);
-const CARD_STROKE: Color32 = Color32::from_rgb(52, 55, 62);
 const SIDEBAR_W: f32 = 200.0;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
@@ -279,8 +277,8 @@ fn settings_sidebar(
     out: &mut InternalPageOutput,
 ) {
     egui::Frame::none()
-        .fill(theme::OMNIBOX_FILL)
-        .stroke(Stroke::new(1.0, theme::OMNIBOX_STROKE))
+        .fill(theme::omnibox_fill())
+        .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
         .rounding(10.0)
         .inner_margin(10.0)
         .show(ui, |ui| {
@@ -330,18 +328,44 @@ fn settings_sidebar(
         });
 }
 
+fn render_appearance_page(ui: &mut Ui, loc: Locale, settings: &mut AppSettings) {
+    ui.label(
+        RichText::new(i18n::internal_settings_appearance_heading(loc))
+            .size(16.0)
+            .strong()
+            .color(theme::settings_heading()),
+    );
+    ui.add_space(6.0);
+    ui.label(
+        RichText::new(i18n::internal_settings_appearance_intro(loc))
+            .small()
+            .color(theme::loading_muted()),
+    );
+    ui.add_space(12.0);
+    ui.radio_value(
+        &mut settings.ui_theme,
+        UiTheme::Dark,
+        i18n::internal_settings_theme_dark(loc),
+    );
+    ui.radio_value(
+        &mut settings.ui_theme,
+        UiTheme::Light,
+        i18n::internal_settings_theme_light(loc),
+    );
+}
+
 fn settings_placeholder(ui: &mut Ui, _loc: Locale, title: &str, body: &str) {
     ui.label(
         RichText::new(title)
             .size(16.0)
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(6.0);
     ui.label(
         RichText::new(body)
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
 }
 
@@ -403,13 +427,13 @@ fn render_download_prefs(
         RichText::new(i18n::internal_settings_dl_prefs_title(loc))
             .size(16.0)
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(6.0);
     ui.label(
         RichText::new(i18n::internal_settings_dl_prefs_intro(loc))
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(12.0);
 
@@ -430,7 +454,7 @@ fn render_download_prefs(
     ui.label(
         RichText::new(i18n::internal_settings_dl_effective_label(loc))
             .strong()
-            .color(theme::TAB_TEXT),
+            .color(theme::tab_text()),
     );
     ui.add_space(4.0);
     let path_display = effective
@@ -441,14 +465,14 @@ fn render_download_prefs(
         RichText::new(path_display)
             .small()
             .monospace()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(12.0);
 
     ui.label(
         RichText::new(i18n::internal_settings_dl_path_hint(loc))
             .strong()
-            .color(theme::TAB_TEXT),
+            .color(theme::tab_text()),
     );
     ui.add_space(4.0);
     let mut path_edit = settings.download_directory.clone().unwrap_or_default();
@@ -488,8 +512,8 @@ fn render_download_prefs(
 fn settings_row_nav(ui: &mut Ui, label: &str, hint: &str, out: &mut InternalPageOutput, url: String) {
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
-            ui.label(RichText::new(label).strong().color(theme::TAB_TEXT));
-            ui.label(RichText::new(hint).small().color(theme::LOADING_MUTED));
+            ui.label(RichText::new(label).strong().color(theme::tab_text()));
+            ui.label(RichText::new(hint).small().color(theme::loading_muted()));
         });
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.small_button("›").clicked() {
@@ -504,7 +528,7 @@ fn render_get_started(ui: &mut Ui, loc: Locale, settings: &mut AppSettings, form
         RichText::new(i18n::internal_settings_get_started_heading(loc))
             .size(16.0)
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(8.0);
     ui.horizontal(|ui| {
@@ -512,12 +536,12 @@ fn render_get_started(ui: &mut Ui, loc: Locale, settings: &mut AppSettings, form
             ui.label(
                 RichText::new(i18n::internal_settings_profile_row(loc))
                     .strong()
-                    .color(theme::TAB_TEXT),
+                    .color(theme::tab_text()),
             );
             ui.label(
                 RichText::new(i18n::internal_settings_profile_hint(loc))
                     .small()
-                    .color(theme::LOADING_MUTED),
+                    .color(theme::loading_muted()),
             );
         });
     });
@@ -527,7 +551,7 @@ fn render_get_started(ui: &mut Ui, loc: Locale, settings: &mut AppSettings, form
     ui.label(
         RichText::new(i18n::internal_settings_startup_heading(loc))
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(8.0);
     for (i, pol) in [
@@ -544,7 +568,7 @@ fn render_get_started(ui: &mut Ui, loc: Locale, settings: &mut AppSettings, form
             ui.radio_value(&mut settings.startup_policy, pol, label)
                 .on_hover_text(help);
         });
-        ui.label(RichText::new(help).small().color(theme::LOADING_MUTED).italics());
+        ui.label(RichText::new(help).small().color(theme::loading_muted()).italics());
         ui.add_space(6.0);
     }
     if settings.startup_policy == StartupPolicy::OpenSpecificPages {
@@ -552,13 +576,13 @@ fn render_get_started(ui: &mut Ui, loc: Locale, settings: &mut AppSettings, form
         ui.label(
             RichText::new(i18n::internal_settings_startup_urls_label(loc))
                 .strong()
-                .color(theme::SETTINGS_HEADING),
+                .color(theme::settings_heading()),
         );
         ui.add_space(4.0);
         ui.label(
             RichText::new(i18n::internal_settings_startup_urls_hint(loc))
                 .small()
-                .color(theme::LOADING_MUTED),
+                .color(theme::loading_muted()),
         );
         ui.add_space(6.0);
         ui.add(
@@ -580,7 +604,7 @@ fn render_system_page(
         RichText::new(i18n::internal_settings_system_heading(loc))
             .size(16.0)
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(10.0);
     settings_row_nav(
@@ -601,7 +625,7 @@ fn render_system_page(
         &mut s.use_hardware_acceleration,
     );
     ui.horizontal(|ui| {
-        ui.label(RichText::new(i18n::internal_settings_proxy(loc)).color(theme::TAB_TEXT));
+        ui.label(RichText::new(i18n::internal_settings_proxy(loc)).color(theme::tab_text()));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.small_button(i18n::internal_settings_open_system(loc)).clicked() {
                 #[cfg(windows)]
@@ -641,7 +665,7 @@ fn render_system_page(
     ui.label(
         RichText::new(i18n::internal_settings_vpn_heading(loc))
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(8.0);
     toggle_row(ui, i18n::internal_settings_vpn_wireguard(loc), &mut s.vpn_use_wireguard);
@@ -649,19 +673,19 @@ fn render_system_page(
     ui.label(
         RichText::new(i18n::internal_settings_vpn_tray_hint(loc))
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(16.0);
     ui.label(
         RichText::new(i18n::internal_settings_memory_heading(loc))
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(6.0);
     ui.label(
         RichText::new(i18n::internal_settings_memory_body(loc))
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(8.0);
     toggle_row(ui, i18n::internal_settings_memory_saver(loc), &mut s.memory_saver_enabled);
@@ -669,13 +693,13 @@ fn render_system_page(
     ui.label(
         RichText::new(i18n::internal_settings_keep_sites(loc))
             .strong()
-            .color(theme::TAB_TEXT),
+            .color(theme::tab_text()),
     );
     ui.horizontal(|ui| {
         ui.label(
             RichText::new(i18n::internal_settings_keep_sites_hint(loc))
                 .small()
-                .color(theme::LOADING_MUTED),
+                .color(theme::loading_muted()),
         );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let _ = ui.small_button(i18n::internal_settings_add(loc));
@@ -685,19 +709,19 @@ fn render_system_page(
         RichText::new(i18n::internal_settings_no_sites(loc))
             .small()
             .italics()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(16.0);
     ui.label(
         RichText::new(i18n::internal_settings_power_heading(loc))
             .strong()
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(6.0);
     ui.label(
         RichText::new(i18n::internal_settings_power_body(loc))
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(8.0);
     ui.horizontal(|ui| {
@@ -724,7 +748,7 @@ fn render_system_page(
 
 fn toggle_row(ui: &mut Ui, label: &str, value: &mut bool) {
     ui.horizontal(|ui| {
-        ui.label(RichText::new(label).color(theme::TAB_TEXT));
+        ui.label(RichText::new(label).color(theme::tab_text()));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             ui.checkbox(value, "");
         });
@@ -746,14 +770,14 @@ fn render_shortcuts_page(
             RichText::new(i18n::internal_settings_shortcuts_title(loc))
                 .strong()
                 .size(16.0)
-                .color(theme::SETTINGS_HEADING),
+                .color(theme::settings_heading()),
         );
     });
     ui.add_space(8.0);
     ui.label(
         RichText::new(i18n::internal_settings_shortcuts_search_hint(loc))
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(6.0);
     ui.add(
@@ -770,8 +794,8 @@ fn render_shortcuts_page(
             for (cmd, keys) in rows {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
-                        ui.label(RichText::new(&cmd).strong().color(theme::TAB_TEXT));
-                        ui.label(RichText::new(&keys).small().color(theme::LOADING_MUTED));
+                        ui.label(RichText::new(&cmd).strong().color(theme::tab_text()));
+                        ui.label(RichText::new(&keys).small().color(theme::loading_muted()));
                     });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let _ = ui
@@ -786,7 +810,7 @@ fn render_shortcuts_page(
     ui.label(
         RichText::new(i18n::internal_settings_shortcuts_footer_note(loc))
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
 }
 
@@ -795,13 +819,13 @@ fn render_reset_page(ui: &mut Ui, loc: Locale, confirm_reset: &mut bool) {
         RichText::new(i18n::internal_settings_reset_heading(loc))
             .strong()
             .size(16.0)
-            .color(theme::SETTINGS_HEADING),
+            .color(theme::settings_heading()),
     );
     ui.add_space(8.0);
     ui.label(
         RichText::new(i18n::internal_settings_reset_body(loc))
             .small()
-            .color(theme::LOADING_MUTED),
+            .color(theme::loading_muted()),
     );
     ui.add_space(16.0);
     if ui
@@ -864,8 +888,8 @@ pub fn show_settings_page(
                         .show(ui, |ui| {
                             ui.set_min_width(ui.available_width());
                             egui::Frame::none()
-                                .fill(CARD)
-                                .stroke(Stroke::new(1.0, CARD_STROKE))
+                                .fill(theme::nt_card_bg())
+                                .stroke(Stroke::new(1.0, theme::nt_card_stroke()))
                                 .rounding(12.0)
                                 .inner_margin(16.0)
                                 .show(ui, |ui| {
@@ -874,13 +898,13 @@ pub fn show_settings_page(
                                             RichText::new(i18n::internal_tab_title_settings(loc))
                                                 .size(22.0)
                                                 .strong()
-                                                .color(theme::SETTINGS_HEADING),
+                                                .color(theme::settings_heading()),
                                         );
                                         ui.add_space(8.0);
                                         ui.label(
                                             RichText::new(i18n::internal_settings_intro(loc))
                                                 .small()
-                                                .color(theme::LOADING_MUTED),
+                                                .color(theme::loading_muted()),
                                         );
                                         ui.add_space(16.0);
                                         let form_id = egui::Id::new("tonet_settings_internal");
@@ -919,12 +943,9 @@ pub fn show_settings_page(
                                             SettingsNav::ResetSettings => {
                                                 render_reset_page(ui, loc, confirm_reset);
                                             }
-                                            SettingsNav::Appearance => settings_placeholder(
-                                                ui,
-                                                loc,
-                                                i18n::internal_settings_appearance_title(loc),
-                                                i18n::internal_settings_appearance_body(loc),
-                                            ),
+                                            SettingsNav::Appearance => {
+                                                render_appearance_page(ui, loc, settings);
+                                            }
                                             SettingsNav::Content => settings_placeholder(
                                                 ui,
                                                 loc,
@@ -1059,7 +1080,7 @@ pub fn show_downloads_page(
                 RichText::new(i18n::internal_tab_title_downloads(loc))
                     .size(22.0)
                     .strong()
-                    .color(theme::SETTINGS_HEADING),
+                    .color(theme::settings_heading()),
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button(i18n::internal_clear_all(loc)).clicked() {
@@ -1076,7 +1097,7 @@ pub fn show_downloads_page(
         ui.label(
             RichText::new(i18n::internal_downloads_intro(loc))
                 .small()
-                .color(theme::LOADING_MUTED),
+                .color(theme::loading_muted()),
         );
         ui.add_space(12.0);
 
@@ -1086,7 +1107,7 @@ pub fn show_downloads_page(
             ui.label(
                 RichText::new(i18n::internal_no_items(loc))
                     .italics()
-                    .color(theme::LOADING_MUTED),
+                    .color(theme::loading_muted()),
             );
         } else {
             ScrollArea::vertical()
@@ -1110,16 +1131,16 @@ fn download_row(
     out: &mut InternalPageOutput,
 ) {
     egui::Frame::none()
-        .fill(CARD)
-        .stroke(Stroke::new(1.0, CARD_STROKE))
+        .fill(theme::nt_card_bg())
+        .stroke(Stroke::new(1.0, theme::nt_card_stroke()))
         .rounding(10.0)
         .inner_margin(12.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(RichText::new("⤓").size(18.0).color(theme::ACCENT));
+                ui.label(RichText::new("⤓").size(18.0).color(theme::accent()));
                 ui.vertical(|ui| {
                     if ui
-                        .link(RichText::new(&d.display_name).strong().color(theme::LINK))
+                        .link(RichText::new(&d.display_name).strong().color(theme::link()))
                         .clicked()
                     {
                         out.navigate_to = Some(d.url.clone());
@@ -1131,7 +1152,7 @@ fn download_row(
                             d.url
                         ))
                         .small()
-                        .color(theme::LOADING_MUTED),
+                        .color(theme::loading_muted()),
                     );
                     if let Some(ref sp) = d.saved_path {
                         ui.label(
@@ -1142,7 +1163,7 @@ fn download_row(
                             ))
                             .small()
                             .monospace()
-                            .color(theme::LOADING_MUTED),
+                            .color(theme::loading_muted()),
                         );
                     }
                 });
@@ -1229,21 +1250,21 @@ pub fn show_history_page(
         ui.vertical(|ui| {
             ui.set_width(SIDEBAR_W);
             egui::Frame::none()
-                .fill(theme::OMNIBOX_FILL)
-                .stroke(Stroke::new(1.0, theme::OMNIBOX_STROKE))
+                .fill(theme::omnibox_fill())
+                .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
                 .rounding(10.0)
                 .inner_margin(10.0)
                 .show(ui, |ui| {
                     ui.label(
                         RichText::new(i18n::internal_history_sidebar(loc))
                             .strong()
-                            .color(theme::ACCENT),
+                            .color(theme::accent()),
                     );
                     let ir = ui.add_enabled_ui(false, |ui| {
                         ui.selectable_label(
                             false,
                             RichText::new(i18n::internal_history_other_devices(loc))
-                                .color(theme::TAB_TEXT_MUTED),
+                                .color(theme::tab_text_muted()),
                         )
                     });
                     ir.response
@@ -1265,7 +1286,7 @@ pub fn show_history_page(
                     RichText::new(i18n::internal_tab_title_history(loc))
                         .size(22.0)
                         .strong()
-                        .color(theme::SETTINGS_HEADING),
+                        .color(theme::settings_heading()),
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if !selected.is_empty() {
@@ -1290,7 +1311,7 @@ pub fn show_history_page(
                 ui.label(
                     RichText::new(i18n::internal_no_items(loc))
                         .italics()
-                        .color(theme::LOADING_MUTED),
+                        .color(theme::loading_muted()),
                 );
             } else {
                 ScrollArea::vertical()
@@ -1305,7 +1326,7 @@ pub fn show_history_page(
                                 ui.label(
                                     RichText::new(dl)
                                         .strong()
-                                        .color(theme::TAB_TEXT_MUTED),
+                                        .color(theme::tab_text_muted()),
                                 );
                                 ui.add_space(6.0);
                             }
@@ -1343,8 +1364,8 @@ fn history_row(
         .unwrap_or_default();
 
     egui::Frame::none()
-        .fill(CARD)
-        .stroke(Stroke::new(1.0, CARD_STROKE))
+        .fill(theme::nt_card_bg())
+        .stroke(Stroke::new(1.0, theme::nt_card_stroke()))
         .rounding(10.0)
         .inner_margin(10.0)
         .show(ui, |ui| {
@@ -1360,19 +1381,19 @@ fn history_row(
                 ui.label(
                     RichText::new(time)
                         .small()
-                        .color(theme::LOADING_MUTED),
+                        .color(theme::loading_muted()),
                 )
                 .on_hover_text(&v.url);
                 ui.label("🌐");
                 ui.vertical(|ui| {
-                    if ui.link(RichText::new(title).color(theme::LINK)).clicked() {
+                    if ui.link(RichText::new(title).color(theme::link())).clicked() {
                         out.navigate_to = Some(v.url.clone());
                     }
                     if !host.is_empty() {
                         ui.label(
                             RichText::new(host)
                                 .small()
-                                .color(theme::LOADING_MUTED),
+                                .color(theme::loading_muted()),
                         );
                     }
                 });

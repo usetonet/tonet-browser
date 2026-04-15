@@ -35,7 +35,7 @@ fn chrome_button(ui: &mut Ui, glyph: &str, size: f32, color: Color32, enabled: b
     if resp.hovered() {
         ui.painter().set(
             hover_idx,
-            Shape::rect_filled(resp.rect, theme::CHROME_BTN_ROUNDING, theme::TAB_HOVER),
+            Shape::rect_filled(resp.rect, theme::CHROME_BTN_ROUNDING, theme::tab_hover()),
         );
     }
     resp
@@ -62,9 +62,9 @@ pub fn show_chrome_toolbar(
 
     let nav_color = |enabled: bool| -> Color32 {
         if enabled {
-            theme::NAV_GLYPH
+            theme::nav_glyph()
         } else {
-            theme::NAV_GLYPH_DISABLED
+            theme::nav_glyph_disabled()
         }
     };
 
@@ -91,13 +91,13 @@ pub fn show_chrome_toolbar(
         }
 
         if loading {
-            if chrome_button(ui, "✕", 14.0, theme::NAV_GLYPH, true)
+            if chrome_button(ui, "✕", 14.0, theme::nav_glyph(), true)
                 .on_hover_text(i18n::stop_loading_tooltip(loc))
                 .clicked()
             {
                 stop_loading = true;
             }
-        } else if chrome_button(ui, "↻", 16.0, theme::NAV_GLYPH, true)
+        } else if chrome_button(ui, "↻", 16.0, theme::nav_glyph(), true)
             .on_hover_text(format!(
                 "{}\n{}",
                 i18n::reload_tooltip(loc),
@@ -134,8 +134,8 @@ pub fn show_chrome_toolbar(
             Layout::left_to_right(Align::Center),
             |ui| {
                 egui::Frame::none()
-                    .fill(theme::OMNIBOX_FILL)
-                    .stroke(Stroke::new(1.0, theme::OMNIBOX_STROKE))
+                    .fill(theme::omnibox_fill())
+                    .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
                     .rounding(20.0)
                     .inner_margin(egui::Margin::symmetric(theme::SP3, theme::SP + 2.0))
                     .show(ui, |ui| {
@@ -144,14 +144,14 @@ pub fn show_chrome_toolbar(
                             ui.label(
                                 RichText::new(chip_icon)
                                     .size(14.0)
-                                    .color(theme::CHIP),
+                                    .color(theme::chip()),
                             )
                             .on_hover_text(chip_tip);
 
                             let te = egui::TextEdit::singleline(url_input)
                                 .id(omnibox_id())
                                 .frame(false)
-                                .text_color(theme::OMNIBOX_TEXT)
+                                .text_color(theme::omnibox_text())
                                 .hint_text(i18n::address_hint(loc))
                                 .desired_rows(1)
                                 .desired_width(ui.available_width());
@@ -192,15 +192,15 @@ pub fn show_chrome_toolbar(
         // ── Right: icon group ───────────────────────────────────
         ui.spacing_mut().item_spacing.x = theme::SP;
 
-        let _ = chrome_button(ui, "☆", 16.0, theme::TOOL_ICON, true);
-        let _ = chrome_button(ui, "◯", 16.0, theme::TOOL_ICON, true);
-        let _ = chrome_button(ui, "⊛", 16.0, theme::TOOL_ICON, true);
-        let _ = chrome_button(ui, "⤓", 16.0, theme::TOOL_ICON, true);
-        let _ = chrome_button(ui, "↺", 16.0, theme::TOOL_ICON, true);
-        let _ = chrome_button(ui, "⊞", 16.0, theme::TOOL_ICON, true);
-        let _ = chrome_button(ui, "◎", 16.0, theme::TOOL_ICON, true);
+        let _ = chrome_button(ui, "☆", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, "◯", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, "⊛", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, "⤓", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, "↺", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, "⊞", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, "◎", 16.0, theme::tool_icon(), true);
 
-        if chrome_button(ui, "☰", 16.0, theme::TOOL_ICON, true)
+        if chrome_button(ui, "☰", 16.0, theme::tool_icon(), true)
             .on_hover_text(i18n::settings_tooltip(loc))
             .clicked()
         {

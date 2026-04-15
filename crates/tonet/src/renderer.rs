@@ -12,7 +12,7 @@ pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode], link_target: &m
         ui.label(
             RichText::new(i18n::empty_page_hint(loc))
                 .italics()
-                .color(theme::LOADING_MUTED),
+                .color(theme::loading_muted()),
         );
         return;
     }
@@ -25,13 +25,13 @@ pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode], link_target: &m
                     RichText::new(&node.text)
                         .strong()
                         .size(21.0)
-                        .color(theme::PAGE_TITLE),
+                        .color(theme::page_title()),
                 );
                 ui.add_space(8.0);
             }
             DomNodeType::H1 => {
                 ui.add_space(6.0);
-                ui.label(RichText::new(&node.text).strong().size(26.0).color(theme::BODY_TEXT));
+                ui.label(RichText::new(&node.text).strong().size(26.0).color(theme::body_text()));
                 ui.add_space(4.0);
             }
             DomNodeType::H2 => {
@@ -40,23 +40,23 @@ pub fn render_nodes(ui: &mut Ui, loc: Locale, nodes: &[DomNode], link_target: &m
                     RichText::new(&node.text)
                         .strong()
                         .size(19.0)
-                        .color(theme::BODY_TEXT),
+                        .color(theme::body_text()),
                 );
                 ui.add_space(2.0);
             }
             DomNodeType::Paragraph => {
-                ui.label(RichText::new(&node.text).size(15.0).color(theme::BODY_TEXT));
+                ui.label(RichText::new(&node.text).size(15.0).color(theme::body_text()));
                 ui.add_space(6.0);
             }
             DomNodeType::Link => {
                 if let Some(ref href) = node.href {
-                    let r = ui.link(RichText::new(&node.text).size(15.0).color(theme::LINK));
+                    let r = ui.link(RichText::new(&node.text).size(15.0).color(theme::link()));
                     if r.clicked() {
                         *link_target = Some(href.clone());
                     }
                     r.on_hover_text(href);
                 } else {
-                    ui.label(RichText::new(&node.text).size(15.0).color(theme::BODY_TEXT));
+                    ui.label(RichText::new(&node.text).size(15.0).color(theme::body_text()));
                 }
                 ui.add_space(4.0);
             }
