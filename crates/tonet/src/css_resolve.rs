@@ -1,13 +1,11 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`).
 
-use std::collections::HashMap;
-
 use egui::Color32;
-use tonet_engine::css::{cascade_simple_type_rules, ParsedQualifiedRule};
+use tonet_engine::css::{cascade_element_rules, ParsedQualifiedRule};
 
-use crate::parser::{DomNode, DomNodeType};
+use crate::parser::DomNode;
 
-/// Per-node overrides from author stylesheets (simple type selectors only).
+/// Per-node overrides from author stylesheets (simple type / class / id selectors).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct DomNodePaintHints {
     pub color: Option<Color32>,
@@ -137,34 +135,24 @@ fn clamp_font(px: f32) -> f32 {
     px.clamp(6.0, 256.0)
 }
 
-fn cascade_maps_for_nodes(
-    nodes: &[DomNode],
-    bundle: &[(String, Vec<ParsedQualifiedRule>)],
-) -> HashMap<DomNodeType, HashMap<String, String>> {
-    let mut out: HashMap<DomNodeType, HashMap<String, String>> = HashMap::new();
-    for n in nodes {
-        out.entry(n.kind)
-            .or_insert_with(|| cascade_simple_type_rules(bundle, n.kind.tag_name()));
-    }
-    out
-}
-
 /// Build one [`DomNodePaintHints`] per DOM node from `bundle` (same order as `nodes`).
 pub fn compute_dom_paint_hints(
     nodes: &[DomNode],
     bundle: &[(String, Vec<ParsedQualifiedRule>)],
 ) -> Vec<DomNodePaintHints> {
-    let maps = cascade_maps_for_nodes(nodes, bundle);
     const ROOT_PX: f32 = 16.0;
     nodes
         .iter()
         .map(|n| {
-            let m = maps.get(&n.kind);
-            let color = m
-                .and_then(|m| m.get("color"))
-                .and_then(|v| parse_css_color(v));
+            let m = cascade_element_rules(
+                bundle,
+                n.kind.tag_name(),
+                &n.classes,
+                n.element_id.as_deref(),
+            );
+            let color = m.get("color").and_then(|v| parse_css_color(v));
             let font_size = m
-                .and_then(|m| m.get("font-size"))
+                .get("font-size")
                 .and_then(|v| parse_font_size_px(v, ROOT_PX))
                 .map(clamp_font);
             DomNodePaintHints { color, font_size }
@@ -204,6 +192,8 @@ mod tests {
             kind: DomNodeType::Paragraph,
             text: "Hi".into(),
             href: None,
+            classes: Vec::new(),
+            element_id: None,
         }];
         let bundle = vec![(
             "https://example.com/a.css".into(),
@@ -220,5 +210,37 @@ mod tests {
         assert!(hints[0].font_size.is_none());
         let c = hints[0].color.expect("color");
         assert_eq!((c.r(), c.g(), c.b()), (0, 0, 128));
+    }
+
+    #[test]
+    fn class_selector_overrides_type() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["lead".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "p".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "color".into(),
+                        value_display: "red".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: ".lead".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "color".into(),
+                        value_display: "blue".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].color, Some(Color32::BLUE));
     }
 }
