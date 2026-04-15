@@ -108,6 +108,10 @@ fn default_startup_urls() -> String {
     String::new()
 }
 
+fn default_ui_scale() -> f32 {
+    1.0
+}
+
 /// One tile on the New Tab shortcut grid (persisted in [`AppSettings::new_tab_shortcuts`]).
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NewTabShortcut {
@@ -197,6 +201,9 @@ pub struct AppSettings {
     pub ui_language: String,
     #[serde(default)]
     pub ui_theme: UiTheme,
+    /// UI zoom multiplier on top of the window’s native scale (0.75–2.0; 1.0 = 100%).
+    #[serde(default = "default_ui_scale")]
+    pub ui_scale: f32,
     #[serde(default)]
     pub search_engine: SearchEngine,
     pub update_policy: UpdatePolicy,
@@ -221,6 +228,7 @@ impl Default for AppSettings {
         Self {
             ui_language: default_ui_language(),
             ui_theme: UiTheme::default(),
+            ui_scale: default_ui_scale(),
             search_engine: SearchEngine::default(),
             update_policy: UpdatePolicy::default(),
             last_update_check_unix: None,
@@ -234,6 +242,16 @@ impl Default for AppSettings {
 }
 
 impl AppSettings {
+    /// Clamped UI scale for egui (`pixels_per_point` multiplier vs native integration scale).
+    #[inline]
+    pub fn clamped_ui_scale(&self) -> f32 {
+        if self.ui_scale.is_finite() {
+            self.ui_scale.clamp(0.75, 2.0)
+        } else {
+            1.0
+        }
+    }
+
     /// Effective download directory: valid custom path, else OS Downloads, else `None`.
     pub fn resolved_download_directory(&self) -> Option<PathBuf> {
         if let Some(ref s) = self.download_directory {
@@ -266,6 +284,11 @@ impl AppSettings {
         if s.new_tab_shortcuts.is_empty() {
             s.new_tab_shortcuts = default_new_tab_shortcuts();
         }
+        if !s.ui_scale.is_finite() {
+            s.ui_scale = default_ui_scale();
+        } else {
+            s.ui_scale = s.ui_scale.clamp(0.75, 2.0);
+        }
         s
     }
 
@@ -293,5 +316,17 @@ mod tests {
         assert!(is_allowed_new_tab_url("tonet://settings"));
         assert!(!is_allowed_new_tab_url(""));
         assert!(!is_allowed_new_tab_url("ftp://x"));
+    }
+
+    #[test]
+    fn ui_scale_clamped() {
+        let mut s = AppSettings::default();
+        assert_eq!(s.clamped_ui_scale(), 1.0);
+        s.ui_scale = 0.5;
+        assert_eq!(s.clamped_ui_scale(), 0.75);
+        s.ui_scale = 3.0;
+        assert_eq!(s.clamped_ui_scale(), 2.0);
+        s.ui_scale = f32::NAN;
+        assert_eq!(s.clamped_ui_scale(), 1.0);
     }
 }

@@ -328,6 +328,46 @@ fn settings_sidebar(
         });
 }
 
+fn render_accessibility_page(ui: &mut Ui, loc: Locale, settings: &mut AppSettings) {
+    ui.label(
+        RichText::new(i18n::internal_settings_a11y_heading(loc))
+            .size(16.0)
+            .strong()
+            .color(theme::settings_heading()),
+    );
+    ui.add_space(6.0);
+    ui.label(
+        RichText::new(i18n::internal_settings_a11y_intro(loc))
+            .small()
+            .color(theme::loading_muted()),
+    );
+    ui.add_space(12.0);
+    ui.label(
+        RichText::new(i18n::internal_settings_ui_scale_label(loc))
+            .strong()
+            .color(theme::tab_text()),
+    );
+    ui.add_space(4.0);
+    ui.add(
+        egui::Slider::new(&mut settings.ui_scale, 0.75..=2.0)
+            .fixed_decimals(2)
+            .suffix(" ×"),
+    );
+    ui.add_space(4.0);
+    ui.label(
+        RichText::new(i18n::internal_settings_ui_scale_hint(loc))
+            .small()
+            .color(theme::loading_muted()),
+    );
+    ui.add_space(8.0);
+    if ui
+        .small_button(i18n::internal_settings_ui_scale_reset(loc))
+        .clicked()
+    {
+        settings.ui_scale = 1.0;
+    }
+}
+
 fn render_appearance_page(ui: &mut Ui, loc: Locale, settings: &mut AppSettings) {
     ui.label(
         RichText::new(i18n::internal_settings_appearance_heading(loc))
@@ -1003,12 +1043,9 @@ pub fn show_settings_page(
                                                     form_id,
                                                 );
                                             }
-                                            SettingsNav::Accessibility => settings_placeholder(
-                                                ui,
-                                                loc,
-                                                i18n::internal_settings_a11y_title(loc),
-                                                i18n::internal_settings_a11y_body(loc),
-                                            ),
+                                            SettingsNav::Accessibility => {
+                                                render_accessibility_page(ui, loc, settings);
+                                            }
                                         }
                                         ui.add_space(16.0);
                                         ui.horizontal(|ui| {
