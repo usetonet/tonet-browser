@@ -2,12 +2,13 @@
 name = "tonet-engine"
 version = "0.1.0"
 edition = "2021"
-description = "Tonet rendering engine core: limits, navigation policy, and shared contracts (no UI)."
+description = "Tonet rendering engine core: HTML/CSS/JS contracts, limits, and navigation policy (no UI)."
 authors = ["Tonet Contributors"]
 license = "PolyForm-Noncommercial-1.0.0"
 repository = "https://github.com/usetonet/tonet-browser"
 
 [dependencies]
+url = "2.5"
 
 [lints.rust]
 unsafe_code = "forbid"

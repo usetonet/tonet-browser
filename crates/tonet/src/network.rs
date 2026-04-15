@@ -79,7 +79,7 @@ pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
 /// Try to fetch a favicon by probing a list of candidate URLs in order.
 ///
 /// Candidates are typically extracted from `<link rel="icon">` tags in the page
-/// HTML (via [`crate::parser::extract_favicon_candidates`]), followed by classic
+/// HTML (via [`tonet_engine::html::minimal::extract_favicon_candidates`]), followed by classic
 /// fallback paths like `/favicon.ico`.
 pub fn fetch_favicon_from_candidates(candidates: &[String]) -> Option<Vec<u8>> {
     if candidates.is_empty() {
