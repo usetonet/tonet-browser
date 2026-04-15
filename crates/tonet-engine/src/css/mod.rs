@@ -7,5 +7,7 @@
 pub mod simple_rules;
 pub mod syntax;
 
-pub use simple_rules::{parse_top_level_qualified_rules, SimpleQualifiedRule};
+pub use simple_rules::{
+    parse_stylesheet_bundle_to_rules, parse_top_level_qualified_rules, SimpleQualifiedRule,
+};
 pub use syntax::{tokenize_css, tokenize_stylesheet_bundle, CssToken};

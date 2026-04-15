@@ -2,7 +2,7 @@
 
 use std::sync::mpsc;
 
-use tonet_engine::css::CssToken;
+use tonet_engine::css::{CssToken, SimpleQualifiedRule};
 
 use crate::parser::{DomNode, DomNodeType};
 
@@ -59,6 +59,9 @@ pub struct Tab {
     /// Tokenized author stylesheets (parallel to [`Self::loaded_stylesheets`] text).
     #[allow(dead_code)]
     pub loaded_stylesheet_tokens: Vec<(String, Vec<CssToken>)>,
+    /// Top-level qualified rules per stylesheet URL (from [`tonet_engine::css::parse_stylesheet_bundle_to_rules`]).
+    #[allow(dead_code)]
+    pub loaded_stylesheet_rules: Vec<(String, Vec<SimpleQualifiedRule>)>,
     /// True while this tab should display the New Tab page.
     /// Cleared only when an actual navigation starts (Enter pressed).
     pub show_new_tab: bool,
@@ -84,6 +87,7 @@ impl Tab {
             stylesheet_urls: Vec::new(),
             loaded_stylesheets: Vec::new(),
             loaded_stylesheet_tokens: Vec::new(),
+            loaded_stylesheet_rules: Vec::new(),
             show_new_tab: is_empty,
         }
     }
@@ -99,6 +103,7 @@ impl Tab {
         self.stylesheet_fetch_rx = None;
         self.loaded_stylesheets.clear();
         self.loaded_stylesheet_tokens.clear();
+        self.loaded_stylesheet_rules.clear();
         self.loading = false;
         self.pending_nav = None;
     }
