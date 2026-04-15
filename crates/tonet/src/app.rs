@@ -16,7 +16,10 @@ use crate::network::{
     fetch_favicon_from_candidates, fetch_stylesheets_from_urls, fetch_url, guess_favicon_ext,
 };
 use crate::parser::{extract_favicon_candidates, extract_stylesheet_candidates, parse_html};
-use tonet_engine::css::{parse_stylesheet_bundle_to_rules, tokenize_stylesheet_bundle};
+use tonet_engine::css::{
+    parse_stylesheet_bundle_rule_declarations, parse_stylesheet_bundle_to_rules,
+    tokenize_stylesheet_bundle,
+};
 use crate::renderer::render_nodes;
 use crate::session_snapshot::SessionSnapshot;
 use crate::settings::{AppSettings, SearchEngine, StartupPolicy, UiTheme, UpdatePolicy};
@@ -459,6 +462,7 @@ impl TonetApp {
         tab.loaded_stylesheets.clear();
         tab.loaded_stylesheet_tokens.clear();
         tab.loaded_stylesheet_rules.clear();
+        tab.loaded_stylesheet_parsed.clear();
         if matches!(intent, NavigateIntent::NewPage) {
             tab.dom.clear();
         }
@@ -510,6 +514,7 @@ impl TonetApp {
         tab.loaded_stylesheets.clear();
         tab.loaded_stylesheet_tokens.clear();
         tab.loaded_stylesheet_rules.clear();
+        tab.loaded_stylesheet_parsed.clear();
         tab.error_message = None;
         self.sync_window_title(ctx);
     }
@@ -529,6 +534,7 @@ impl TonetApp {
         tab.loaded_stylesheets.clear();
         tab.loaded_stylesheet_tokens.clear();
         tab.loaded_stylesheet_rules.clear();
+        tab.loaded_stylesheet_parsed.clear();
         tab.error_message = None;
         self.sync_window_title(ctx);
     }
@@ -600,6 +606,7 @@ impl TonetApp {
                         tab.loaded_stylesheets.clear();
                         tab.loaded_stylesheet_tokens.clear();
                         tab.loaded_stylesheet_rules.clear();
+                        tab.loaded_stylesheet_parsed.clear();
                         let (sheet_tx, sheet_rx) = mpsc::channel();
                         tab.stylesheet_fetch_rx = Some(sheet_rx);
                         std::thread::spawn(move || {
@@ -609,6 +616,7 @@ impl TonetApp {
                         tab.loaded_stylesheets.clear();
                         tab.loaded_stylesheet_tokens.clear();
                         tab.loaded_stylesheet_rules.clear();
+                        tab.loaded_stylesheet_parsed.clear();
                     }
 
                     if i == active {
@@ -626,6 +634,7 @@ impl TonetApp {
                     tab.loaded_stylesheets.clear();
                     tab.loaded_stylesheet_tokens.clear();
                     tab.loaded_stylesheet_rules.clear();
+                    tab.loaded_stylesheet_parsed.clear();
                     if i == active {
                         reset_window_title = true;
                     }
@@ -643,6 +652,7 @@ impl TonetApp {
                     tab.loaded_stylesheets.clear();
                     tab.loaded_stylesheet_tokens.clear();
                     tab.loaded_stylesheet_rules.clear();
+                    tab.loaded_stylesheet_parsed.clear();
                     tab.error_message = Some(i18n::err_fetch_disconnected(loc).to_string());
                     ctx.request_repaint();
                 }
@@ -703,6 +713,8 @@ impl TonetApp {
                     tab.stylesheet_fetch_rx = None;
                     let tok = tokenize_stylesheet_bundle(&v);
                     tab.loaded_stylesheet_rules = parse_stylesheet_bundle_to_rules(&tok);
+                    tab.loaded_stylesheet_parsed =
+                        parse_stylesheet_bundle_rule_declarations(&tab.loaded_stylesheet_rules);
                     tab.loaded_stylesheet_tokens = tok;
                     tab.loaded_stylesheets = v;
                     ctx.request_repaint();

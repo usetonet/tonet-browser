@@ -152,7 +152,7 @@ Suggested order (already agreed in planning):
 2. **`tonet-engine`** crate — **done**: limits (`EngineLimits::STANDARD`), `policy::check_document_size`, navigation helpers; `tonet` uses it for HTTP/fetch budgets and **explicit redirect policy** (`max_http_redirects`, default 10).
 3. **Corpus CI** — **done**: `corpus/fixtures/*.html` + `tonet-engine` integration tests; **`.github/workflows/ci.yml`** runs `cargo test --workspace` on Ubuntu and Windows; `tonet-setup` built separately.
 4. **HTML static read path** — **in progress**: tokenizer + tree builder; `DomNode` flattening; rawtext `script`/`style`; `<base href>` for link resolution; **`<link rel=stylesheet>` URL discovery** (`extract_stylesheet_candidates`) for a future fetch path. Full HTML5 tree construction remains a §5 milestone.
-5. **CSS (author)** — **in progress**: **tokenizer** + **top-level rule split** (`css::simple_rules`) + **declarations** (`css::declarations`, `property: value` inside blocks); the shell **fetches** sheets and fills `Tab.loaded_stylesheet_rules`—**not** applied to layout yet. Next: selector matching + cascade + box model per §5.
+5. **CSS (author)** — **in progress**: **tokenizer** + **top-level rule split** (`css::simple_rules`) + **declarations** (`css::declarations`, `property: value` inside blocks); the shell **fetches** sheets and fills `Tab.loaded_stylesheet_rules` plus `Tab.loaded_stylesheet_parsed` (prelude + declaration lists)—**not** applied to layout yet. Next: selector matching + cascade + box model per §5.
 6. **Appearance (light/dark)** — **partially met**: `tonet` uses a thread-local `UiTheme` and `theme.rs` so chrome, settings, and page chrome colors track the same palette; extend when layout needs author-driven constraints.
 7. **Next (gates / measurement):** **cookie/cache** persistence design (**Gate C**); grow HTML/CSS corpora; fill §4 **TBD** budgets on the reference machine (§9).
 
@@ -174,5 +174,6 @@ Suggested order (already agreed in planning):
 | 2026-04-18 | Engine: `css::simple_rules` — top-level qualified rules from token stream; `@` skip fix. |
 | 2026-04-19 | Desktop: `parse_stylesheet_bundle_to_rules` wired after stylesheet fetch. |
 | 2026-04-20 | `css::declarations` for `property: value`; vision FAQ on when author CSS reaches pixels. |
+| 2026-04-21 | `ParsedQualifiedRule` + `Tab.loaded_stylesheet_parsed` filled after fetch (parallel to qualified rules). |
 
 Update this file when phases complete, budgets change, or the reference machine changes.
