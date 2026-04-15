@@ -1,9 +1,11 @@
 //! Internal `tonet://` pages (Settings, Downloads, History) — Brave-style chrome pages.
 
 use std::collections::HashSet;
+use std::path::Path;
+use std::process::Command;
 
 use chrono::{Duration, TimeZone, Utc};
-use egui::{Color32, RichText, ScrollArea, Stroke, Ui, Vec2};
+use egui::{Color32, RichText, ScrollArea, Stroke, TextEdit, Ui, Vec2};
 
 use crate::browser_log::{BrowserLog, DownloadRecord, VisitRecord};
 use crate::i18n::{self, Locale};
@@ -341,6 +343,114 @@ fn settings_placeholder(ui: &mut Ui, _loc: Locale, title: &str, body: &str) {
             .small()
             .color(theme::LOADING_MUTED),
     );
+}
+
+fn reveal_path_in_shell(path: &Path) {
+    #[cfg(windows)]
+    {
+        let _ = Command::new("explorer").arg(path).spawn();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("open").arg(path).spawn();
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let _ = Command::new("xdg-open").arg(path).spawn();
+    }
+}
+
+fn render_download_prefs(
+    ui: &mut Ui,
+    loc: Locale,
+    settings: &mut AppSettings,
+    out: &mut InternalPageOutput,
+    form_id: egui::Id,
+) {
+    ui.label(
+        RichText::new(i18n::internal_settings_dl_prefs_title(loc))
+            .size(16.0)
+            .strong()
+            .color(theme::SETTINGS_HEADING),
+    );
+    ui.add_space(6.0);
+    ui.label(
+        RichText::new(i18n::internal_settings_dl_prefs_intro(loc))
+            .small()
+            .color(theme::LOADING_MUTED),
+    );
+    ui.add_space(12.0);
+
+    let override_invalid = settings.download_directory.as_ref().is_some_and(|s| {
+        let t = s.trim();
+        !t.is_empty() && !std::path::PathBuf::from(t).is_dir()
+    });
+    if override_invalid {
+        ui.label(
+            RichText::new(i18n::internal_settings_dl_invalid_override(loc))
+                .small()
+                .color(Color32::from_rgb(220, 140, 100)),
+        );
+        ui.add_space(8.0);
+    }
+
+    let effective = settings.resolved_download_directory();
+    ui.label(
+        RichText::new(i18n::internal_settings_dl_effective_label(loc))
+            .strong()
+            .color(theme::TAB_TEXT),
+    );
+    ui.add_space(4.0);
+    let path_display = effective
+        .as_ref()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "—".to_string());
+    ui.label(
+        RichText::new(path_display)
+            .small()
+            .monospace()
+            .color(theme::LOADING_MUTED),
+    );
+    ui.add_space(12.0);
+
+    ui.label(
+        RichText::new(i18n::internal_settings_dl_path_hint(loc))
+            .strong()
+            .color(theme::TAB_TEXT),
+    );
+    ui.add_space(4.0);
+    let mut path_edit = settings.download_directory.clone().unwrap_or_default();
+    let w = ui.available_width().min(520.0);
+    ui.add(
+        TextEdit::singleline(&mut path_edit)
+            .desired_width(w)
+            .id_source(form_id.with("dl_dir")),
+    );
+    settings.download_directory = match path_edit.trim() {
+        "" => None,
+        t => Some(t.to_string()),
+    };
+
+    ui.add_space(12.0);
+    ui.horizontal(|ui| {
+        if ui
+            .button(i18n::internal_settings_dl_use_system_default(loc))
+            .clicked()
+        {
+            settings.download_directory = None;
+        }
+        if ui
+            .button(i18n::internal_settings_dl_open_folder(loc))
+            .clicked()
+        {
+            if let Some(ref p) = effective {
+                reveal_path_in_shell(p);
+            }
+        }
+        if ui.button(i18n::internal_nav_downloads(loc)).clicked() {
+            out.navigate_to = Some(InternalRoute::Downloads.canonical_url().to_string());
+        }
+    });
 }
 
 fn settings_row_nav(ui: &mut Ui, label: &str, hint: &str, out: &mut InternalPageOutput, url: String) {
@@ -831,12 +941,15 @@ pub fn show_settings_page(
                                                 i18n::internal_settings_autofill_title(loc),
                                                 i18n::internal_settings_autofill_body(loc),
                                             ),
-                                            SettingsNav::DownloadPreferences => settings_placeholder(
-                                                ui,
-                                                loc,
-                                                i18n::internal_settings_dl_prefs_title(loc),
-                                                i18n::internal_settings_dl_prefs_body(loc),
-                                            ),
+                                            SettingsNav::DownloadPreferences => {
+                                                render_download_prefs(
+                                                    ui,
+                                                    loc,
+                                                    settings,
+                                                    &mut out,
+                                                    form_id,
+                                                );
+                                            }
                                             SettingsNav::Accessibility => settings_placeholder(
                                                 ui,
                                                 loc,

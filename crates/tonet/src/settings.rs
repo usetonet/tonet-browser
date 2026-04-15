@@ -115,6 +115,9 @@ pub struct AppSettings {
     /// When [`StartupPolicy::OpenSpecificPages`]: one URL or search per line (same rules as the omnibox).
     #[serde(default = "default_startup_urls")]
     pub startup_urls: String,
+    /// Preferred download folder when Tonet saves files to disk (future); must exist if set.
+    #[serde(default)]
+    pub download_directory: Option<String>,
     #[serde(default)]
     pub system: SystemSettings,
 }
@@ -128,12 +131,27 @@ impl Default for AppSettings {
             last_update_check_unix: None,
             startup_policy: StartupPolicy::default(),
             startup_urls: default_startup_urls(),
+            download_directory: None,
             system: SystemSettings::default(),
         }
     }
 }
 
 impl AppSettings {
+    /// Effective download directory: valid custom path, else OS Downloads, else `None`.
+    pub fn resolved_download_directory(&self) -> Option<PathBuf> {
+        if let Some(ref s) = self.download_directory {
+            let t = s.trim();
+            if !t.is_empty() {
+                let p = PathBuf::from(t);
+                if p.is_dir() {
+                    return Some(p);
+                }
+            }
+        }
+        dirs::download_dir()
+    }
+
     pub fn file_path() -> Option<PathBuf> {
         dirs::config_dir().map(|d| d.join("tonet").join("settings.json"))
     }
