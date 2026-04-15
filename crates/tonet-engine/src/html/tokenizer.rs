@@ -3,11 +3,12 @@
 //! Emits text, comments, and tags; start-tag attributes are parsed via [`super::attributes`].
 
 use super::attributes::parse_attributes;
+use super::entities::decode_html_entities;
 
 /// One lexical token from the input stream.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
-    /// Character data (decoded as UTF-8; `&amp;` etc. are **not** resolved yet).
+    /// Character data (UTF-8; character references like `&amp;` are decoded).
     Text(String),
     /// `<tag …>`.
     StartTag {
@@ -30,7 +31,8 @@ pub fn tokenize(input: &str) -> Vec<Token> {
 
     fn flush_text(out: &mut Vec<Token>, buf: &mut String) {
         if !buf.is_empty() {
-            out.push(Token::Text(std::mem::take(buf)));
+            let raw = std::mem::take(buf);
+            out.push(Token::Text(decode_html_entities(&raw)));
         }
     }
 
@@ -237,6 +239,29 @@ mod tests {
                 },
                 Token::EndOfFile,
             ]
+        );
+    }
+
+    #[test]
+    fn text_decodes_character_references() {
+        let t = tokenize("<p>a&amp;b&lt;c</p>");
+        assert!(
+            t.iter().any(|x| matches!(x, Token::Text(s) if s == "a&b<c")),
+            "{t:?}"
+        );
+    }
+
+    #[test]
+    fn attribute_value_decodes_entities() {
+        let t = tokenize(r#"<span title="a&quot;b">x</span>"#);
+        let st = t.iter().find_map(|x| match x {
+            Token::StartTag { name, attrs, .. } if name == "span" => Some(attrs),
+            _ => None,
+        })
+        .unwrap();
+        assert_eq!(
+            st.iter().find(|a| a.name == "title").map(|a| a.value.as_str()),
+            Some("a\"b")
         );
     }
 
