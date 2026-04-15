@@ -79,6 +79,8 @@ By contributing, you grant Usetonet:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+**Upstream write access:** if you can push to `main` on this repository, still use a **feature branch and a pull request** (not direct commits to `main`) so CI and review apply the same way as for forks.
+
 ## Code of Conduct
 
 This project follows a professional code of conduct. We expect all contributors to:
