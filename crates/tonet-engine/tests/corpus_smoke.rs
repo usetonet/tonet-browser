@@ -22,3 +22,21 @@ fn minimal_fixture_has_doctype_and_title() {
         "minimal fixture should keep its identifying title text"
     );
 }
+
+const WITH_LINKS_HTML: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../corpus/fixtures/with_links.html"
+));
+
+#[test]
+fn with_links_fixture_has_anchor_hrefs() {
+    let lower = WITH_LINKS_HTML.to_ascii_lowercase();
+    assert!(
+        lower.contains("href=\"https://example.com/a\""),
+        "with_links should include first external href"
+    );
+    assert!(
+        lower.contains("href=\"https://example.com/b\""),
+        "with_links should include second external href"
+    );
+}

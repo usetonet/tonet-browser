@@ -11,7 +11,7 @@ pub struct EngineLimits {
     pub http_request_timeout_secs: u64,
     /// Timeout for favicon probe requests (seconds).
     pub favicon_request_timeout_secs: u64,
-    /// Maximum HTTP redirects to follow for a navigation (0 = none yet; reserved).
+    /// Maximum HTTP redirects to follow for a navigation (`0` means do not follow redirects).
     pub max_http_redirects: u32,
 }
 
@@ -22,7 +22,8 @@ impl EngineLimits {
         max_favicon_bytes: 512_000,
         http_request_timeout_secs: 45,
         favicon_request_timeout_secs: 8,
-        max_http_redirects: 0,
+        // Explicit cap (reqwest previously followed up to 10 by default; now centralized here).
+        max_http_redirects: 10,
     };
 }
 
