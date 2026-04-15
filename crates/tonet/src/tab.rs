@@ -2,6 +2,8 @@
 
 use std::sync::mpsc;
 
+use tonet_engine::css::CssToken;
+
 use crate::parser::{DomNode, DomNodeType};
 
 pub struct PageFetchData {
@@ -54,6 +56,9 @@ pub struct Tab {
     /// Not yet consumed by a style engine; kept for the next cascade/layout milestone.
     #[allow(dead_code)]
     pub loaded_stylesheets: Vec<(String, String)>,
+    /// Tokenized author stylesheets (parallel to [`Self::loaded_stylesheets`] text).
+    #[allow(dead_code)]
+    pub loaded_stylesheet_tokens: Vec<(String, Vec<CssToken>)>,
     /// True while this tab should display the New Tab page.
     /// Cleared only when an actual navigation starts (Enter pressed).
     pub show_new_tab: bool,
@@ -78,6 +83,7 @@ impl Tab {
             stylesheet_fetch_rx: None,
             stylesheet_urls: Vec::new(),
             loaded_stylesheets: Vec::new(),
+            loaded_stylesheet_tokens: Vec::new(),
             show_new_tab: is_empty,
         }
     }
@@ -92,6 +98,7 @@ impl Tab {
         self.favicon_fetch_rx = None;
         self.stylesheet_fetch_rx = None;
         self.loaded_stylesheets.clear();
+        self.loaded_stylesheet_tokens.clear();
         self.loading = false;
         self.pending_nav = None;
     }
