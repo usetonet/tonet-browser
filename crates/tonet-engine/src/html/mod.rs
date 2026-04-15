@@ -5,9 +5,11 @@
 //! algorithms are still TBD. See `TONET_VISION.md` §5.
 
 pub mod attributes;
+pub mod entities;
 pub mod minimal;
 pub mod tokenizer;
 pub mod tree_builder;
 
 pub use attributes::{parse_attributes, Attr};
+pub use entities::decode_html_entities;
 pub use tree_builder::{DocumentFragment, ElementNode, Node};

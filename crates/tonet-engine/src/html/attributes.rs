@@ -1,7 +1,9 @@
 //! HTML **attribute** parsing from the raw string between a start-tag name and `>`.
 //!
-//! Covers common cases (quoted / unquoted / boolean). Not a full WHATWG attribute state machine
-//! (no `&` decoding in values yet).
+//! Covers common cases (quoted / unquoted / boolean). Character references in values are decoded
+//! via [`super::entities::decode_html_entities`].
+
+use super::entities::decode_html_entities;
 
 /// One `name`=`value` pair from a start tag (`value` empty for boolean attributes).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,7 +36,7 @@ pub fn parse_attributes(raw: &str) -> Vec<Attr> {
         if it.peek() == Some(&'=') {
             it.next();
             skip_ws(&mut it);
-            let value = read_attr_value(&mut it);
+            let value = decode_html_entities(&read_attr_value(&mut it));
             out.push(Attr { name, value });
         } else {
             out.push(Attr {
@@ -143,6 +145,18 @@ mod tests {
             vec![Attr {
                 name: "hidden".into(),
                 value: String::new(),
+            }]
+        );
+    }
+
+    #[test]
+    fn value_with_amp_entity() {
+        let a = parse_attributes(r#"title="Tom &amp; Jerry""#);
+        assert_eq!(
+            a,
+            vec![Attr {
+                name: "title".into(),
+                value: "Tom & Jerry".into(),
             }]
         );
     }
