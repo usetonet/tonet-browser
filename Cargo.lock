@@ -4062,6 +4062,9 @@ dependencies = [
 [[package]]
 name = "tonet-engine"
 version = "0.1.0"
+dependencies = [
+ "url",
+]
 
 [[package]]
 name = "tonet-setup"
