@@ -149,8 +149,9 @@ All **TBD** performance numbers in §4 must be measured on this profile unless a
 Suggested order (already agreed in planning):
 
 1. **This document** (`TONET_VISION.md`) — **done** when merged; fill TBDs from baselines.
-2. **`tonet-engine`** crate — **in progress**: limits (`EngineLimits::STANDARD`), `policy::check_document_size`, navigation helpers; `tonet` uses it for HTTP/fetch budgets.
-3. **Corpus CI** — **in progress**: `corpus/fixtures/minimal.html` + `tonet-engine` integration test; **`.github/workflows/ci.yml`** runs `cargo test --workspace` on Ubuntu and Windows.
+2. **`tonet-engine`** crate — **done**: limits (`EngineLimits::STANDARD`), `policy::check_document_size`, navigation helpers; `tonet` uses it for HTTP/fetch budgets and **explicit redirect policy** (`max_http_redirects`, default 10).
+3. **Corpus CI** — **done**: `corpus/fixtures/*.html` + `tonet-engine` integration tests; **`.github/workflows/ci.yml`** runs `cargo test --workspace` on Ubuntu and Windows; `tonet-setup` built separately.
+4. **Next:** full **Appearance** (light/dark) requires a **palette / theme context** (not only `egui::Visuals`) so chrome, settings, and renderer stay consistent; **HTML/CSS conformance** incremental suites; **cookie/cache** persistence design (Gate C).
 
 ---
 
@@ -159,5 +160,6 @@ Suggested order (already agreed in planning):
 | Date | Change |
 |------|--------|
 | (initial) | Created vision + gates template. |
+| 2026-04-14 | Marked engine + corpus CI steps done; noted redirect cap; next steps for Appearance / conformance / storage. |
 
 Update this file when phases complete, budgets change, or the reference machine changes.

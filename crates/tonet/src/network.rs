@@ -10,11 +10,20 @@ use url::Url;
 
 const LIMITS: EngineLimits = EngineLimits::STANDARD;
 
+fn reqwest_redirect_policy() -> reqwest::redirect::Policy {
+    let n = LIMITS.max_http_redirects as usize;
+    if n == 0 {
+        reqwest::redirect::Policy::none()
+    } else {
+        reqwest::redirect::Policy::limited(n)
+    }
+}
+
 /// Blocking GET; returns body as UTF-8 text.
 ///
 /// - User-Agent: `Tonet/<version> (Minimalist Browser)`.
 /// - Only `http` and `https` schemes.
-/// - Only **200 OK** (other status codes return a clear error).
+/// - Follows at most [`EngineLimits::max_http_redirects`] redirects, then expects **200 OK** on the final response (other status codes return a clear error).
 /// - Bodies over 1 MB are rejected (Purity filter).
 pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
     let parsed = Url::parse(url).with_context(|| format!("Invalid URL: {url}"))?;
@@ -30,6 +39,7 @@ pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
             "Tonet/{} (Minimalist Browser)",
             env!("CARGO_PKG_VERSION")
         ))
+        .redirect(reqwest_redirect_policy())
         .timeout(Duration::from_secs(LIMITS.http_request_timeout_secs))
         .build()
         .context("Could not build HTTP client")?;
@@ -79,6 +89,7 @@ pub fn fetch_favicon_from_candidates(candidates: &[String]) -> Option<Vec<u8>> {
             "Tonet/{} (Minimalist Browser)",
             env!("CARGO_PKG_VERSION")
         ))
+        .redirect(reqwest_redirect_policy())
         .timeout(Duration::from_secs(LIMITS.favicon_request_timeout_secs))
         .build()
         .ok()?;
