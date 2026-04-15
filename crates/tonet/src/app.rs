@@ -359,9 +359,7 @@ impl TonetApp {
     fn close_tab_at(&mut self, index: usize, ctx: &egui::Context) {
         self.tabs[index].cancel_in_flight();
         if self.tabs.len() <= 1 {
-            self.tabs[0] = Tab::new(DEFAULT_HOME_URL);
-            self.active_tab = 0;
-            self.sync_window_title(ctx);
+            ctx.send_viewport_cmd(ViewportCommand::Close);
             return;
         }
         self.tabs.remove(index);
