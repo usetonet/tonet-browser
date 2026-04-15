@@ -2,6 +2,7 @@
 //!
 //! [`parse_html`] runs the in-house tokenizer + tree builder, then flattens to [`DomNode`]s in
 //! document order (`<title>`, `<h1>`, `<h2>`, `<p>`, `<a href>` with `http`/`https` after resolution).
+//! Relative `href`s use the document URL, then the first `<base href>` in tree order when present.
 //! A legacy linear scanner is kept as [`parse_html_scan`] for regression checks.
 //!
 //! HTML comments are ignored in the tree path; `<script>` / `<style>` use rawtext tokenization so
@@ -142,14 +143,35 @@ pub fn parse_html_scan(html: &str, page_url: &str) -> Vec<DomNode> {
 pub fn parse_html_from_tree(html: &str, page_url: &str) -> Vec<DomNode> {
     let tokens = tokenizer::tokenize(html);
     let fragment = tree_builder::build_fragment(&tokens);
+    let link_base = first_base_href_resolved(&fragment.children, page_url).unwrap_or_else(|| page_url.to_string());
     let mut out = Vec::new();
     for n in &fragment.children {
-        walk_tree_to_dom(n, page_url, &mut out);
+        walk_tree_to_dom(n, &link_base, &mut out);
     }
     out
 }
 
-fn walk_tree_to_dom(node: &Node, page_url: &str, out: &mut Vec<DomNode>) {
+/// First `<base href>` in depth-first document order that resolves to `http`/`https`, else `None`.
+fn first_base_href_resolved(nodes: &[Node], page_url: &str) -> Option<String> {
+    for n in nodes {
+        let Node::Element(el) = n else {
+            continue;
+        };
+        if el.name == "base" {
+            if let Some(raw) = el.attrs.iter().find(|a| a.name == "href").map(|a| a.value.as_str()) {
+                if let Some(abs) = resolve_href(page_url, raw) {
+                    return Some(abs);
+                }
+            }
+        }
+        if let Some(u) = first_base_href_resolved(&el.children, page_url) {
+            return Some(u);
+        }
+    }
+    None
+}
+
+fn walk_tree_to_dom(node: &Node, link_base: &str, out: &mut Vec<DomNode>) {
     let Node::Element(el) = node else {
         return;
     };
@@ -161,10 +183,10 @@ fn walk_tree_to_dom(node: &Node, page_url: &str, out: &mut Vec<DomNode>) {
         "h1" => emit_dom_block(DomNodeType::H1, el, out),
         "h2" => emit_dom_block(DomNodeType::H2, el, out),
         "p" => emit_dom_block(DomNodeType::Paragraph, el, out),
-        "a" => emit_dom_link(el, page_url, out),
+        "a" => emit_dom_link(el, link_base, out),
         _ => {
             for c in &el.children {
-                walk_tree_to_dom(c, page_url, out);
+                walk_tree_to_dom(c, link_base, out);
             }
         }
     }
@@ -181,14 +203,14 @@ fn emit_dom_block(kind: DomNodeType, el: &ElementNode, out: &mut Vec<DomNode>) {
     }
 }
 
-fn emit_dom_link(el: &ElementNode, page_url: &str, out: &mut Vec<DomNode>) {
+fn emit_dom_link(el: &ElementNode, link_base: &str, out: &mut Vec<DomNode>) {
     let href_raw = el
         .attrs
         .iter()
         .find(|a| a.name == "href")
         .map(|a| a.value.as_str())
         .unwrap_or("");
-    let Some(href_abs) = resolve_href(page_url, href_raw) else {
+    let Some(href_abs) = resolve_href(link_base, href_raw) else {
         return;
     };
     let mut label = normalize_whitespace(&collect_element_text(el));
@@ -551,6 +573,20 @@ mod tests {
         let link = nodes.iter().find(|n| n.kind == DomNodeType::Link).expect("link");
         assert_eq!(link.href.as_deref(), Some("https://example.com/path"));
         assert_eq!(link.text, "Go");
+    }
+
+    #[test]
+    fn first_base_href_wins_for_relative_links() {
+        let html = r#"<html><head>
+            <base href="https://cdn.example.com/assets/">
+            <base href="https://ignore.example/">
+            </head><body><a href="page.html">x</a></body></html>"#;
+        let nodes = parse_html(html, "https://origin.example.com/dir/doc.html");
+        let link = nodes.iter().find(|n| n.kind == DomNodeType::Link).expect("link");
+        assert_eq!(
+            link.href.as_deref(),
+            Some("https://cdn.example.com/assets/page.html")
+        );
     }
 
     #[test]
