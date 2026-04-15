@@ -4,13 +4,11 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
+use tonet_engine::policy;
+use tonet_engine::EngineLimits;
 use url::Url;
 
-/// Maximum allowed downloaded HTML size (1 MB).
-const MAX_BODY_BYTES: usize = 1_000_000;
-
-/// Maximum favicon size we'll accept (512 KB).
-const MAX_FAVICON_BYTES: usize = 512_000;
+const LIMITS: EngineLimits = EngineLimits::STANDARD;
 
 /// Blocking GET; returns body as UTF-8 text.
 ///
@@ -32,7 +30,7 @@ pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
             "Tonet/{} (Minimalist Browser)",
             env!("CARGO_PKG_VERSION")
         ))
-        .timeout(Duration::from_secs(45))
+        .timeout(Duration::from_secs(LIMITS.http_request_timeout_secs))
         .build()
         .context("Could not build HTTP client")?;
 
@@ -53,11 +51,12 @@ pub fn fetch_url(url: &str) -> Result<String, anyhow::Error> {
         .bytes()
         .context("Could not read response body")?;
 
-    if bytes.len() > MAX_BODY_BYTES {
-        return Err(anyhow!(
-            "Tonet: page too large (over 1 MB). Tonet only loads lightweight content."
-        ));
-    }
+    policy::check_document_size(bytes.len(), &LIMITS).map_err(|_| {
+        anyhow!(
+            "Tonet: page too large (over {} bytes). Tonet only loads lightweight content.",
+            LIMITS.max_document_bytes
+        )
+    })?;
 
     let text = String::from_utf8(bytes.to_vec())
         .map_err(|e| anyhow!("Body is not valid UTF-8: {e}"))?;
@@ -80,14 +79,14 @@ pub fn fetch_favicon_from_candidates(candidates: &[String]) -> Option<Vec<u8>> {
             "Tonet/{} (Minimalist Browser)",
             env!("CARGO_PKG_VERSION")
         ))
-        .timeout(Duration::from_secs(8))
+        .timeout(Duration::from_secs(LIMITS.favicon_request_timeout_secs))
         .build()
         .ok()?;
 
     for url in candidates {
         if url.starts_with("data:") {
             if let Some(bytes) = decode_data_uri(url) {
-                if !bytes.is_empty() && bytes.len() <= MAX_FAVICON_BYTES {
+                if !bytes.is_empty() && bytes.len() <= LIMITS.max_favicon_bytes {
                     return Some(bytes);
                 }
             }
@@ -99,7 +98,7 @@ pub fn fetch_favicon_from_candidates(candidates: &[String]) -> Option<Vec<u8>> {
             _ => continue,
         };
         if let Ok(bytes) = resp.bytes() {
-            if bytes.is_empty() || bytes.len() > MAX_FAVICON_BYTES {
+            if bytes.is_empty() || bytes.len() > LIMITS.max_favicon_bytes {
                 continue;
             }
             if looks_like_html(&bytes) {
