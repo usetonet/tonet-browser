@@ -1648,18 +1648,84 @@ stub_settings_page!(
     "Built-in password manager: coming soon."
 );
 
-stub_settings_page!(
-    internal_settings_dl_prefs_title,
-    internal_settings_dl_prefs_body,
-    "Descargas",
-    "Downloads",
-    "Téléchargements",
-    "Downloads",
-    "Carpeta de descarga y comportamiento: próximamente.",
-    "Download-Ordner und Verhalten: demnächst.",
-    "Dossier et comportement des téléchargements : bientôt.",
-    "Download folder and behavior: coming soon."
-);
+pub fn internal_settings_dl_prefs_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Descargas",
+        Locale::De => "Downloads",
+        Locale::Fr => "Téléchargements",
+        Locale::En => "Downloads",
+    }
+}
+
+pub fn internal_settings_dl_prefs_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "Elige una carpeta existente como destino preferido cuando Tonet guarde archivos. Si la ruta no es válida, se usa la carpeta de descargas del sistema. Pulsa «Guardar preferencias» abajo para persistir los cambios."
+        }
+        Locale::De => {
+            "Wähle einen vorhandenen Ordner als bevorzugtes Ziel, wenn Tonet Dateien speichert. Ungültige Pfade fallen auf den System-Download-Ordner zurück. Zum Speichern unten auf «Einstellungen speichern» klicken."
+        }
+        Locale::Fr => {
+            "Choisissez un dossier existant comme emplacement préféré lorsque Tonet enregistre des fichiers. Si le chemin est invalide, le dossier Téléchargements du système est utilisé. Utilisez « Enregistrer les préférences » en bas pour conserver les changements."
+        }
+        Locale::En => {
+            "Pick an existing folder as the preferred destination when Tonet saves files to disk. If the path is invalid, the system Downloads folder is used. Use Save preferences below to persist changes."
+        }
+    }
+}
+
+pub fn internal_settings_dl_effective_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ubicación efectiva",
+        Locale::De => "Aktiver Speicherort",
+        Locale::Fr => "Emplacement effectif",
+        Locale::En => "Effective location",
+    }
+}
+
+pub fn internal_settings_dl_path_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Carpeta personalizada (opcional; vacío = carpeta del sistema)",
+        Locale::De => "Benutzerdefinierter Ordner (optional; leer = Systemstandard)",
+        Locale::Fr => "Dossier personnalisé (facultatif ; vide = dossier système)",
+        Locale::En => "Custom folder path (optional; empty = system default)",
+    }
+}
+
+pub fn internal_settings_dl_use_system_default(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Usar carpeta del sistema",
+        Locale::De => "Systemstandard verwenden",
+        Locale::Fr => "Utiliser le dossier système",
+        Locale::En => "Use system default",
+    }
+}
+
+pub fn internal_settings_dl_open_folder(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Abrir en el explorador",
+        Locale::De => "Im Dateimanager öffnen",
+        Locale::Fr => "Ouvrir dans le gestionnaire de fichiers",
+        Locale::En => "Open in file manager",
+    }
+}
+
+pub fn internal_settings_dl_invalid_override(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "La ruta personalizada no existe o no es una carpeta; se usa la ubicación del sistema."
+        }
+        Locale::De => {
+            "Der benutzerdefinierte Pfad existiert nicht oder ist kein Ordner; es wird der Systemort verwendet."
+        }
+        Locale::Fr => {
+            "Le chemin personnalisé est absent ou n’est pas un dossier ; l’emplacement système est utilisé."
+        }
+        Locale::En => {
+            "The custom path is missing or not a folder; using the system location instead."
+        }
+    }
+}
 
 stub_settings_page!(
     internal_settings_a11y_title,
