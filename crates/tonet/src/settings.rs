@@ -99,6 +99,87 @@ fn default_startup_urls() -> String {
     String::new()
 }
 
+/// One tile on the New Tab shortcut grid (persisted in [`AppSettings::new_tab_shortcuts`]).
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NewTabShortcut {
+    pub icon: String,
+    pub label: String,
+    pub url: String,
+}
+
+/// Maximum number of URL tiles on the New Tab page (the “Add” control does not count).
+pub const NEW_TAB_SHORTCUTS_MAX: usize = 24;
+
+/// Returns true if `url` is allowed as a New Tab shortcut target.
+pub fn is_allowed_new_tab_url(url: &str) -> bool {
+    let t = url.trim();
+    !t.is_empty()
+        && (t.starts_with("https://")
+            || t.starts_with("http://")
+            || t.starts_with("tonet://"))
+}
+
+/// Built-in shortcuts when no `new_tab_shortcuts` key exists in settings JSON.
+pub fn default_new_tab_shortcuts() -> Vec<NewTabShortcut> {
+    vec![
+        NewTabShortcut {
+            icon: "𝐓".into(),
+            label: "Tonet Home".into(),
+            url: "https://usetonet.com".into(),
+        },
+        NewTabShortcut {
+            icon: "⊙".into(),
+            label: "GitHub".into(),
+            url: "https://github.com".into(),
+        },
+        NewTabShortcut {
+            icon: "G".into(),
+            label: "Google".into(),
+            url: "https://google.com".into(),
+        },
+        NewTabShortcut {
+            icon: "🛡".into(),
+            label: "Brave Search".into(),
+            url: "https://search.brave.com".into(),
+        },
+        NewTabShortcut {
+            icon: "⚙".into(),
+            label: "Tonet settings".into(),
+            url: "tonet://settings".into(),
+        },
+        NewTabShortcut {
+            icon: "⤓".into(),
+            label: "Downloads".into(),
+            url: "tonet://downloads".into(),
+        },
+        NewTabShortcut {
+            icon: "🕐".into(),
+            label: "History".into(),
+            url: "tonet://history".into(),
+        },
+        NewTabShortcut {
+            icon: "e".into(),
+            label: "egui docs".into(),
+            url: "https://docs.rs/egui".into(),
+        },
+        NewTabShortcut {
+            icon: "🦀".into(),
+            label: "rust-lang.org".into(),
+            url: "https://rust-lang.org".into(),
+        },
+        NewTabShortcut {
+            icon: "◉".into(),
+            label: "openai.com".into(),
+            url: "https://openai.com".into(),
+        },
+        NewTabShortcut {
+            icon: "W".into(),
+            label: "wikipedia.org".into(),
+            url: "https://wikipedia.org".into(),
+        },
+    ]
+}
+
 /// Settings stored on disk.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -118,6 +199,8 @@ pub struct AppSettings {
     /// Preferred download folder for on-disk HTML snapshots; must exist if set.
     #[serde(default)]
     pub download_directory: Option<String>,
+    #[serde(default = "default_new_tab_shortcuts")]
+    pub new_tab_shortcuts: Vec<NewTabShortcut>,
     #[serde(default)]
     pub system: SystemSettings,
 }
@@ -132,6 +215,7 @@ impl Default for AppSettings {
             startup_policy: StartupPolicy::default(),
             startup_urls: default_startup_urls(),
             download_directory: None,
+            new_tab_shortcuts: default_new_tab_shortcuts(),
             system: SystemSettings::default(),
         }
     }
@@ -163,10 +247,14 @@ impl AppSettings {
         if !path.exists() {
             return Self::default();
         }
-        fs::read_to_string(&path)
+        let mut s = fs::read_to_string(&path)
             .ok()
             .and_then(|s| serde_json::from_str::<AppSettings>(&s).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        if s.new_tab_shortcuts.is_empty() {
+            s.new_tab_shortcuts = default_new_tab_shortcuts();
+        }
+        s
     }
 
     pub fn save(&self) -> anyhow::Result<()> {
@@ -179,5 +267,19 @@ impl AppSettings {
         let json = serde_json::to_string_pretty(self).context("serialize settings")?;
         fs::write(&path, json).with_context(|| format!("write {:?}", path))?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn allowed_new_tab_urls() {
+        assert!(is_allowed_new_tab_url("https://a.com"));
+        assert!(is_allowed_new_tab_url("http://b.org"));
+        assert!(is_allowed_new_tab_url("tonet://settings"));
+        assert!(!is_allowed_new_tab_url(""));
+        assert!(!is_allowed_new_tab_url("ftp://x"));
     }
 }

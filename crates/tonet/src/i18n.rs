@@ -735,6 +735,114 @@ pub fn new_tab_search_hint(loc: Locale) -> &'static str {
     }
 }
 
+pub fn new_tab_add_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Añadir acceso",
+        Locale::De => "Verknüpfung hinzufügen",
+        Locale::Fr => "Ajouter un raccourci",
+        Locale::En => "Add shortcut",
+    }
+}
+
+pub fn new_tab_add_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "URL con http://, https:// o tonet://. Se guarda en tus preferencias.",
+        Locale::De => "URL mit http://, https:// oder tonet://. Wird in den Einstellungen gespeichert.",
+        Locale::Fr => "URL en http://, https:// ou tonet://. Enregistré dans vos préférences.",
+        Locale::En => "Use http://, https://, or tonet://. Saved with your preferences.",
+    }
+}
+
+pub fn new_tab_add_icon_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Icono (texto)",
+        Locale::De => "Symbol (Text)",
+        Locale::Fr => "Icône (texte)",
+        Locale::En => "Icon (text)",
+    }
+}
+
+pub fn new_tab_add_label_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Etiqueta",
+        Locale::De => "Bezeichnung",
+        Locale::Fr => "Libellé",
+        Locale::En => "Label",
+    }
+}
+
+pub fn new_tab_add_url_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "URL",
+        Locale::De => "URL",
+        Locale::Fr => "URL",
+        Locale::En => "URL",
+    }
+}
+
+pub fn new_tab_add_save(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Añadir",
+        Locale::De => "Hinzufügen",
+        Locale::Fr => "Ajouter",
+        Locale::En => "Add",
+    }
+}
+
+pub fn new_tab_add_cancel(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cancelar",
+        Locale::De => "Abbrechen",
+        Locale::Fr => "Annuler",
+        Locale::En => "Cancel",
+    }
+}
+
+pub fn new_tab_add_url_invalid(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "La URL debe empezar por http://, https:// o tonet://",
+        Locale::De => "URL muss mit http://, https:// oder tonet:// beginnen",
+        Locale::Fr => "L’URL doit commencer par http://, https:// ou tonet://",
+        Locale::En => "URL must start with http://, https://, or tonet://",
+    }
+}
+
+pub fn new_tab_add_max_tiles(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Límite de accesos en la página de nueva pestaña (24).",
+        Locale::De => "Limit für Kacheln auf der neuen Registerkarte (24).",
+        Locale::Fr => "Limite de raccourcis sur la page nouvel onglet (24).",
+        Locale::En => "New Tab shortcut limit reached (24).",
+    }
+}
+
+pub fn new_tab_add_tile_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Añadir acceso",
+        Locale::De => "Verknüpfung",
+        Locale::Fr => "Ajouter",
+        Locale::En => "Add shortcut",
+    }
+}
+
+pub fn new_tab_add_tile_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Añadir un acceso a esta cuadrícula",
+        Locale::De => "Eine Verknüpfung zu dieser Kachelansicht hinzufügen",
+        Locale::Fr => "Ajouter un raccourci à cette grille",
+        Locale::En => "Add a shortcut to this grid",
+    }
+}
+
+pub fn new_tab_remove(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Quitar de nueva pestaña",
+        Locale::De => "Von neuer Registerkarte entfernen",
+        Locale::Fr => "Retirer du nouvel onglet",
+        Locale::En => "Remove from New Tab",
+    }
+}
+
 // --- Renderer ---
 
 pub fn empty_page_hint(loc: Locale) -> &'static str {
@@ -1210,10 +1318,10 @@ pub fn internal_settings_shortcuts_row(loc: Locale) -> &'static str {
 
 pub fn internal_settings_shortcuts_row_hint(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "Ver y personalizar atajos de teclado.",
-        Locale::De => "Tastenkürzel anzeigen und anpassen.",
-        Locale::Fr => "Afficher et personnaliser les raccourcis.",
-        Locale::En => "View and customize keyboard shortcuts.",
+        Locale::Es => "Ver la lista de referencia de atajos de teclado.",
+        Locale::De => "Tastenkürzel-Referenzliste anzeigen.",
+        Locale::Fr => "Voir la liste de référence des raccourcis clavier.",
+        Locale::En => "View the keyboard shortcut reference list.",
     }
 }
 
@@ -1465,26 +1573,26 @@ pub fn internal_settings_shortcuts_filter_hint(loc: Locale) -> &'static str {
 
 pub fn internal_settings_add_hint(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "La personalización de atajos llegará en una versión futura.",
-        Locale::De => "Anpassbare Tastenkürzel kommen in einer späteren Version.",
-        Locale::Fr => "La personnalisation des raccourcis arrive dans une version ultérieure.",
-        Locale::En => "Custom shortcut editing is not available yet.",
+        Locale::Es => "Cambiar combinaciones de teclado: aún no disponible (solo referencia).",
+        Locale::De => "Tastenkürzel umbelegen: noch nicht verfügbar (nur Referenz).",
+        Locale::Fr => "Modifier les raccourcis clavier : pas encore disponible (référence seule).",
+        Locale::En => "Rebinding keys is not available yet (reference list only).",
     }
 }
 
 pub fn internal_settings_shortcuts_footer_note(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => {
-            "Lista de referencia tipo Chromium; Tonet aún no guarda atajos personalizados. El botón «Añadir» está reservado."
+            "Lista de referencia tipo Chromium para atajos de teclado; esos enlaces no se personalizan aquí. Los accesos de la página «Nueva pestaña» sí se guardan en preferencias."
         }
         Locale::De => {
-            "Chromium-Referenzliste; benutzerdefinierte Kürzel werden in Tonet noch nicht gespeichert. „Hinzufügen“ ist vorbehalten."
+            "Chromium-Referenz für Tastenkürzel; hier nicht editierbar. Kacheln auf der Seite „Neuer Tab“ werden dagegen in den Einstellungen gespeichert."
         }
         Locale::Fr => {
-            "Liste de référence de type Chromium ; les raccourcis personnalisés ne sont pas encore enregistrés. Le bouton « Ajouter » est réservé."
+            "Liste de référence Chromium pour les raccourcis clavier, non modifiable ici. Les tuiles de la page nouvel onglet sont enregistrées dans les préférences."
         }
         Locale::En => {
-            "Chromium-style reference list; Tonet does not store custom shortcuts yet. The Add button is reserved for a future release."
+            "Chromium-style keyboard shortcut reference (not editable here). New Tab page tiles are saved in your preferences."
         }
     }
 }

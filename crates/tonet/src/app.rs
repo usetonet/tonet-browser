@@ -194,6 +194,9 @@ pub struct TonetApp {
     confirm_clear_history: bool,
     confirm_clear_downloads: bool,
 
+    /// “Add shortcut” dialog state on the New Tab page.
+    new_tab_add: crate::new_tab::NewTabAddState,
+
     /// First frame after launch: load active tab if it has a URL (restore / specific pages).
     pending_startup_fetch: bool,
 }
@@ -264,6 +267,7 @@ impl TonetApp {
             internal_hist_selected: HashSet::new(),
             confirm_clear_history: false,
             confirm_clear_downloads: false,
+            new_tab_add: crate::new_tab::NewTabAddState::default(),
             pending_startup_fetch: true,
         };
         this.sync_window_title(&cc.egui_ctx);
@@ -958,10 +962,20 @@ impl eframe::App for TonetApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             let tab = &mut self.tabs[active_i];
             if is_new_tab {
-                let nta = crate::new_tab::show_new_tab_page(ui, loc, &mut tab.url_input);
+                let nta = crate::new_tab::show_new_tab_page(
+                    ui,
+                    ctx,
+                    loc,
+                    &mut tab.url_input,
+                    &mut self.settings,
+                    &mut self.new_tab_add,
+                );
                 if let Some(url) = nta.navigate_to {
                     tab.url_input = url;
                     tab.pending_link_navigation = Some(tab.url_input.clone());
+                }
+                if nta.need_save {
+                    let _ = self.settings.save();
                 }
             } else if let Some(parsed) = internal_route {
                 let route = parsed.route;
