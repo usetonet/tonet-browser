@@ -1,20 +1,19 @@
 //! Incremental **HTML tokenizer** toward WHATWG / HTML5 conformance.
 //!
-//! This is not a full living-standard implementation yet: it tokenizes a useful subset
-//! (text, start/end tags, comments) and skips attribute lists into a lump for now — enough to
-//! drive tests and a future tree builder.
+//! Emits text, comments, and tags; start-tag attributes are parsed via [`super::attributes`].
+
+use super::attributes::parse_attributes;
 
 /// One lexical token from the input stream.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
     /// Character data (decoded as UTF-8; `&amp;` etc. are **not** resolved yet).
     Text(String),
-    /// `<tag …>`; `attrs_raw` is the slice between the tag name and `>` (trimmed), for later parsing.
+    /// `<tag …>`.
     StartTag {
         name: String,
         self_closing: bool,
-        /// Unparsed attribute source (empty until a dedicated attribute tokenizer exists).
-        attrs_raw: String,
+        attrs: Vec<super::attributes::Attr>,
     },
     /// `</tag>`
     EndTag { name: String },
@@ -93,10 +92,11 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                 let name = read_tag_name(&mut it);
                 let (self_closing, attrs_raw) = read_until_tag_close(&mut it);
                 if !name.is_empty() {
+                    let attrs = parse_attributes(&attrs_raw);
                     out.push(Token::StartTag {
                         name,
                         self_closing,
-                        attrs_raw,
+                        attrs,
                     });
                 }
             }
@@ -176,7 +176,7 @@ mod tests {
                 Token::StartTag {
                     name: "p".into(),
                     self_closing: false,
-                    attrs_raw: String::new(),
+                    attrs: vec![],
                 },
                 Token::Text("x".into()),
                 Token::EndTag { name: "p".into() },
@@ -217,7 +217,7 @@ mod tests {
                 Token::StartTag {
                     name: "br".into(),
                     self_closing: true,
-                    attrs_raw: String::new(),
+                    attrs: vec![],
                 },
                 Token::EndOfFile,
             ]
@@ -233,7 +233,7 @@ mod tests {
                 Token::StartTag {
                     name: "br".into(),
                     self_closing: true,
-                    attrs_raw: String::new(),
+                    attrs: vec![],
                 },
                 Token::EndOfFile,
             ]
@@ -241,7 +241,8 @@ mod tests {
     }
 
     #[test]
-    fn tag_with_unparsed_attrs() {
+    fn tag_with_parsed_attrs() {
+        use crate::html::attributes::Attr;
         let t = tokenize(r#"<a href="/z" class=x>y</a>"#);
         assert_eq!(
             t,
@@ -249,7 +250,16 @@ mod tests {
                 Token::StartTag {
                     name: "a".into(),
                     self_closing: false,
-                    attrs_raw: r#"href="/z" class=x"#.into(),
+                    attrs: vec![
+                        Attr {
+                            name: "href".into(),
+                            value: "/z".into(),
+                        },
+                        Attr {
+                            name: "class".into(),
+                            value: "x".into(),
+                        },
+                    ],
                 },
                 Token::Text("y".into()),
                 Token::EndTag { name: "a".into() },
