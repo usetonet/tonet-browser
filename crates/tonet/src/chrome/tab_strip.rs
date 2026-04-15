@@ -58,6 +58,7 @@ fn draw_tab(
         ui.set_max_width(max_w);
 
         let mut favicon_center = egui::Pos2::ZERO;
+        let mut close_clicked = false;
 
         let frame_resp = egui::Frame::none()
             .fill(tab_bg)
@@ -116,11 +117,16 @@ fn draw_tab(
                             .on_hover_text(i18n::tab_close_tooltip(loc))
                             .clicked()
                         {
+                            close_clicked = true;
                             out.close_tab = Some(index);
                         }
                     }
                 });
             });
+
+        if !close_clicked && frame_resp.response.clicked() {
+            out.select_tab = Some(index);
+        }
 
         (frame_resp.response.rect, frame_resp.response.hovered(), favicon_center)
     });
@@ -145,9 +151,21 @@ fn draw_tab(
                 );
 
                 let close_rect = egui::Rect::from_center_size(favicon_center, Vec2::splat(16.0));
-                let close_resp = ui.interact(close_rect, ui.id().with(("compact_close", index)), Sense::click());
-                if close_resp.clicked() {
+                // Register wider hit target first, then the × so the close wins on overlap.
+                let tab_hit = ui.interact(
+                    tab_rect,
+                    ui.id().with(("compact_tab_hit", index)),
+                    Sense::click(),
+                );
+                let close_hit = ui.interact(
+                    close_rect,
+                    ui.id().with(("compact_close", index)),
+                    Sense::click(),
+                );
+                if close_hit.clicked() {
                     out.close_tab = Some(index);
+                } else if tab_hit.clicked() {
+                    out.select_tab = Some(index);
                 }
             } else {
                 egui::show_tooltip(
@@ -158,13 +176,16 @@ fn draw_tab(
                         ui.label(title);
                     },
                 );
+                let tab_hit = ui.interact(
+                    tab_rect,
+                    ui.id().with(("compact_tab_hit_ns", index)),
+                    Sense::click(),
+                );
+                if tab_hit.clicked() {
+                    out.select_tab = Some(index);
+                }
             }
         }
-    }
-
-    let click_response = ui.interact(tab_rect, ui.id().with(("tab_click", index)), Sense::click());
-    if click_response.clicked() {
-        out.select_tab = Some(index);
     }
 
     if !selected && hovered {
