@@ -12,7 +12,9 @@ use crate::branding;
 use crate::browser_log::BrowserLog;
 use crate::i18n::{self, Locale};
 use crate::internal_pages::{self, InternalRoute};
-use crate::network::{fetch_favicon_from_candidates, fetch_url, guess_favicon_ext};
+use crate::network::{
+    fetch_favicon_from_candidates, fetch_stylesheets_from_urls, fetch_url, guess_favicon_ext,
+};
 use crate::parser::{extract_favicon_candidates, extract_stylesheet_candidates, parse_html};
 use crate::renderer::render_nodes;
 use crate::session_snapshot::SessionSnapshot;
@@ -451,7 +453,9 @@ impl TonetApp {
         tab.error_message = None;
         tab.favicon_uri.clear();
         tab.favicon_fetch_rx = None;
+        tab.stylesheet_fetch_rx = None;
         tab.stylesheet_urls.clear();
+        tab.loaded_stylesheets.clear();
         if matches!(intent, NavigateIntent::NewPage) {
             tab.dom.clear();
         }
@@ -499,6 +503,8 @@ impl TonetApp {
         tab.url_input = e.url;
         tab.dom = e.nodes;
         tab.stylesheet_urls = e.stylesheet_urls;
+        tab.stylesheet_fetch_rx = None;
+        tab.loaded_stylesheets.clear();
         tab.error_message = None;
         self.sync_window_title(ctx);
     }
@@ -514,6 +520,8 @@ impl TonetApp {
         tab.url_input = e.url;
         tab.dom = e.nodes;
         tab.stylesheet_urls = e.stylesheet_urls;
+        tab.stylesheet_fetch_rx = None;
+        tab.loaded_stylesheets.clear();
         tab.error_message = None;
         self.sync_window_title(ctx);
     }
@@ -579,6 +587,19 @@ impl TonetApp {
                         });
                     }
 
+                    tab.stylesheet_fetch_rx = None;
+                    if !tab.stylesheet_urls.is_empty() {
+                        let urls = tab.stylesheet_urls.clone();
+                        tab.loaded_stylesheets.clear();
+                        let (sheet_tx, sheet_rx) = mpsc::channel();
+                        tab.stylesheet_fetch_rx = Some(sheet_rx);
+                        std::thread::spawn(move || {
+                            let _ = sheet_tx.send(fetch_stylesheets_from_urls(&urls));
+                        });
+                    } else {
+                        tab.loaded_stylesheets.clear();
+                    }
+
                     if i == active {
                         title_dirty = true;
                     }
@@ -589,7 +610,9 @@ impl TonetApp {
                     tab.loading = false;
                     tab.fetch_rx = None;
                     tab.pending_nav = None;
+                    tab.stylesheet_fetch_rx = None;
                     tab.stylesheet_urls.clear();
+                    tab.loaded_stylesheets.clear();
                     if i == active {
                         reset_window_title = true;
                     }
@@ -602,7 +625,9 @@ impl TonetApp {
                     tab.loading = false;
                     tab.fetch_rx = None;
                     tab.pending_nav = None;
+                    tab.stylesheet_fetch_rx = None;
                     tab.stylesheet_urls.clear();
+                    tab.loaded_stylesheets.clear();
                     tab.error_message = Some(i18n::err_fetch_disconnected(loc).to_string());
                     ctx.request_repaint();
                 }
@@ -648,6 +673,27 @@ impl TonetApp {
                 }
                 Err(mpsc::TryRecvError::Disconnected) => {
                     tab.favicon_fetch_rx = None;
+                }
+            }
+        }
+    }
+
+    fn poll_stylesheets(&mut self, ctx: &egui::Context) {
+        for tab in &mut self.tabs {
+            let Some(rx) = &tab.stylesheet_fetch_rx else {
+                continue;
+            };
+            match rx.try_recv() {
+                Ok(v) => {
+                    tab.stylesheet_fetch_rx = None;
+                    tab.loaded_stylesheets = v;
+                    ctx.request_repaint();
+                }
+                Err(mpsc::TryRecvError::Empty) => {
+                    ctx.request_repaint();
+                }
+                Err(mpsc::TryRecvError::Disconnected) => {
+                    tab.stylesheet_fetch_rx = None;
                 }
             }
         }
@@ -784,6 +830,7 @@ impl eframe::App for TonetApp {
 
         self.poll_fetch(ctx);
         self.poll_favicons(ctx);
+        self.poll_stylesheets(ctx);
         self.poll_update_job(ctx);
         self.maybe_schedule_update_checks(ctx);
 

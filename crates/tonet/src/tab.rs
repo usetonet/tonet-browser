@@ -46,8 +46,14 @@ pub struct Tab {
     pub favicon_uri: String,
     /// Async favicon fetch result.
     pub favicon_fetch_rx: Option<mpsc::Receiver<Option<Vec<u8>>>>,
+    /// Async author stylesheet bodies `(url, css_text)` after navigation.
+    pub stylesheet_fetch_rx: Option<mpsc::Receiver<Vec<(String, String)>>>,
     /// Last successfully parsed author stylesheet URLs for this document (empty until a fetch completes).
     pub stylesheet_urls: Vec<String>,
+    /// Fetched stylesheet bodies for [`Self::stylesheet_urls`] (subset that returned 200 + size OK).
+    /// Not yet consumed by a style engine; kept for the next cascade/layout milestone.
+    #[allow(dead_code)]
+    pub loaded_stylesheets: Vec<(String, String)>,
     /// True while this tab should display the New Tab page.
     /// Cleared only when an actual navigation starts (Enter pressed).
     pub show_new_tab: bool,
@@ -69,7 +75,9 @@ impl Tab {
             pending_nav: None,
             favicon_uri: String::new(),
             favicon_fetch_rx: None,
+            stylesheet_fetch_rx: None,
             stylesheet_urls: Vec::new(),
+            loaded_stylesheets: Vec::new(),
             show_new_tab: is_empty,
         }
     }
@@ -82,6 +90,8 @@ impl Tab {
     pub fn cancel_in_flight(&mut self) {
         self.fetch_rx = None;
         self.favicon_fetch_rx = None;
+        self.stylesheet_fetch_rx = None;
+        self.loaded_stylesheets.clear();
         self.loading = false;
         self.pending_nav = None;
     }
