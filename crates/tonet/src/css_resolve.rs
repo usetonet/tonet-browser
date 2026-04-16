@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -19,6 +19,22 @@ pub enum TextAlignHint {
     Start,
     Center,
     End,
+}
+
+/// CSS `visibility` in the read view. `collapse` is treated like `hidden` until table layout exists.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VisibilityHint {
+    #[default]
+    Visible,
+    Hidden,
+}
+
+pub fn parse_visibility(value: &str) -> Option<VisibilityHint> {
+    match trim_css_ascii_whitespace(value).to_ascii_lowercase().as_str() {
+        "visible" => Some(VisibilityHint::Visible),
+        "hidden" | "collapse" => Some(VisibilityHint::Hidden),
+        _ => None,
+    }
 }
 
 /// Parse `text-align` keywords we support (`justify` → unsupported / `None`).
@@ -186,6 +202,8 @@ pub struct DomNodePaintHints {
     pub text_indent: Option<TextIndentSpec>,
     /// Opacity `0`…`1` (or `%` in author CSS); merged with `html`/`body`. Applied to the resolved text color when painting (not a full stacking-context / subtree model).
     pub opacity: Option<f32>,
+    /// `visible` / `hidden` / `collapse` (see [`VisibilityHint`]); merged with `html`/`body`.
+    pub visibility: Option<VisibilityHint>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -554,6 +572,7 @@ pub fn compute_dom_paint_hints(
                 merged_author_value(&m, &doc, "text-transform").and_then(parse_text_transform);
             let text_indent = merged_author_value(&m, &doc, "text-indent").and_then(parse_text_indent);
             let opacity = merged_author_value(&m, &doc, "opacity").and_then(parse_opacity);
+            let visibility = merged_author_value(&m, &doc, "visibility").and_then(parse_visibility);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -568,6 +587,7 @@ pub fn compute_dom_paint_hints(
                 text_transform,
                 text_indent,
                 opacity,
+                visibility,
             }
         })
         .collect()
@@ -1151,5 +1171,68 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].opacity, Some(0.25));
+    }
+
+    #[test]
+    fn parse_visibility_keywords() {
+        assert_eq!(parse_visibility("visible"), Some(VisibilityHint::Visible));
+        assert_eq!(parse_visibility("HIDDEN"), Some(VisibilityHint::Hidden));
+        assert_eq!(parse_visibility("collapse"), Some(VisibilityHint::Hidden));
+        assert_eq!(parse_visibility("bogus"), None);
+    }
+
+    #[test]
+    fn visibility_hidden_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "visibility".into(),
+                    value_display: "hidden".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].visibility, Some(VisibilityHint::Hidden));
+    }
+
+    #[test]
+    fn visibility_visible_on_element_overrides_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "body".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "visibility".into(),
+                        value_display: "hidden".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: "p".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "visibility".into(),
+                        value_display: "visible".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].visibility, Some(VisibilityHint::Visible));
     }
 }

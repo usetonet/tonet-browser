@@ -1,19 +1,20 @@
 //! Renders the simplified DOM into egui widgets.
 
 use crate::css_resolve::{
-    display_text_cow, resolve_text_indent_px, DomNodePaintHints, TextAlignHint, AUTHOR_STYLE_ROOT_PX,
+    display_text_cow, resolve_text_indent_px, DomNodePaintHints, TextAlignHint, VisibilityHint,
+    AUTHOR_STYLE_ROOT_PX,
 };
 use crate::i18n;
 use crate::i18n::Locale;
 use crate::parser::{DomNode, DomNodeType};
 use crate::theme;
 use egui::text::TextWrapping;
-use egui::{Align, Color32, FontSelection, Layout, RichText, Ui};
+use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
 
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, and `opacity` override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, and `visibility` override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -162,6 +163,10 @@ fn paint_styled_text(
     href: Option<&str>,
     link_target: &mut Option<String>,
 ) {
+    let text_visible = !matches!(
+        hint.and_then(|h| h.visibility),
+        Some(VisibilityHint::Hidden)
+    );
     let line_width = ui.available_width();
     let indent_px = hint
         .and_then(|h| h.text_indent)
@@ -172,23 +177,27 @@ fn paint_styled_text(
     if let Some(href) = href {
         if job_needed {
             let job = layout_job_for_rich_text(ui, rt, indent_px);
-            let r = ui.link(job);
-            if r.clicked() {
+            let r = ui.add_visible(text_visible, Link::new(job));
+            if text_visible && r.clicked() {
                 *link_target = Some(href.to_string());
             }
-            r.on_hover_text(href);
+            if text_visible {
+                r.on_hover_text(href);
+            }
         } else {
-            let r = ui.link(rt);
-            if r.clicked() {
+            let r = ui.add_visible(text_visible, Link::new(rt));
+            if text_visible && r.clicked() {
                 *link_target = Some(href.to_string());
             }
-            r.on_hover_text(href);
+            if text_visible {
+                r.on_hover_text(href);
+            }
         }
     } else if job_needed {
         let job = layout_job_for_rich_text(ui, rt, indent_px);
-        ui.label(job);
+        ui.add_visible(text_visible, Label::new(job));
     } else {
-        ui.label(rt);
+        ui.add_visible(text_visible, Label::new(rt));
     }
 }
 
