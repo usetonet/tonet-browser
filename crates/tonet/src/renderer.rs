@@ -10,12 +10,12 @@ use crate::i18n::Locale;
 use crate::parser::{DomNode, DomNodeType};
 use crate::theme;
 use egui::text::TextWrapping;
-use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
+use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Stroke, Ui};
 
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` (including `margin-left` / `margin-right` and shorthand), `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), `max-width`, `padding` / `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`, single-color `background` shorthand, and uniform `border-radius` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` (including `margin-left` / `margin-right` and shorthand), `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), `max-width`, `padding` / `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`, single-color `background` shorthand, uniform `border-radius`, and `border-width` / `border-color` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -308,7 +308,7 @@ fn with_max_width(ui: &mut Ui, hint: Option<DomNodePaintHints>, used_font_size: 
     }
 }
 
-/// Optional [`egui::Frame`] (`background-color` fill and/or `border-radius`), then `padding-top` / `padding-bottom`, horizontal `padding-left` / `padding-right`, `max-width`, `text-align`, and text.
+/// Optional [`egui::Frame`] (`background-color` fill, `border-radius`, `border-width` / `border-color` stroke), then padding, `max-width`, `text-align`, and text.
 fn paint_read_text_block(
     ui: &mut Ui,
     node: &DomNode,
@@ -323,6 +323,35 @@ fn paint_read_text_block(
         .map(|s| resolve_padding_inset_px(s, size, AUTHOR_STYLE_ROOT_PX, full_w_outer))
         .unwrap_or(0.0);
     corner_r = corner_r.min(full_w_outer * 0.5).clamp(0.0, 500.0);
+
+    let border_w_px = hint
+        .and_then(|h| h.border_width)
+        .map(|s| resolve_padding_inset_px(s, size, AUTHOR_STYLE_ROOT_PX, full_w_outer))
+        .unwrap_or(0.0)
+        .clamp(0.0, 24.0);
+    let opacity = hint.and_then(|h| h.opacity);
+    let border_stroke = if border_w_px > 0.01 {
+        let w = border_w_px.max(0.5);
+        let stroke_color = match hint.and_then(|h| h.border_color) {
+            Some(c) if c.a() == 0 => None,
+            Some(mut c) => {
+                if let Some(o) = opacity {
+                    c = c.gamma_multiply(o);
+                }
+                Some(c)
+            }
+            None => {
+                let mut c = color;
+                if let Some(o) = opacity {
+                    c = c.gamma_multiply(o);
+                }
+                Some(c)
+            }
+        };
+        stroke_color.map(|c| Stroke::new(w, c))
+    } else {
+        None
+    };
 
     let fill_bg = hint
         .and_then(|h| h.background_color)
@@ -395,14 +424,17 @@ fn paint_read_text_block(
         }
     };
 
-    let use_frame = fill_bg.is_some() || corner_r > 0.01;
+    let use_frame = fill_bg.is_some() || corner_r > 0.01 || border_stroke.is_some();
     if use_frame {
         let fill = fill_bg.unwrap_or(Color32::TRANSPARENT);
-        egui::Frame::none()
+        let mut frame = egui::Frame::none()
             .fill(fill)
             .inner_margin(0.0)
-            .rounding(corner_r)
-            .show(ui, |ui| paint_insets(ui));
+            .rounding(corner_r);
+        if let Some(st) = border_stroke {
+            frame = frame.stroke(st);
+        }
+        frame.show(ui, |ui| paint_insets(ui));
     } else {
         paint_insets(ui);
     }
