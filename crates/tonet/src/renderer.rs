@@ -1,8 +1,8 @@
 //! Renders the simplified DOM into egui widgets.
 
 use crate::css_resolve::{
-    display_text_cow, resolve_text_indent_px, DomNodePaintHints, TextAlignHint, VisibilityHint,
-    AUTHOR_STYLE_ROOT_PX,
+    display_text_cow, resolve_text_indent_px, DisplayHint, DomNodePaintHints, TextAlignHint,
+    VisibilityHint, AUTHOR_STYLE_ROOT_PX,
 };
 use crate::i18n;
 use crate::i18n::Locale;
@@ -14,7 +14,7 @@ use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, and `visibility` override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, and `display` (`none` skips the node) override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -35,6 +35,9 @@ pub fn render_nodes(
 
     for (i, node) in nodes.iter().enumerate() {
         let hint = hints_slice.and_then(|h| h.get(i)).copied();
+        if matches!(hint.and_then(|h| h.display), Some(DisplayHint::None)) {
+            continue;
+        }
 
         match node.kind {
             DomNodeType::Title => {
