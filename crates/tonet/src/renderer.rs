@@ -1,16 +1,16 @@
 //! Renders the simplified DOM into egui widgets.
 
-use crate::css_resolve::DomNodePaintHints;
+use crate::css_resolve::{DomNodePaintHints, TextAlignHint};
 use crate::i18n;
 use crate::i18n::Locale;
 use crate::parser::{DomNode, DomNodeType};
 use crate::theme;
-use egui::{Color32, RichText, Ui};
+use egui::{Align, Color32, Layout, RichText, Ui};
 
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `font-weight`, `font-style`, `margin` / margins, and `text-decoration` override or extend built-in page chrome.
+/// `font-weight`, `font-style`, `margin` / margins, `text-decoration`, and `text-align` override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -41,7 +41,10 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                ui.label(styled_rich_text(node, hint, size, color));
+                let rt = styled_rich_text(node, hint, size, color);
+                with_text_align(ui, hint, |ui| {
+                    ui.label(rt);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -55,7 +58,10 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                ui.label(styled_rich_text(node, hint, size, color));
+                let rt = styled_rich_text(node, hint, size, color);
+                with_text_align(ui, hint, |ui| {
+                    ui.label(rt);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -69,7 +75,10 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                ui.label(styled_rich_text(node, hint, size, color));
+                let rt = styled_rich_text(node, hint, size, color);
+                with_text_align(ui, hint, |ui| {
+                    ui.label(rt);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -83,7 +92,10 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                ui.label(styled_rich_text(node, hint, size, color));
+                let rt = styled_rich_text(node, hint, size, color);
+                with_text_align(ui, hint, |ui| {
+                    ui.label(rt);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -102,20 +114,52 @@ pub fn render_nodes(
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
-                if let Some(ref href) = node.href {
-                    let r = ui.link(rt);
-                    if r.clicked() {
-                        *link_target = Some(href.clone());
+                with_text_align(ui, hint, |ui| {
+                    if let Some(ref href) = node.href {
+                        let r = ui.link(rt.clone());
+                        if r.clicked() {
+                            *link_target = Some(href.clone());
+                        }
+                        r.on_hover_text(href);
+                    } else {
+                        ui.label(rt);
                     }
-                    r.on_hover_text(href);
-                } else {
-                    ui.label(rt);
-                }
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
                 ui.add_space(bottom);
             }
+        }
+    }
+}
+
+fn with_text_align(ui: &mut Ui, hint: Option<DomNodePaintHints>, child: impl FnOnce(&mut Ui)) {
+    let align = hint
+        .and_then(|h| h.text_align)
+        .unwrap_or(TextAlignHint::Start);
+    let w = ui.available_width();
+    match align {
+        TextAlignHint::Start => child(ui),
+        TextAlignHint::Center => {
+            ui.allocate_ui_with_layout(
+                egui::vec2(w, 0.0),
+                Layout::top_down(Align::Center),
+                |ui| {
+                    ui.set_width(w);
+                    child(ui);
+                },
+            );
+        }
+        TextAlignHint::End => {
+            ui.allocate_ui_with_layout(
+                egui::vec2(w, 0.0),
+                Layout::right_to_left(Align::Min),
+                |ui| {
+                    ui.set_width(w);
+                    child(ui);
+                },
+            );
         }
     }
 }
