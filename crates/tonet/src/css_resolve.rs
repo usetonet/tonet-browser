@@ -1,12 +1,12 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`).
+//! `line-height`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`).
 
 use std::collections::HashMap;
 
 use egui::Color32;
 use tonet_engine::css::{cascade_document_defaults, cascade_element_rules, ParsedQualifiedRule};
 
-use crate::parser::DomNode;
+use crate::parser::{DomNode, DomNodeType};
 
 /// Subset of CSS `text-align` for the LTR read view (`start`/`end` ≈ left/right).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -34,6 +34,8 @@ pub fn parse_text_align(value: &str) -> Option<TextAlignHint> {
 pub struct DomNodePaintHints {
     pub color: Option<Color32>,
     pub font_size: Option<f32>,
+    /// Resolved line height in **points** for egui (`RichText::line_height`); `None` = CSS `normal` / default.
+    pub line_height_px: Option<f32>,
     /// Resolved CSS weight (`100`…`900`) when `font-weight` was set.
     pub font_weight: Option<u16>,
     /// When `Some(true)` / `Some(false)`, mirrors author `font-style` italic vs normal.
@@ -171,6 +173,52 @@ fn clamp_font(px: f32) -> f32 {
     px.clamp(6.0, 256.0)
 }
 
+fn clamp_line_height(px: f32) -> f32 {
+    px.clamp(4.0, 400.0)
+}
+
+/// Default `font-size` in px when the author did not set one — must match [`crate::renderer`] defaults.
+fn default_font_size_px(kind: DomNodeType) -> f32 {
+    match kind {
+        DomNodeType::Title => 21.0,
+        DomNodeType::H1 => 26.0,
+        DomNodeType::H2 => 19.0,
+        DomNodeType::Paragraph | DomNodeType::Link => 15.0,
+    }
+}
+
+/// Parse `line-height` against the node’s **used** `font-size` and root px (`rem` / `%` base).
+///
+/// `normal` yields `None` (egui picks default). Unitless numbers multiply `font_size_px`.
+pub fn parse_line_height(value: &str, font_size_px: f32, root_px: f32) -> Option<f32> {
+    let s = trim_css_ascii_whitespace(value);
+    if s.is_empty() {
+        return None;
+    }
+    let lower = s.to_ascii_lowercase();
+    if lower == "normal" {
+        return None;
+    }
+    if lower.ends_with("px") {
+        let n: f32 = lower[..lower.len() - 2].trim().parse().ok()?;
+        return (n.is_finite() && n > 0.0).then_some(clamp_line_height(n));
+    }
+    if lower.ends_with("rem") {
+        let n: f32 = lower[..lower.len() - 3].trim().parse().ok()?;
+        return (n.is_finite() && n > 0.0).then_some(clamp_line_height(n * root_px));
+    }
+    if lower.ends_with("em") {
+        let n: f32 = lower[..lower.len() - 2].trim().parse().ok()?;
+        return (n.is_finite() && n > 0.0).then_some(clamp_line_height(n * font_size_px));
+    }
+    if lower.ends_with('%') {
+        let n: f32 = lower[..lower.len() - 1].trim().parse().ok()?;
+        return (n.is_finite() && n > 0.0).then_some(clamp_line_height(n / 100.0 * font_size_px));
+    }
+    let n: f32 = lower.parse().ok()?;
+    (n.is_finite() && n > 0.0).then_some(clamp_line_height(n * font_size_px))
+}
+
 fn clamp_margin(px: f32) -> f32 {
     px.clamp(0.0, 240.0)
 }
@@ -306,6 +354,9 @@ pub fn compute_dom_paint_hints(
             let font_size = merged_author_value(&m, &doc, "font-size")
                 .and_then(|v| parse_font_size_px(v, ROOT_PX))
                 .map(clamp_font);
+            let used_font_size = font_size.unwrap_or_else(|| default_font_size_px(n.kind));
+            let line_height_px = merged_author_value(&m, &doc, "line-height")
+                .and_then(|v| parse_line_height(v, used_font_size, ROOT_PX));
             let font_weight =
                 merged_author_value(&m, &doc, "font-weight").and_then(parse_font_weight);
             let font_style_italic =
@@ -319,6 +370,7 @@ pub fn compute_dom_paint_hints(
             DomNodePaintHints {
                 color,
                 font_size,
+                line_height_px,
                 font_weight,
                 font_style_italic,
                 margin_top,
@@ -638,5 +690,71 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].text_align, Some(TextAlignHint::Center));
+    }
+
+    #[test]
+    fn parse_line_height_normal_and_unitless() {
+        assert_eq!(parse_line_height("normal", 15.0, 16.0), None);
+        assert_eq!(parse_line_height("1.5", 20.0, 16.0), Some(30.0));
+        assert_eq!(parse_line_height("24px", 15.0, 16.0), Some(24.0));
+        assert_eq!(parse_line_height("150%", 20.0, 16.0), Some(30.0));
+        assert_eq!(parse_line_height("2em", 10.0, 16.0), Some(20.0));
+        assert!((parse_line_height("1.25rem", 15.0, 16.0).unwrap() - 20.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn line_height_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "line-height".into(),
+                    value_display: "2".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].line_height_px, Some(30.0));
+    }
+
+    #[test]
+    fn line_height_unitless_uses_author_font_size() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "body".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "line-height".into(),
+                        value_display: "2".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: "p".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "font-size".into(),
+                        value_display: "20px".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].font_size, Some(20.0));
+        assert_eq!(hints[0].line_height_px, Some(40.0));
     }
 }
