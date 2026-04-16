@@ -2,7 +2,7 @@
 
 use crate::css_resolve::{
     display_text_cow, resolve_text_indent_px, DisplayHint, DomNodePaintHints, TextAlignHint,
-    VisibilityHint, AUTHOR_STYLE_ROOT_PX,
+    VisibilityHint, WhiteSpaceHint, AUTHOR_STYLE_ROOT_PX,
 };
 use crate::i18n;
 use crate::i18n::Locale;
@@ -14,7 +14,7 @@ use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, and `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`) override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), and `white-space` (`nowrap` → no soft wrap) override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -140,7 +140,7 @@ pub fn render_nodes(
     }
 }
 
-fn layout_job_for_rich_text(ui: &Ui, rt: RichText, extra_leading: f32) -> egui::text::LayoutJob {
+fn layout_job_for_rich_text(ui: &Ui, rt: RichText, extra_leading: f32, nowrap: bool) -> egui::text::LayoutJob {
     let w = ui.available_width();
     let mut job = egui::WidgetText::from(rt).into_layout_job(
         ui.style(),
@@ -152,12 +152,15 @@ fn layout_job_for_rich_text(ui: &Ui, rt: RichText, extra_leading: f32) -> egui::
             sec.leading_space += extra_leading;
         }
     }
-    job.wrap = TextWrapping::from_wrap_mode_and_width(ui.wrap_mode(), w);
+    job.wrap = if nowrap {
+        TextWrapping::no_max_width()
+    } else {
+        TextWrapping::from_wrap_mode_and_width(ui.wrap_mode(), w)
+    };
     job
 }
 
-/// Paints author-styled text; uses a [`egui::text::LayoutJob`] when `text-indent` is set so the
-/// first wrapped line picks up egui’s first-line `leading_space` behavior.
+/// Paints author-styled text; uses a [`egui::text::LayoutJob`] when `text-indent` or `white-space: nowrap` needs layout control (`TextWrapping::no_max_width` for the latter).
 fn paint_styled_text(
     ui: &mut Ui,
     hint: Option<DomNodePaintHints>,
@@ -175,11 +178,16 @@ fn paint_styled_text(
         .and_then(|h| h.text_indent)
         .map(|s| resolve_text_indent_px(s, used_font_size, AUTHOR_STYLE_ROOT_PX, line_width))
         .unwrap_or(0.0);
+    let nowrap = matches!(
+        hint.and_then(|h| h.white_space),
+        Some(WhiteSpaceHint::Nowrap)
+    );
     let job_needed = indent_px.abs() > f32::EPSILON;
+    let use_layout_job = job_needed || nowrap;
 
     if let Some(href) = href {
-        if job_needed {
-            let job = layout_job_for_rich_text(ui, rt, indent_px);
+        if use_layout_job {
+            let job = layout_job_for_rich_text(ui, rt, indent_px, nowrap);
             let r = ui.add_visible(text_visible, Link::new(job));
             if text_visible && r.clicked() {
                 *link_target = Some(href.to_string());
@@ -196,8 +204,8 @@ fn paint_styled_text(
                 r.on_hover_text(href);
             }
         }
-    } else if job_needed {
-        let job = layout_job_for_rich_text(ui, rt, indent_px);
+    } else if use_layout_job {
+        let job = layout_job_for_rich_text(ui, rt, indent_px, nowrap);
         ui.add_visible(text_visible, Label::new(job));
     } else {
         ui.add_visible(text_visible, Label::new(rt));
