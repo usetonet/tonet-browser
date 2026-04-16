@@ -1,8 +1,9 @@
 //! Renders the simplified DOM into egui widgets.
 
 use crate::css_resolve::{
-    display_text_cow, resolve_max_width_cap_px, resolve_text_indent_px, DisplayHint, DomNodePaintHints,
-    OverflowWrapHint, TextAlignHint, VisibilityHint, WhiteSpaceHint, WordBreakHint, AUTHOR_STYLE_ROOT_PX,
+    display_text_cow, resolve_max_width_cap_px, resolve_padding_inset_px, resolve_text_indent_px,
+    DisplayHint, DomNodePaintHints, OverflowWrapHint, TextAlignHint, VisibilityHint, WhiteSpaceHint,
+    WordBreakHint, AUTHOR_STYLE_ROOT_PX,
 };
 use crate::i18n;
 use crate::i18n::Locale;
@@ -14,7 +15,7 @@ use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), and `max-width` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), `max-width`, and `padding-left` / `padding-right` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -48,12 +49,7 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                let rt = styled_rich_text(node, hint, size, color);
-                with_max_width(ui, hint, size, |ui| {
-                    with_text_align(ui, hint, |ui| {
-                        paint_styled_text(ui, hint, size, rt, None, link_target);
-                    });
-                });
+                paint_read_text_block(ui, node, hint, size, color, link_target);
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -67,12 +63,7 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                let rt = styled_rich_text(node, hint, size, color);
-                with_max_width(ui, hint, size, |ui| {
-                    with_text_align(ui, hint, |ui| {
-                        paint_styled_text(ui, hint, size, rt, None, link_target);
-                    });
-                });
+                paint_read_text_block(ui, node, hint, size, color, link_target);
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -86,12 +77,7 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                let rt = styled_rich_text(node, hint, size, color);
-                with_max_width(ui, hint, size, |ui| {
-                    with_text_align(ui, hint, |ui| {
-                        paint_styled_text(ui, hint, size, rt, None, link_target);
-                    });
-                });
+                paint_read_text_block(ui, node, hint, size, color, link_target);
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -105,12 +91,7 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                let rt = styled_rich_text(node, hint, size, color);
-                with_max_width(ui, hint, size, |ui| {
-                    with_text_align(ui, hint, |ui| {
-                        paint_styled_text(ui, hint, size, rt, None, link_target);
-                    });
-                });
+                paint_read_text_block(ui, node, hint, size, color, link_target);
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -128,19 +109,7 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                let rt = styled_rich_text(node, hint, size, color);
-                with_max_width(ui, hint, size, |ui| {
-                    with_text_align(ui, hint, |ui| {
-                        paint_styled_text(
-                            ui,
-                            hint,
-                            size,
-                            rt,
-                            node.href.as_deref(),
-                            link_target,
-                        );
-                    });
-                });
+                paint_read_text_block(ui, node, hint, size, color, link_target);
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -298,6 +267,60 @@ fn with_max_width(ui: &mut Ui, hint: Option<DomNodePaintHints>, used_font_size: 
         }
     } else {
         child(ui);
+    }
+}
+
+/// Horizontal `padding-left` / `padding-right` (per-node), then `max-width`, `text-align`, and text.
+fn paint_read_text_block(
+    ui: &mut Ui,
+    node: &DomNode,
+    hint: Option<DomNodePaintHints>,
+    size: f32,
+    color: Color32,
+    link_target: &mut Option<String>,
+) {
+    let full_w = ui.available_width().max(1.0);
+    let pl = hint
+        .and_then(|h| h.padding_left)
+        .map(|s| resolve_padding_inset_px(s, size, AUTHOR_STYLE_ROOT_PX, full_w))
+        .unwrap_or(0.0);
+    let pr = hint
+        .and_then(|h| h.padding_right)
+        .map(|s| resolve_padding_inset_px(s, size, AUTHOR_STYLE_ROOT_PX, full_w))
+        .unwrap_or(0.0);
+
+    if pl <= f32::EPSILON && pr <= f32::EPSILON {
+        let rt = styled_rich_text(node, hint, size, color);
+        let href = node.href.as_deref();
+        with_max_width(ui, hint, size, |ui| {
+            with_text_align(ui, hint, |ui| {
+                paint_styled_text(ui, hint, size, rt, href, link_target);
+            });
+        });
+    } else {
+        let inner_w = (full_w - pl - pr).max(1.0);
+        ui.horizontal(|ui| {
+            if pl > 0.01 {
+                ui.add_space(pl);
+            }
+            ui.allocate_ui_with_layout(
+                egui::vec2(inner_w, 0.0),
+                Layout::top_down(Align::Min),
+                |ui| {
+                    ui.set_width(inner_w);
+                    let rt = styled_rich_text(node, hint, size, color);
+                    let href = node.href.as_deref();
+                    with_max_width(ui, hint, size, |ui| {
+                        with_text_align(ui, hint, |ui| {
+                            paint_styled_text(ui, hint, size, rt, href, link_target);
+                        });
+                    });
+                },
+            );
+            if pr > 0.01 {
+                ui.add_space(pr);
+            }
+        });
     }
 }
 
