@@ -4055,6 +4055,7 @@ dependencies = [
  "serde_json",
  "sys-locale",
  "tonet-engine",
+ "unicode-segmentation",
  "url",
  "webbrowser",
 ]

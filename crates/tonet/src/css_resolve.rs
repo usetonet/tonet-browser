@@ -31,6 +31,13 @@ pub fn parse_text_align(value: &str) -> Option<TextAlignHint> {
 }
 
 /// Subset of CSS `text-transform` for the read view (`full-width` / etc. → unsupported).
+///
+/// `capitalize` follows CSS Text Level 3: UAX \#29 word boundaries (`split_word_bounds`), extended
+/// grapheme clusters, and only the first grapheme cluster of each word that begins with an
+/// alphabetic character is case-mapped; the rest of that word is unchanged (not lowercased).
+/// `uppercase` / `lowercase` use Unicode full case mappings from the standard library.
+/// Locale-sensitive casing (e.g. Turkish `i` / `İ`) waits on a reliable document `lang` (or
+/// equivalent) in the read path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TextTransformHint {
     #[default]
@@ -50,18 +57,39 @@ pub fn parse_text_transform(value: &str) -> Option<TextTransformHint> {
     }
 }
 
+fn titlecase_first_grapheme_cluster(g: &str) -> String {
+    let mut it = g.chars();
+    let Some(c0) = it.next() else {
+        return String::new();
+    };
+    let mut s: String = c0.to_uppercase().collect();
+    s.extend(it);
+    s
+}
+
+/// CSS `text-transform: capitalize` — [CSS Text](https://www.w3.org/TR/css-text-3/#valdef-text-transform-capitalize):
+/// first extended grapheme cluster of each UAX \#29 word that **starts** with an alphabetic
+/// character is uppercased at its first scalar value; other grapheme clusters in that word
+/// are copied verbatim.
 fn capitalize_words_css(s: &str) -> String {
+    use unicode_segmentation::UnicodeSegmentation;
+
     let mut out = String::with_capacity(s.len());
-    let mut at_word_start = true;
-    for ch in s.chars() {
-        if ch.is_whitespace() {
-            out.push(ch);
-            at_word_start = true;
-        } else if at_word_start {
-            out.extend(ch.to_uppercase());
-            at_word_start = false;
+    for segment in s.split_word_bounds() {
+        let gcs: Vec<&str> = segment.graphemes(true).collect();
+        let word_starts_with_letter = gcs
+            .first()
+            .is_some_and(|g| g.chars().any(|c| c.is_alphabetic()));
+        if word_starts_with_letter {
+            for (i, g) in gcs.iter().enumerate() {
+                if i == 0 {
+                    out.push_str(&titlecase_first_grapheme_cluster(g));
+                } else {
+                    out.push_str(g);
+                }
+            }
         } else {
-            out.extend(ch.to_lowercase());
+            out.push_str(segment);
         }
     }
     out
@@ -891,7 +919,19 @@ mod tests {
     fn display_text_capitalize_words() {
         assert_eq!(
             display_text_cow("hello WORLD", Some(TextTransformHint::Capitalize)).as_ref(),
-            "Hello World"
+            "Hello WORLD"
+        );
+        assert_eq!(
+            display_text_cow("the (quick) brown", Some(TextTransformHint::Capitalize)).as_ref(),
+            "The (Quick) Brown"
+        );
+        assert_eq!(
+            display_text_cow("don't stop", Some(TextTransformHint::Capitalize)).as_ref(),
+            "Don't Stop"
+        );
+        assert_eq!(
+            display_text_cow("32nd place", Some(TextTransformHint::Capitalize)).as_ref(),
+            "32nd Place"
         );
         assert_eq!(
             display_text_cow("Hi", Some(TextTransformHint::Uppercase)).as_ref(),
@@ -901,6 +941,15 @@ mod tests {
             display_text_cow("NONE", Some(TextTransformHint::None)).as_ref(),
             "NONE"
         );
+    }
+
+    #[test]
+    fn display_text_capitalize_respects_grapheme_clusters() {
+        // e + combining acute is one extended grapheme cluster; only base is uppercased.
+        let s = "e\u{301}lan";
+        let out = display_text_cow(s, Some(TextTransformHint::Capitalize));
+        assert!(out.starts_with('E'));
+        assert!(out.contains("\u{301}"));
     }
 
     #[test]
