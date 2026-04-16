@@ -235,7 +235,7 @@ pub struct DomNodePaintHints {
     pub opacity: Option<f32>,
     /// `visible` / `hidden` / `collapse` (see [`VisibilityHint`]); merged with `html`/`body`.
     pub visibility: Option<VisibilityHint>,
-    /// `display: none` removes the node from read layout (no margins). **Not** merged from `html`/`body` (CSS `display` is not inherited); only rules matching this node set it.
+    /// `display: none` removes the node from read layout (no margins). Set by rules matching this node, or for **every** node when `html` / `body` **type** defaults ([`cascade_document_defaults`]) resolve to `display: none` (subtree hidden). Other `display` values on `html`/`body` are not copied onto children (non-inheritance).
     pub display: Option<DisplayHint>,
 }
 
@@ -573,6 +573,10 @@ pub fn compute_dom_paint_hints(
     bundle: &[(String, Vec<ParsedQualifiedRule>)],
 ) -> Vec<DomNodePaintHints> {
     let doc = cascade_document_defaults(bundle);
+    let doc_suppresses_layout = doc
+        .get("display")
+        .and_then(|v| parse_display(v))
+        .is_some_and(|d| matches!(d, DisplayHint::None));
     nodes
         .iter()
         .map(|n| {
@@ -606,8 +610,12 @@ pub fn compute_dom_paint_hints(
             let text_indent = merged_author_value(&m, &doc, "text-indent").and_then(parse_text_indent);
             let opacity = merged_author_value(&m, &doc, "opacity").and_then(parse_opacity);
             let visibility = merged_author_value(&m, &doc, "visibility").and_then(parse_visibility);
-            // `display` is not inherited — do not read from `doc` or `body` would incorrectly hide all nodes.
-            let display = m.get("display").and_then(|v| parse_display(v));
+            // `display` is not inherited onto arbitrary properties, but `html`/`body { display: none }`
+            // suppresses the whole document subtree; approximate that by hiding every flattened node.
+            let mut display = m.get("display").and_then(|v| parse_display(v));
+            if doc_suppresses_layout {
+                display = Some(DisplayHint::None);
+            }
             DomNodePaintHints {
                 color,
                 font_size,
@@ -1305,7 +1313,7 @@ mod tests {
     }
 
     #[test]
-    fn display_not_merged_from_body() {
+    fn body_type_display_none_hides_all_nodes() {
         let nodes = vec![DomNode {
             kind: DomNodeType::Paragraph,
             text: "Hi".into(),
@@ -1320,6 +1328,84 @@ mod tests {
                 declarations: vec![SimpleDeclaration {
                     property: "display".into(),
                     value_display: "none".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].display, Some(DisplayHint::None));
+    }
+
+    #[test]
+    fn html_type_display_none_hides_all_nodes() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "html".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "display".into(),
+                    value_display: "none".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].display, Some(DisplayHint::None));
+    }
+
+    #[test]
+    fn later_html_display_block_overrides_body_display_none_in_defaults() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "body".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "display".into(),
+                        value_display: "none".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: "html".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "display".into(),
+                        value_display: "block".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].display, None);
+    }
+
+    #[test]
+    fn body_type_display_block_does_not_set_display_on_paragraph() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "display".into(),
+                    value_display: "block".into(),
                 }],
             }],
         )];
