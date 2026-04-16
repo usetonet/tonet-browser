@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -84,6 +84,49 @@ pub fn parse_white_space(value: &str) -> Option<WhiteSpaceHint> {
         "normal" | "pre-wrap" | "pre-line" => Some(WhiteSpaceHint::Normal),
         _ => None,
     }
+}
+
+/// Subset of CSS `word-break` for soft-wrapped read text (egui `TextWrapping::break_anywhere`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WordBreakHint {
+    #[default]
+    Normal,
+    BreakAll,
+}
+
+pub fn parse_word_break(value: &str) -> Option<WordBreakHint> {
+    match trim_css_ascii_whitespace(value).to_ascii_lowercase().as_str() {
+        "normal" => Some(WordBreakHint::Normal),
+        "break-all" => Some(WordBreakHint::BreakAll),
+        _ => None,
+    }
+}
+
+/// Subset of CSS `overflow-wrap` / legacy `word-wrap` for soft-wrapped lines.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum OverflowWrapHint {
+    #[default]
+    Normal,
+    Anywhere,
+    BreakWord,
+}
+
+pub fn parse_overflow_wrap(value: &str) -> Option<OverflowWrapHint> {
+    match trim_css_ascii_whitespace(value).to_ascii_lowercase().as_str() {
+        "normal" => Some(OverflowWrapHint::Normal),
+        "anywhere" => Some(OverflowWrapHint::Anywhere),
+        "break-word" => Some(OverflowWrapHint::BreakWord),
+        _ => None,
+    }
+}
+
+/// Merge `overflow-wrap` with legacy `word-wrap` (same cascade maps). If both keys exist, `overflow-wrap` wins.
+fn merged_overflow_wrap<'a>(
+    node: &'a HashMap<String, String>,
+    doc: &'a HashMap<String, String>,
+) -> Option<&'a str> {
+    merged_author_value(node, doc, "overflow-wrap")
+        .or_else(|| merged_author_value(node, doc, "word-wrap"))
 }
 
 /// Parse `text-align` keywords we support (`justify` → unsupported / `None`).
@@ -257,6 +300,10 @@ pub struct DomNodePaintHints {
     pub display: Option<DisplayHint>,
     /// `white-space` (`nowrap` vs `normal` / `pre-wrap` / `pre-line`); merged with `html`/`body`.
     pub white_space: Option<WhiteSpaceHint>,
+    /// `word-break` (`break-all` vs `normal`); merged with `html`/`body`.
+    pub word_break: Option<WordBreakHint>,
+    /// `overflow-wrap` or legacy `word-wrap`; merged with `html`/`body`. If both names are set on the same element, `overflow-wrap` wins.
+    pub overflow_wrap: Option<OverflowWrapHint>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -638,6 +685,9 @@ pub fn compute_dom_paint_hints(
             }
             let white_space =
                 merged_author_value(&m, &doc, "white-space").and_then(parse_white_space);
+            let word_break =
+                merged_author_value(&m, &doc, "word-break").and_then(parse_word_break);
+            let overflow_wrap = merged_overflow_wrap(&m, &doc).and_then(parse_overflow_wrap);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -655,6 +705,8 @@ pub fn compute_dom_paint_hints(
                 visibility,
                 display,
                 white_space,
+                word_break,
+                overflow_wrap,
             }
         })
         .collect()
@@ -1498,5 +1550,72 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].white_space, Some(WhiteSpaceHint::Normal));
+    }
+
+    #[test]
+    fn parse_word_break_keywords() {
+        assert_eq!(parse_word_break("break-all"), Some(WordBreakHint::BreakAll));
+        assert_eq!(parse_word_break("normal"), Some(WordBreakHint::Normal));
+        assert_eq!(parse_word_break("keep-all"), None);
+    }
+
+    #[test]
+    fn parse_overflow_wrap_keywords() {
+        assert_eq!(
+            parse_overflow_wrap("anywhere"),
+            Some(OverflowWrapHint::Anywhere)
+        );
+        assert_eq!(
+            parse_overflow_wrap("break-word"),
+            Some(OverflowWrapHint::BreakWord)
+        );
+        assert_eq!(parse_overflow_wrap("normal"), Some(OverflowWrapHint::Normal));
+        assert_eq!(parse_overflow_wrap("bogus"), None);
+    }
+
+    #[test]
+    fn word_break_break_all_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "word-break".into(),
+                    value_display: "break-all".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].word_break, Some(WordBreakHint::BreakAll));
+    }
+
+    #[test]
+    fn legacy_word_wrap_anywhere_maps_to_overflow_wrap_hint() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "p".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "word-wrap".into(),
+                    value_display: "anywhere".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].overflow_wrap, Some(OverflowWrapHint::Anywhere));
     }
 }
