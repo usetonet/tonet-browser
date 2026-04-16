@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -64,6 +64,24 @@ pub fn parse_display(value: &str) -> Option<DisplayHint> {
         | "table-cell"
         | "list-item"
         | "contents" => Some(DisplayHint::Flow),
+        _ => None,
+    }
+}
+
+/// Subset of CSS `white-space` for read-layout text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WhiteSpaceHint {
+    #[default]
+    Normal,
+    /// `nowrap` — single row until `\n`; no soft wrap at read-area width.
+    Nowrap,
+}
+
+/// Parse `white-space`. `pre` / `break-spaces` → `None` (not implemented); `pre-wrap` / `pre-line` treated like `normal` (soft wrap).
+pub fn parse_white_space(value: &str) -> Option<WhiteSpaceHint> {
+    match trim_css_ascii_whitespace(value).to_ascii_lowercase().as_str() {
+        "nowrap" => Some(WhiteSpaceHint::Nowrap),
+        "normal" | "pre-wrap" | "pre-line" => Some(WhiteSpaceHint::Normal),
         _ => None,
     }
 }
@@ -237,6 +255,8 @@ pub struct DomNodePaintHints {
     pub visibility: Option<VisibilityHint>,
     /// `display: none` removes the node from read layout (no margins). Set by rules matching this node, or for **every** node when `html` / `body` **type** defaults ([`cascade_document_defaults`]) resolve to `display: none` (subtree hidden). Other `display` values on `html`/`body` are not copied onto children (non-inheritance).
     pub display: Option<DisplayHint>,
+    /// `white-space` (`nowrap` vs `normal` / `pre-wrap` / `pre-line`); merged with `html`/`body`.
+    pub white_space: Option<WhiteSpaceHint>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -616,6 +636,8 @@ pub fn compute_dom_paint_hints(
             if doc_suppresses_layout {
                 display = Some(DisplayHint::None);
             }
+            let white_space =
+                merged_author_value(&m, &doc, "white-space").and_then(parse_white_space);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -632,6 +654,7 @@ pub fn compute_dom_paint_hints(
                 opacity,
                 visibility,
                 display,
+                white_space,
             }
         })
         .collect()
@@ -1411,5 +1434,69 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].display, None);
+    }
+
+    #[test]
+    fn parse_white_space_keywords() {
+        assert_eq!(parse_white_space("nowrap"), Some(WhiteSpaceHint::Nowrap));
+        assert_eq!(parse_white_space("NORMAL"), Some(WhiteSpaceHint::Normal));
+        assert_eq!(parse_white_space("pre-wrap"), Some(WhiteSpaceHint::Normal));
+        assert_eq!(parse_white_space("pre"), None);
+        assert_eq!(parse_white_space("break-spaces"), None);
+    }
+
+    #[test]
+    fn white_space_nowrap_merged_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "white-space".into(),
+                    value_display: "nowrap".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].white_space, Some(WhiteSpaceHint::Nowrap));
+    }
+
+    #[test]
+    fn white_space_normal_on_p_overrides_body_nowrap() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "body".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "white-space".into(),
+                        value_display: "nowrap".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: "p".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "white-space".into(),
+                        value_display: "normal".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].white_space, Some(WhiteSpaceHint::Normal));
     }
 }
