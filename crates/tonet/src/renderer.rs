@@ -10,7 +10,7 @@ use egui::{Color32, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `font-weight`, and `font-style` override or extend the built-in typography per node.
+/// `font-weight`, `font-style`, `margin-top`, and `margin-bottom` override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -37,32 +37,57 @@ pub fn render_nodes(
                 let (def_size, def_color) = (21.0, theme::page_title());
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
-                ui.add_space(4.0);
+                let top = hint
+                    .and_then(|h| h.margin_top)
+                    .unwrap_or_else(|| default_margin_top(node.kind));
+                ui.add_space(top);
                 ui.label(styled_rich_text(node, hint, size, color));
-                ui.add_space(8.0);
+                let bottom = hint
+                    .and_then(|h| h.margin_bottom)
+                    .unwrap_or_else(|| default_margin_bottom(node.kind));
+                ui.add_space(bottom);
             }
             DomNodeType::H1 => {
                 let (def_size, def_color) = (26.0, theme::body_text());
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
-                ui.add_space(6.0);
+                let top = hint
+                    .and_then(|h| h.margin_top)
+                    .unwrap_or_else(|| default_margin_top(node.kind));
+                ui.add_space(top);
                 ui.label(styled_rich_text(node, hint, size, color));
-                ui.add_space(4.0);
+                let bottom = hint
+                    .and_then(|h| h.margin_bottom)
+                    .unwrap_or_else(|| default_margin_bottom(node.kind));
+                ui.add_space(bottom);
             }
             DomNodeType::H2 => {
                 let (def_size, def_color) = (19.0, theme::body_text());
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
-                ui.add_space(4.0);
+                let top = hint
+                    .and_then(|h| h.margin_top)
+                    .unwrap_or_else(|| default_margin_top(node.kind));
+                ui.add_space(top);
                 ui.label(styled_rich_text(node, hint, size, color));
-                ui.add_space(2.0);
+                let bottom = hint
+                    .and_then(|h| h.margin_bottom)
+                    .unwrap_or_else(|| default_margin_bottom(node.kind));
+                ui.add_space(bottom);
             }
             DomNodeType::Paragraph => {
                 let (def_size, def_color) = (15.0, theme::body_text());
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
+                let top = hint
+                    .and_then(|h| h.margin_top)
+                    .unwrap_or_else(|| default_margin_top(node.kind));
+                ui.add_space(top);
                 ui.label(styled_rich_text(node, hint, size, color));
-                ui.add_space(6.0);
+                let bottom = hint
+                    .and_then(|h| h.margin_bottom)
+                    .unwrap_or_else(|| default_margin_bottom(node.kind));
+                ui.add_space(bottom);
             }
             DomNodeType::Link => {
                 let (def_size, def_color) = if node.href.is_some() {
@@ -72,6 +97,10 @@ pub fn render_nodes(
                 };
                 let size = hint.and_then(|h| h.font_size).unwrap_or(def_size);
                 let color = hint.and_then(|h| h.color).unwrap_or(def_color);
+                let top = hint
+                    .and_then(|h| h.margin_top)
+                    .unwrap_or_else(|| default_margin_top(node.kind));
+                ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
                 if let Some(ref href) = node.href {
                     let r = ui.link(rt);
@@ -82,9 +111,31 @@ pub fn render_nodes(
                 } else {
                     ui.label(rt);
                 }
-                ui.add_space(4.0);
+                let bottom = hint
+                    .and_then(|h| h.margin_bottom)
+                    .unwrap_or_else(|| default_margin_bottom(node.kind));
+                ui.add_space(bottom);
             }
         }
+    }
+}
+
+fn default_margin_top(kind: DomNodeType) -> f32 {
+    match kind {
+        DomNodeType::Title => 4.0,
+        DomNodeType::H1 => 6.0,
+        DomNodeType::H2 => 4.0,
+        DomNodeType::Paragraph | DomNodeType::Link => 0.0,
+    }
+}
+
+fn default_margin_bottom(kind: DomNodeType) -> f32 {
+    match kind {
+        DomNodeType::Title => 8.0,
+        DomNodeType::H1 => 4.0,
+        DomNodeType::H2 => 2.0,
+        DomNodeType::Paragraph => 6.0,
+        DomNodeType::Link => 4.0,
     }
 }
 
