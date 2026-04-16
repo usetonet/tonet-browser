@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right` / `padding-top` / `padding-bottom`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -219,54 +219,59 @@ pub fn resolve_text_indent_px(
     raw.clamp(-2000.0, 2000.0)
 }
 
-/// Expand CSS `padding` shorthand (1–4 tokens) into horizontal `(left, right)` [`TextIndentSpec`].
-/// Top/bottom are ignored for read layout. If any token is invalid, returns `(None, None)`.
+/// Expand CSS `padding` shorthand (1–4 tokens) into `(top, right, bottom, left)` [`TextIndentSpec`].
+/// If any token is invalid, returns four `None`.
 /// Order: 1 → all sides; 2 → vertical, horizontal; 3 → top, horizontal, bottom; 4 → top, right, bottom, left.
-fn parse_padding_shorthand_horizontal(value: &str) -> (Option<TextIndentSpec>, Option<TextIndentSpec>) {
+fn parse_padding_shorthand(value: &str) -> (
+    Option<TextIndentSpec>,
+    Option<TextIndentSpec>,
+    Option<TextIndentSpec>,
+    Option<TextIndentSpec>,
+) {
     let tokens: Vec<&str> = trim_css_ascii_whitespace(value)
         .split_whitespace()
         .collect();
     if tokens.is_empty() || tokens.len() > 4 {
-        return (None, None);
+        return (None, None, None, None);
     }
     let p = |t: &str| parse_text_indent(t);
     let Some(t0) = p(tokens[0]) else {
-        return (None, None);
+        return (None, None, None, None);
     };
     match tokens.len() {
-        1 => (Some(t0), Some(t0)),
+        1 => (Some(t0), Some(t0), Some(t0), Some(t0)),
         2 => {
             let Some(t1) = p(tokens[1]) else {
-                return (None, None);
+                return (None, None, None, None);
             };
-            (Some(t1), Some(t1))
+            (Some(t0), Some(t1), Some(t0), Some(t1))
         }
         3 => {
             let Some(t1) = p(tokens[1]) else {
-                return (None, None);
+                return (None, None, None, None);
             };
-            if p(tokens[2]).is_none() {
-                return (None, None);
-            }
-            (Some(t1), Some(t1))
+            let Some(t2) = p(tokens[2]) else {
+                return (None, None, None, None);
+            };
+            (Some(t0), Some(t1), Some(t2), Some(t1))
         }
         4 => {
             let Some(t1) = p(tokens[1]) else {
-                return (None, None);
+                return (None, None, None, None);
             };
-            if p(tokens[2]).is_none() {
-                return (None, None);
-            }
+            let Some(t2) = p(tokens[2]) else {
+                return (None, None, None, None);
+            };
             let Some(t3) = p(tokens[3]) else {
-                return (None, None);
+                return (None, None, None, None);
             };
-            (Some(t3), Some(t1))
+            (Some(t0), Some(t1), Some(t2), Some(t3))
         }
-        _ => (None, None),
+        _ => (None, None, None, None),
     }
 }
 
-/// Resolve a non-negative horizontal inset (`padding-left` / `padding-right`). `%` uses `containing_width_px` (read-area width before inset).
+/// Resolve a non-negative inset (`padding-*`). `%` uses `containing_width_px` (CSS2.1: vertical `%` padding also resolves against containing block **width**).
 pub fn resolve_padding_inset_px(
     spec: TextIndentSpec,
     used_font_size: f32,
@@ -442,6 +447,10 @@ pub struct DomNodePaintHints {
     pub padding_left: Option<TextIndentSpec>,
     /// `padding-right`; same as [`Self::padding_left`].
     pub padding_right: Option<TextIndentSpec>,
+    /// `padding-top`; **not** inherited. Longhand wins over the vertical slice of `padding` shorthand when both are set.
+    pub padding_top: Option<TextIndentSpec>,
+    /// `padding-bottom`; same as [`Self::padding_top`].
+    pub padding_bottom: Option<TextIndentSpec>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -845,11 +854,11 @@ pub fn compute_dom_paint_hints(
                 merged_author_value(&m, &doc, "word-break").and_then(parse_word_break);
             let overflow_wrap = merged_overflow_wrap(&m, &doc).and_then(parse_overflow_wrap);
             let max_width = m.get("max-width").and_then(|v| parse_max_width(v));
-            let (pad_sh_left, pad_sh_right) = m
+            let (pad_sh_top, pad_sh_right, pad_sh_bottom, pad_sh_left) = m
                 .get("padding")
                 .map(String::as_str)
-                .map(parse_padding_shorthand_horizontal)
-                .unwrap_or((None, None));
+                .map(parse_padding_shorthand)
+                .unwrap_or((None, None, None, None));
             let padding_left = m
                 .get("padding-left")
                 .map(String::as_str)
@@ -860,6 +869,16 @@ pub fn compute_dom_paint_hints(
                 .map(String::as_str)
                 .and_then(parse_text_indent)
                 .or(pad_sh_right);
+            let padding_top = m
+                .get("padding-top")
+                .map(String::as_str)
+                .and_then(parse_text_indent)
+                .or(pad_sh_top);
+            let padding_bottom = m
+                .get("padding-bottom")
+                .map(String::as_str)
+                .and_then(parse_text_indent)
+                .or(pad_sh_bottom);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -884,6 +903,8 @@ pub fn compute_dom_paint_hints(
                 max_width,
                 padding_left,
                 padding_right,
+                padding_top,
+                padding_bottom,
             }
         })
         .collect()
@@ -2038,6 +2059,8 @@ mod tests {
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].padding_left, Some(TextIndentSpec::Px(12.0)));
         assert_eq!(hints[0].padding_right, Some(TextIndentSpec::Px(12.0)));
+        assert_eq!(hints[0].padding_top, Some(TextIndentSpec::Px(12.0)));
+        assert_eq!(hints[0].padding_bottom, Some(TextIndentSpec::Px(12.0)));
     }
 
     #[test]
@@ -2062,6 +2085,8 @@ mod tests {
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].padding_left, Some(TextIndentSpec::Px(4.0)));
         assert_eq!(hints[0].padding_right, Some(TextIndentSpec::Px(2.0)));
+        assert_eq!(hints[0].padding_top, Some(TextIndentSpec::Px(1.0)));
+        assert_eq!(hints[0].padding_bottom, Some(TextIndentSpec::Px(3.0)));
     }
 
     #[test]
@@ -2092,5 +2117,60 @@ mod tests {
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].padding_left, Some(TextIndentSpec::Px(40.0)));
         assert_eq!(hints[0].padding_right, Some(TextIndentSpec::Px(2.0)));
+    }
+
+    #[test]
+    fn padding_top_longhand_overrides_shorthand() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["x".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".x".into(),
+                declarations: vec![
+                    SimpleDeclaration {
+                        property: "padding".into(),
+                        value_display: "1px 2px 3px 4px".into(),
+                    },
+                    SimpleDeclaration {
+                        property: "padding-top".into(),
+                        value_display: "40px".into(),
+                    },
+                ],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].padding_top, Some(TextIndentSpec::Px(40.0)));
+        assert_eq!(hints[0].padding_bottom, Some(TextIndentSpec::Px(3.0)));
+        assert_eq!(hints[0].padding_left, Some(TextIndentSpec::Px(4.0)));
+        assert_eq!(hints[0].padding_right, Some(TextIndentSpec::Px(2.0)));
+    }
+
+    #[test]
+    fn body_padding_top_not_on_paragraph_without_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "padding-top".into(),
+                    value_display: "50px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].padding_top, None);
     }
 }
