@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`).
+//! `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`).
 
 use std::collections::HashMap;
 
@@ -7,6 +7,27 @@ use egui::Color32;
 use tonet_engine::css::{cascade_document_defaults, cascade_element_rules, ParsedQualifiedRule};
 
 use crate::parser::DomNode;
+
+/// Subset of CSS `text-align` for the LTR read view (`start`/`end` ≈ left/right).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TextAlignHint {
+    #[default]
+    Start,
+    Center,
+    End,
+}
+
+/// Parse `text-align` keywords we support (`justify` → unsupported / `None`).
+pub fn parse_text_align(value: &str) -> Option<TextAlignHint> {
+    let t = trim_css_ascii_whitespace(value).to_ascii_lowercase();
+    match t.as_str() {
+        "left" | "start" => Some(TextAlignHint::Start),
+        "center" => Some(TextAlignHint::Center),
+        "right" | "end" => Some(TextAlignHint::End),
+        "justify" => None,
+        _ => None,
+    }
+}
 
 /// Per-node overrides from author stylesheets (simple type / class / id selectors).
 #[derive(Debug, Clone, Copy, Default)]
@@ -23,6 +44,8 @@ pub struct DomNodePaintHints {
     pub margin_bottom: Option<f32>,
     /// `text-decoration` underline (`Some(true)` / `Some(false)`); merged with `html`/`body` like typography.
     pub underline: Option<bool>,
+    /// Horizontal alignment for the node’s text line(s); merged with `html`/`body`.
+    pub text_align: Option<TextAlignHint>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -292,6 +315,7 @@ pub fn compute_dom_paint_hints(
             let margin_bottom = resolve_margin_bottom(&m, ROOT_PX);
             let underline = merged_author_value(&m, &doc, "text-decoration")
                 .and_then(parse_text_decoration_underline);
+            let text_align = merged_author_value(&m, &doc, "text-align").and_then(parse_text_align);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -300,6 +324,7 @@ pub fn compute_dom_paint_hints(
                 margin_top,
                 margin_bottom,
                 underline,
+                text_align,
             }
         })
         .collect()
@@ -580,5 +605,38 @@ mod tests {
             parse_text_decoration_underline("underline dotted"),
             Some(true)
         );
+    }
+
+    #[test]
+    fn parse_text_align_keywords() {
+        assert_eq!(parse_text_align("left"), Some(TextAlignHint::Start));
+        assert_eq!(parse_text_align("START"), Some(TextAlignHint::Start));
+        assert_eq!(parse_text_align("center"), Some(TextAlignHint::Center));
+        assert_eq!(parse_text_align("right"), Some(TextAlignHint::End));
+        assert_eq!(parse_text_align("end"), Some(TextAlignHint::End));
+        assert_eq!(parse_text_align("justify"), None);
+    }
+
+    #[test]
+    fn text_align_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "text-align".into(),
+                    value_display: "center".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].text_align, Some(TextAlignHint::Center));
     }
 }
