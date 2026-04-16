@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -8,6 +8,9 @@ use egui::Color32;
 use tonet_engine::css::{cascade_document_defaults, cascade_element_rules, ParsedQualifiedRule};
 
 use crate::parser::{DomNode, DomNodeType};
+
+/// Root em / `rem` base (px) for author length resolution in [`compute_dom_paint_hints`].
+pub const AUTHOR_STYLE_ROOT_PX: f32 = 16.0;
 
 /// Subset of CSS `text-align` for the LTR read view (`start`/`end` ≈ left/right).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -55,6 +58,57 @@ pub fn parse_text_transform(value: &str) -> Option<TextTransformHint> {
         "capitalize" => Some(TextTransformHint::Capitalize),
         _ => None,
     }
+}
+
+/// Parsed `text-indent` length; [`resolve_text_indent_px`] needs used `font-size`, root px,
+/// and **line width** (containing block width at paint time) for `%`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TextIndentSpec {
+    Px(f32),
+    Em(f32),
+    Rem(f32),
+    Percent(f32),
+}
+
+pub fn parse_text_indent(value: &str) -> Option<TextIndentSpec> {
+    let s = trim_css_ascii_whitespace(value).to_ascii_lowercase();
+    if s.is_empty() {
+        return None;
+    }
+    if let Some(rest) = s.strip_suffix("px") {
+        let n: f32 = rest.trim().parse().ok()?;
+        return n.is_finite().then_some(TextIndentSpec::Px(n));
+    }
+    if s.ends_with("rem") {
+        let n: f32 = s[..s.len() - 3].trim().parse().ok()?;
+        return n.is_finite().then_some(TextIndentSpec::Rem(n));
+    }
+    if s.ends_with("em") {
+        let n: f32 = s[..s.len() - 2].trim().parse().ok()?;
+        return n.is_finite().then_some(TextIndentSpec::Em(n));
+    }
+    if s.ends_with('%') {
+        let n: f32 = s[..s.len() - 1].trim().parse().ok()?;
+        return n.is_finite().then_some(TextIndentSpec::Percent(n));
+    }
+    None
+}
+
+/// Resolve [`TextIndentSpec`] to pixels for layout (`%` uses `line_width_px` as the containing width).
+pub fn resolve_text_indent_px(
+    spec: TextIndentSpec,
+    used_font_size: f32,
+    root_px: f32,
+    line_width_px: f32,
+) -> f32 {
+    let w = line_width_px.max(1.0);
+    let raw = match spec {
+        TextIndentSpec::Px(v) => v,
+        TextIndentSpec::Em(v) => v * used_font_size,
+        TextIndentSpec::Rem(v) => v * root_px,
+        TextIndentSpec::Percent(p) => p / 100.0 * w,
+    };
+    raw.clamp(-2000.0, 2000.0)
 }
 
 fn titlecase_first_grapheme_cluster(g: &str) -> String {
@@ -128,6 +182,8 @@ pub struct DomNodePaintHints {
     pub text_align: Option<TextAlignHint>,
     /// Casing of displayed text; merged with `html`/`body`.
     pub text_transform: Option<TextTransformHint>,
+    /// First-line inset; merged with `html`/`body`. Resolved to px at paint time via [`resolve_text_indent_px`].
+    pub text_indent: Option<TextIndentSpec>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -448,7 +504,6 @@ pub fn compute_dom_paint_hints(
     nodes: &[DomNode],
     bundle: &[(String, Vec<ParsedQualifiedRule>)],
 ) -> Vec<DomNodePaintHints> {
-    const ROOT_PX: f32 = 16.0;
     let doc = cascade_document_defaults(bundle);
     nodes
         .iter()
@@ -461,25 +516,26 @@ pub fn compute_dom_paint_hints(
             );
             let color = merged_author_value(&m, &doc, "color").and_then(parse_css_color);
             let font_size = merged_author_value(&m, &doc, "font-size")
-                .and_then(|v| parse_font_size_px(v, ROOT_PX))
+                .and_then(|v| parse_font_size_px(v, AUTHOR_STYLE_ROOT_PX))
                 .map(clamp_font);
             let used_font_size = font_size.unwrap_or_else(|| default_font_size_px(n.kind));
             let line_height_px = merged_author_value(&m, &doc, "line-height")
-                .and_then(|v| parse_line_height(v, used_font_size, ROOT_PX));
+                .and_then(|v| parse_line_height(v, used_font_size, AUTHOR_STYLE_ROOT_PX));
             let letter_spacing_px = merged_author_value(&m, &doc, "letter-spacing")
-                .and_then(|v| parse_letter_spacing(v, used_font_size, ROOT_PX));
+                .and_then(|v| parse_letter_spacing(v, used_font_size, AUTHOR_STYLE_ROOT_PX));
             let font_weight =
                 merged_author_value(&m, &doc, "font-weight").and_then(parse_font_weight);
             let font_style_italic =
                 merged_author_value(&m, &doc, "font-style").and_then(parse_font_style);
             // Margins are not inherited; longhands win over `margin` shorthand when present.
-            let margin_top = resolve_margin_top(&m, ROOT_PX);
-            let margin_bottom = resolve_margin_bottom(&m, ROOT_PX);
+            let margin_top = resolve_margin_top(&m, AUTHOR_STYLE_ROOT_PX);
+            let margin_bottom = resolve_margin_bottom(&m, AUTHOR_STYLE_ROOT_PX);
             let underline = merged_author_value(&m, &doc, "text-decoration")
                 .and_then(parse_text_decoration_underline);
             let text_align = merged_author_value(&m, &doc, "text-align").and_then(parse_text_align);
             let text_transform =
                 merged_author_value(&m, &doc, "text-transform").and_then(parse_text_transform);
+            let text_indent = merged_author_value(&m, &doc, "text-indent").and_then(parse_text_indent);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -492,6 +548,7 @@ pub fn compute_dom_paint_hints(
                 underline,
                 text_align,
                 text_transform,
+                text_indent,
             }
         })
         .collect()
@@ -1005,5 +1062,42 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].text_transform, Some(TextTransformHint::None));
+    }
+
+    #[test]
+    fn parse_text_indent_units() {
+        assert_eq!(parse_text_indent("2em"), Some(TextIndentSpec::Em(2.0)));
+        assert_eq!(parse_text_indent("-12px"), Some(TextIndentSpec::Px(-12.0)));
+        assert_eq!(parse_text_indent("10%"), Some(TextIndentSpec::Percent(10.0)));
+        assert_eq!(parse_text_indent("1.5rem"), Some(TextIndentSpec::Rem(1.5)));
+    }
+
+    #[test]
+    fn resolve_text_indent_percent_uses_line_width() {
+        let px = resolve_text_indent_px(TextIndentSpec::Percent(10.0), 15.0, 16.0, 400.0);
+        assert!((px - 40.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn text_indent_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "text-indent".into(),
+                    value_display: "20px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].text_indent, Some(TextIndentSpec::Px(20.0)));
     }
 }

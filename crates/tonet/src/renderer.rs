@@ -1,16 +1,19 @@
 //! Renders the simplified DOM into egui widgets.
 
-use crate::css_resolve::{display_text_cow, DomNodePaintHints, TextAlignHint};
+use crate::css_resolve::{
+    display_text_cow, resolve_text_indent_px, DomNodePaintHints, TextAlignHint, AUTHOR_STYLE_ROOT_PX,
+};
 use crate::i18n;
 use crate::i18n::Locale;
 use crate::parser::{DomNode, DomNodeType};
 use crate::theme;
-use egui::{Align, Color32, Layout, RichText, Ui};
+use egui::text::TextWrapping;
+use egui::{Align, Color32, FontSelection, Layout, RichText, Ui};
 
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, and `text-transform` override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, and `text-indent` override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -43,7 +46,7 @@ pub fn render_nodes(
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
                 with_text_align(ui, hint, |ui| {
-                    ui.label(rt);
+                    paint_styled_text(ui, hint, size, rt, None, link_target);
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -60,7 +63,7 @@ pub fn render_nodes(
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
                 with_text_align(ui, hint, |ui| {
-                    ui.label(rt);
+                    paint_styled_text(ui, hint, size, rt, None, link_target);
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -77,7 +80,7 @@ pub fn render_nodes(
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
                 with_text_align(ui, hint, |ui| {
-                    ui.label(rt);
+                    paint_styled_text(ui, hint, size, rt, None, link_target);
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -94,7 +97,7 @@ pub fn render_nodes(
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
                 with_text_align(ui, hint, |ui| {
-                    ui.label(rt);
+                    paint_styled_text(ui, hint, size, rt, None, link_target);
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -115,15 +118,14 @@ pub fn render_nodes(
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
                 with_text_align(ui, hint, |ui| {
-                    if let Some(ref href) = node.href {
-                        let r = ui.link(rt.clone());
-                        if r.clicked() {
-                            *link_target = Some(href.clone());
-                        }
-                        r.on_hover_text(href);
-                    } else {
-                        ui.label(rt);
-                    }
+                    paint_styled_text(
+                        ui,
+                        hint,
+                        size,
+                        rt,
+                        node.href.as_deref(),
+                        link_target,
+                    );
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -131,6 +133,62 @@ pub fn render_nodes(
                 ui.add_space(bottom);
             }
         }
+    }
+}
+
+fn layout_job_for_rich_text(ui: &Ui, rt: RichText, extra_leading: f32) -> egui::text::LayoutJob {
+    let w = ui.available_width();
+    let mut job = egui::WidgetText::from(rt).into_layout_job(
+        ui.style(),
+        FontSelection::default(),
+        Align::Min,
+    );
+    if extra_leading.abs() > f32::EPSILON {
+        if let Some(sec) = job.sections.first_mut() {
+            sec.leading_space += extra_leading;
+        }
+    }
+    job.wrap = TextWrapping::from_wrap_mode_and_width(ui.wrap_mode(), w);
+    job
+}
+
+/// Paints author-styled text; uses a [`egui::text::LayoutJob`] when `text-indent` is set so the
+/// first wrapped line picks up egui’s first-line `leading_space` behavior.
+fn paint_styled_text(
+    ui: &mut Ui,
+    hint: Option<DomNodePaintHints>,
+    used_font_size: f32,
+    rt: RichText,
+    href: Option<&str>,
+    link_target: &mut Option<String>,
+) {
+    let line_width = ui.available_width();
+    let indent_px = hint
+        .and_then(|h| h.text_indent)
+        .map(|s| resolve_text_indent_px(s, used_font_size, AUTHOR_STYLE_ROOT_PX, line_width))
+        .unwrap_or(0.0);
+    let job_needed = indent_px.abs() > f32::EPSILON;
+
+    if let Some(href) = href {
+        if job_needed {
+            let job = layout_job_for_rich_text(ui, rt, indent_px);
+            let r = ui.link(job);
+            if r.clicked() {
+                *link_target = Some(href.to_string());
+            }
+            r.on_hover_text(href);
+        } else {
+            let r = ui.link(rt);
+            if r.clicked() {
+                *link_target = Some(href.to_string());
+            }
+            r.on_hover_text(href);
+        }
+    } else if job_needed {
+        let job = layout_job_for_rich_text(ui, rt, indent_px);
+        ui.label(job);
+    } else {
+        ui.label(rt);
     }
 }
 
