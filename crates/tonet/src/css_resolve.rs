@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -412,6 +412,10 @@ pub struct DomNodePaintHints {
     pub margin_top: Option<f32>,
     /// Vertical spacing after the block (`margin-bottom`). **Not** inherited from `html`/`body`.
     pub margin_bottom: Option<f32>,
+    /// Horizontal spacing before the block (`margin-left` or `margin` shorthand). **Not** inherited from `html`/`body`.
+    pub margin_left: Option<f32>,
+    /// Horizontal spacing after the block (`margin-right` or `margin` shorthand). **Not** inherited from `html`/`body`.
+    pub margin_right: Option<f32>,
     /// `text-decoration` underline (`Some(true)` / `Some(false)`); merged with `html`/`body` like typography.
     pub underline: Option<bool>,
     /// Horizontal alignment for the node’s text line(s); merged with `html`/`body`.
@@ -710,6 +714,22 @@ fn resolve_margin_bottom(m: &HashMap<String, String>, root_px: f32) -> Option<f3
         .and_then(|sh| parse_margin_shorthand_lengths(sh, root_px).2)
 }
 
+fn resolve_margin_left(m: &HashMap<String, String>, root_px: f32) -> Option<f32> {
+    if let Some(v) = m.get("margin-left") {
+        return parse_font_size_px(v, root_px).map(clamp_margin);
+    }
+    m.get("margin")
+        .and_then(|sh| parse_margin_shorthand_lengths(sh, root_px).3)
+}
+
+fn resolve_margin_right(m: &HashMap<String, String>, root_px: f32) -> Option<f32> {
+    if let Some(v) = m.get("margin-right") {
+        return parse_font_size_px(v, root_px).map(clamp_margin);
+    }
+    m.get("margin")
+        .and_then(|sh| parse_margin_shorthand_lengths(sh, root_px).1)
+}
+
 /// Parse `font-weight` keywords and numeric `100`…`900`.
 pub fn parse_font_weight(value: &str) -> Option<u16> {
     let s = trim_css_ascii_whitespace(value);
@@ -803,6 +823,8 @@ pub fn compute_dom_paint_hints(
             // Margins are not inherited; longhands win over `margin` shorthand when present.
             let margin_top = resolve_margin_top(&m, AUTHOR_STYLE_ROOT_PX);
             let margin_bottom = resolve_margin_bottom(&m, AUTHOR_STYLE_ROOT_PX);
+            let margin_left = resolve_margin_left(&m, AUTHOR_STYLE_ROOT_PX);
+            let margin_right = resolve_margin_right(&m, AUTHOR_STYLE_ROOT_PX);
             let underline = merged_author_value(&m, &doc, "text-decoration")
                 .and_then(parse_text_decoration_underline);
             let text_align = merged_author_value(&m, &doc, "text-align").and_then(parse_text_align);
@@ -847,6 +869,8 @@ pub fn compute_dom_paint_hints(
                 font_style_italic,
                 margin_top,
                 margin_bottom,
+                margin_left,
+                margin_right,
                 underline,
                 text_align,
                 text_transform,
@@ -1077,6 +1101,8 @@ mod tests {
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].margin_top, Some(8.0));
         assert_eq!(hints[0].margin_bottom, Some(8.0));
+        assert_eq!(hints[0].margin_left, Some(8.0));
+        assert_eq!(hints[0].margin_right, Some(8.0));
     }
 
     #[test]
@@ -1107,6 +1133,85 @@ mod tests {
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].margin_top, Some(20.0));
         assert_eq!(hints[0].margin_bottom, Some(1.0));
+        assert_eq!(hints[0].margin_left, Some(1.0));
+        assert_eq!(hints[0].margin_right, Some(1.0));
+    }
+
+    #[test]
+    fn margin_four_values_sets_left_and_right() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["m".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".m".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "margin".into(),
+                    value_display: "1px 2px 3px 4px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].margin_left, Some(4.0));
+        assert_eq!(hints[0].margin_right, Some(2.0));
+    }
+
+    #[test]
+    fn margin_left_longhand_overrides_shorthand() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["m".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".m".into(),
+                declarations: vec![
+                    SimpleDeclaration {
+                        property: "margin".into(),
+                        value_display: "1px 2px 3px 4px".into(),
+                    },
+                    SimpleDeclaration {
+                        property: "margin-left".into(),
+                        value_display: "40px".into(),
+                    },
+                ],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].margin_left, Some(40.0));
+        assert_eq!(hints[0].margin_right, Some(2.0));
+    }
+
+    #[test]
+    fn body_margin_left_not_on_paragraph_without_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "margin-left".into(),
+                    value_display: "50px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].margin_left, None);
     }
 
     #[test]
