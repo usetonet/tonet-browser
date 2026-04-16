@@ -1,8 +1,10 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
 //! `font-weight`, `font-style`).
 
+use std::collections::HashMap;
+
 use egui::Color32;
-use tonet_engine::css::{cascade_element_rules, ParsedQualifiedRule};
+use tonet_engine::css::{cascade_document_defaults, cascade_element_rules, ParsedQualifiedRule};
 
 use crate::parser::DomNode;
 
@@ -172,12 +174,24 @@ pub fn parse_font_style(value: &str) -> Option<bool> {
     }
 }
 
+fn merged_author_value<'a>(
+    node: &'a HashMap<String, String>,
+    doc: &'a HashMap<String, String>,
+    key: &str,
+) -> Option<&'a str> {
+    node.get(key).or(doc.get(key)).map(String::as_str)
+}
+
 /// Build one [`DomNodePaintHints`] per DOM node from `bundle` (same order as `nodes`).
+///
+/// Declarations from `html` / `body` **type** rules (`tonet_engine::css::cascade_document_defaults`)
+/// apply when a node does not set the same property.
 pub fn compute_dom_paint_hints(
     nodes: &[DomNode],
     bundle: &[(String, Vec<ParsedQualifiedRule>)],
 ) -> Vec<DomNodePaintHints> {
     const ROOT_PX: f32 = 16.0;
+    let doc = cascade_document_defaults(bundle);
     nodes
         .iter()
         .map(|n| {
@@ -187,13 +201,14 @@ pub fn compute_dom_paint_hints(
                 &n.classes,
                 n.element_id.as_deref(),
             );
-            let color = m.get("color").and_then(|v| parse_css_color(v));
-            let font_size = m
-                .get("font-size")
+            let color = merged_author_value(&m, &doc, "color").and_then(parse_css_color);
+            let font_size = merged_author_value(&m, &doc, "font-size")
                 .and_then(|v| parse_font_size_px(v, ROOT_PX))
                 .map(clamp_font);
-            let font_weight = m.get("font-weight").and_then(|v| parse_font_weight(v));
-            let font_style_italic = m.get("font-style").and_then(|v| parse_font_style(v));
+            let font_weight =
+                merged_author_value(&m, &doc, "font-weight").and_then(parse_font_weight);
+            let font_style_italic =
+                merged_author_value(&m, &doc, "font-style").and_then(parse_font_style);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -322,5 +337,28 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].color, Some(Color32::BLUE));
+    }
+
+    #[test]
+    fn paragraph_inherits_body_color() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "color".into(),
+                    value_display: "green".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].color, Some(Color32::GREEN));
     }
 }

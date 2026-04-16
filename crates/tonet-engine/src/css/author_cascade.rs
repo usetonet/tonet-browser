@@ -2,6 +2,9 @@
 //!
 //! No combinators or pseudo-classes. When several rules set the same property, the winner is the
 //! higher **specificity** (`#id` > `.class` > type); ties break by **document order** (later rule).
+//!
+//! [`cascade_document_defaults`] collects only `html` / `body` **type** rules in stylesheet order so
+//! the shell can approximate inherited paint (Tonet does not emit `html` / `body` as `DomNode`s).
 
 use std::collections::HashMap;
 
@@ -155,6 +158,52 @@ pub fn cascade_simple_type_rules(
     cascade_element_rules(bundle, element_tag_lower, &[], None)
 }
 
+fn is_document_root_type_tag(tag: &str) -> bool {
+    tag == "html" || tag == "body"
+}
+
+/// Declarations from rules whose prelude is the type selector `html` or `body` only.
+///
+/// Rules are considered in bundle order; other selectors are skipped. Among matching rules,
+/// specificity is always type-level `(0,0,1)`; ties use rule order (and declaration index within
+/// a rule), same as [`cascade_element_rules`].
+pub fn cascade_document_defaults(
+    bundle: &[(String, Vec<ParsedQualifiedRule>)],
+) -> HashMap<String, String> {
+    let mut best: HashMap<String, ((u8, u8, u32), u32, String)> = HashMap::new();
+    let mut doc_order = 0u32;
+    for (_url, rules) in bundle {
+        for rule in rules {
+            let Some(SimpleSelectorPrelude::Type { tag }) =
+                parse_simple_prelude(&rule.prelude_display)
+            else {
+                continue;
+            };
+            if !is_document_root_type_tag(&tag) {
+                continue;
+            }
+            let spec = (0, 0, 1);
+            for (di, d) in rule.declarations.iter().enumerate() {
+                let key = d.property.to_ascii_lowercase();
+                let tie = doc_order.saturating_mul(4096).saturating_add(di as u32);
+                let cand_val = d.value_display.clone();
+                match best.get(&key) {
+                    None => {
+                        best.insert(key, (spec, tie, cand_val));
+                    }
+                    Some((ex_spec, ex_tie, _)) => {
+                        if (spec, tie) > (*ex_spec, *ex_tie) {
+                            best.insert(key, (spec, tie, cand_val));
+                        }
+                    }
+                }
+            }
+            doc_order = doc_order.saturating_add(1);
+        }
+    }
+    best.into_iter().map(|(k, (_, _, v))| (k, v)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -258,5 +307,32 @@ mod tests {
         )];
         let m = cascade_element_rules(&bundle, "p", &[], None);
         assert_eq!(m.get("color").map(String::as_str), Some("green"));
+    }
+
+    #[test]
+    fn document_defaults_html_body_order() {
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule("body", vec![("color", "red")]),
+                rule("p", vec![("color", "blue")]),
+                rule("body", vec![("color", "green")]),
+            ],
+        )];
+        let m = cascade_document_defaults(&bundle);
+        assert_eq!(m.get("color").map(String::as_str), Some("green"));
+    }
+
+    #[test]
+    fn document_defaults_skips_class_selectors() {
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule(".theme", vec![("color", "red")]),
+                rule("html", vec![("color", "navy")]),
+            ],
+        )];
+        let m = cascade_document_defaults(&bundle);
+        assert_eq!(m.get("color").map(String::as_str), Some("navy"));
     }
 }
