@@ -10,7 +10,7 @@ use egui::{Color32, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `font-weight`, `font-style`, `margin-top`, and `margin-bottom` override or extend built-in page chrome.
+/// `font-weight`, `font-style`, `margin` / margins, and `text-decoration` override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -159,6 +159,9 @@ fn styled_rich_text(
     }
     if matches!(hint.and_then(|h| h.font_style_italic), Some(true)) {
         rt = rt.italics();
+    }
+    if matches!(hint.and_then(|h| h.underline), Some(true)) {
+        rt = rt.underline();
     }
     rt
 }
