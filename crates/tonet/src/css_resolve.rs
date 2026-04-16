@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `font-weight`, `font-style`, `margin-top`, `margin-bottom`).
+//! `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`).
 
 use std::collections::HashMap;
 
@@ -21,6 +21,8 @@ pub struct DomNodePaintHints {
     pub margin_top: Option<f32>,
     /// Vertical spacing after the block (`margin-bottom`). **Not** inherited from `html`/`body`.
     pub margin_bottom: Option<f32>,
+    /// `text-decoration` underline (`Some(true)` / `Some(false)`); merged with `html`/`body` like typography.
+    pub underline: Option<bool>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -150,6 +152,74 @@ fn clamp_margin(px: f32) -> f32 {
     px.clamp(0.0, 240.0)
 }
 
+/// `text-decoration`: `underline` → `true`, `none` → `false`, else `None` (unsupported tokens ignored unless `underline` appears).
+pub fn parse_text_decoration_underline(value: &str) -> Option<bool> {
+    let t = trim_css_ascii_whitespace(value).to_ascii_lowercase();
+    if t.is_empty() {
+        return None;
+    }
+    if t == "none" {
+        return Some(false);
+    }
+    if t.split_whitespace().any(|tok| tok == "underline") {
+        return Some(true);
+    }
+    None
+}
+
+/// Expand CSS `margin` shorthand into `(top, right, bottom, left)` using the same length parser as `font-size`.
+fn parse_margin_shorthand_lengths(
+    value: &str,
+    root_px: f32,
+) -> (Option<f32>, Option<f32>, Option<f32>, Option<f32>) {
+    let tokens: Vec<&str> = trim_css_ascii_whitespace(value)
+        .split_whitespace()
+        .collect();
+    let p = |t: &str| parse_font_size_px(t, root_px).map(clamp_margin);
+    match tokens.len() {
+        0 => (None, None, None, None),
+        1 => {
+            let v = p(tokens[0]);
+            (v, v, v, v)
+        }
+        2 => {
+            let tb = p(tokens[0]);
+            let rl = p(tokens[1]);
+            (tb, rl, tb, rl)
+        }
+        3 => {
+            let t = p(tokens[0]);
+            let r = p(tokens[1]);
+            let b = p(tokens[2]);
+            let l = r;
+            (t, r, b, l)
+        }
+        _ => {
+            let t = p(tokens[0]);
+            let r = tokens.get(1).and_then(|x| p(x));
+            let b = tokens.get(2).and_then(|x| p(x));
+            let l = tokens.get(3).and_then(|x| p(x));
+            (t, r, b, l)
+        }
+    }
+}
+
+fn resolve_margin_top(m: &HashMap<String, String>, root_px: f32) -> Option<f32> {
+    if let Some(v) = m.get("margin-top") {
+        return parse_font_size_px(v, root_px).map(clamp_margin);
+    }
+    m.get("margin")
+        .and_then(|sh| parse_margin_shorthand_lengths(sh, root_px).0)
+}
+
+fn resolve_margin_bottom(m: &HashMap<String, String>, root_px: f32) -> Option<f32> {
+    if let Some(v) = m.get("margin-bottom") {
+        return parse_font_size_px(v, root_px).map(clamp_margin);
+    }
+    m.get("margin")
+        .and_then(|sh| parse_margin_shorthand_lengths(sh, root_px).2)
+}
+
 /// Parse `font-weight` keywords and numeric `100`…`900`.
 pub fn parse_font_weight(value: &str) -> Option<u16> {
     let s = trim_css_ascii_whitespace(value);
@@ -217,15 +287,11 @@ pub fn compute_dom_paint_hints(
                 merged_author_value(&m, &doc, "font-weight").and_then(parse_font_weight);
             let font_style_italic =
                 merged_author_value(&m, &doc, "font-style").and_then(parse_font_style);
-            // Margins are not inherited in CSS; only match the element’s own rules.
-            let margin_top = m
-                .get("margin-top")
-                .and_then(|v| parse_font_size_px(v, ROOT_PX))
-                .map(clamp_margin);
-            let margin_bottom = m
-                .get("margin-bottom")
-                .and_then(|v| parse_font_size_px(v, ROOT_PX))
-                .map(clamp_margin);
+            // Margins are not inherited; longhands win over `margin` shorthand when present.
+            let margin_top = resolve_margin_top(&m, ROOT_PX);
+            let margin_bottom = resolve_margin_bottom(&m, ROOT_PX);
+            let underline = merged_author_value(&m, &doc, "text-decoration")
+                .and_then(parse_text_decoration_underline);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -233,6 +299,7 @@ pub fn compute_dom_paint_hints(
                 font_style_italic,
                 margin_top,
                 margin_bottom,
+                underline,
             }
         })
         .collect()
@@ -426,5 +493,92 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert!(hints[0].margin_top.is_none());
+    }
+
+    #[test]
+    fn margin_shorthand_sets_top_and_bottom() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "p".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "margin".into(),
+                    value_display: "8px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].margin_top, Some(8.0));
+        assert_eq!(hints[0].margin_bottom, Some(8.0));
+    }
+
+    #[test]
+    fn margin_top_longhand_overrides_shorthand() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "p".into(),
+                declarations: vec![
+                    SimpleDeclaration {
+                        property: "margin".into(),
+                        value_display: "1px".into(),
+                    },
+                    SimpleDeclaration {
+                        property: "margin-top".into(),
+                        value_display: "20px".into(),
+                    },
+                ],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].margin_top, Some(20.0));
+        assert_eq!(hints[0].margin_bottom, Some(1.0));
+    }
+
+    #[test]
+    fn text_decoration_underline_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "text-decoration".into(),
+                    value_display: "underline".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].underline, Some(true));
+    }
+
+    #[test]
+    fn parse_text_decoration_keywords() {
+        assert_eq!(parse_text_decoration_underline("none"), Some(false));
+        assert_eq!(parse_text_decoration_underline("underline"), Some(true));
+        assert_eq!(
+            parse_text_decoration_underline("underline dotted"),
+            Some(true)
+        );
     }
 }
