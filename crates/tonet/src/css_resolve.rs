@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`, `background` shorthand (single `<color>` token only)).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -451,7 +451,8 @@ pub struct DomNodePaintHints {
     pub padding_top: Option<TextIndentSpec>,
     /// `padding-bottom`; same as [`Self::padding_top`].
     pub padding_bottom: Option<TextIndentSpec>,
-    /// `background-color` (same syntax as `color`); **not** inherited. Omitted when `transparent` or alpha zero.
+    /// Fill from `background-color`, or from `background` when that shorthand is a single color token; **not** inherited.
+    /// When the cascade map contains **`background-color`**, that longhand wins (even `transparent`); otherwise `background` is consulted.
     pub background_color: Option<Color32>,
 }
 
@@ -476,6 +477,24 @@ pub fn parse_css_color(value: &str) -> Option<Color32> {
         return parse_rgb_function(s);
     }
     named_color(s)
+}
+
+/// `background` shorthand: only a **single** `<color>` value (`#fff`, `rgb()` / `rgba()` with optional
+/// internal spaces, named colors). Multi-token values (`#f00 url(x)`, gradients) return `None`.
+pub fn parse_background_shorthand_color_only(value: &str) -> Option<Color32> {
+    let s = trim_css_ascii_whitespace(value);
+    if s.is_empty() {
+        return None;
+    }
+    let lower = s.to_ascii_lowercase();
+    if lower.starts_with("rgb(") || lower.starts_with("rgba(") {
+        return parse_css_color(s);
+    }
+    let tokens: Vec<&str> = s.split_whitespace().collect();
+    if tokens.len() != 1 {
+        return None;
+    }
+    parse_css_color(tokens[0])
 }
 
 fn parse_hex_color(hex: &str) -> Option<Color32> {
@@ -881,11 +900,17 @@ pub fn compute_dom_paint_hints(
                 .map(String::as_str)
                 .and_then(parse_text_indent)
                 .or(pad_sh_bottom);
-            let background_color = m
-                .get("background-color")
-                .map(String::as_str)
-                .and_then(parse_css_color)
-                .filter(|c| c.a() > 0);
+            let background_color = if m.contains_key("background-color") {
+                m.get("background-color")
+                    .map(String::as_str)
+                    .and_then(parse_css_color)
+                    .filter(|c| c.a() > 0)
+            } else {
+                m.get("background")
+                    .map(String::as_str)
+                    .and_then(parse_background_shorthand_color_only)
+                    .filter(|c| c.a() > 0)
+            };
             DomNodePaintHints {
                 color,
                 font_size,
@@ -2247,6 +2272,136 @@ mod tests {
                 declarations: vec![SimpleDeclaration {
                     property: "background-color".into(),
                     value_display: "red".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].background_color, None);
+    }
+
+    #[test]
+    fn background_shorthand_rgb_function_with_spaces() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["box".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".box".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "background".into(),
+                    value_display: "rgb(10, 20, 30)".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(
+            hints[0].background_color,
+            Some(Color32::from_rgb(10, 20, 30))
+        );
+    }
+
+    #[test]
+    fn background_shorthand_single_color_sets_hint() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["box".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".box".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "background".into(),
+                    value_display: "#112233".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(
+            hints[0].background_color,
+            Some(Color32::from_rgb(0x11, 0x22, 0x33))
+        );
+    }
+
+    #[test]
+    fn background_shorthand_multi_token_yields_none() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["box".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".box".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "background".into(),
+                    value_display: "#f00 url(bg.png) no-repeat".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].background_color, None);
+    }
+
+    #[test]
+    fn background_color_longhand_key_wins_over_background_shorthand() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["box".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".box".into(),
+                declarations: vec![
+                    SimpleDeclaration {
+                        property: "background".into(),
+                        value_display: "#ff0000".into(),
+                    },
+                    SimpleDeclaration {
+                        property: "background-color".into(),
+                        value_display: "#00ff00".into(),
+                    },
+                ],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(
+            hints[0].background_color,
+            Some(Color32::from_rgb(0, 0xff, 0))
+        );
+    }
+
+    #[test]
+    fn body_background_shorthand_not_on_paragraph_without_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "background".into(),
+                    value_display: "yellow".into(),
                 }],
             }],
         )];
