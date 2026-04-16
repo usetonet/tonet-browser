@@ -1,7 +1,7 @@
-//! Minimal **author stylesheet** cascade: one **simple selector** per prelude (`p`, `.lead`, `#x`).
+//! Minimal **author stylesheet** cascade: one **simple selector** per prelude (`p`, `.lead`, `#x`, `p.lead`).
 //!
 //! No combinators or pseudo-classes. When several rules set the same property, the winner is the
-//! higher **specificity** (`#id` > `.class` > type); ties break by **document order** (later rule).
+//! higher **specificity** (`#id` > `type.class` > `.class` > `type`); ties break by **document order** (later rule).
 //!
 //! [`cascade_document_defaults`] collects only `html` / `body` **type** rules in stylesheet order so
 //! the shell can approximate inherited paint (Tonet does not emit `html` / `body` as `DomNode`s).
@@ -10,18 +10,21 @@ use std::collections::HashMap;
 
 use super::declarations::ParsedQualifiedRule;
 
-/// Parsed single-token prelude (type, class, or id).
+/// Parsed prelude: type, class, id, or compound `tag.class` (single class name, no extra dots).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SimpleSelectorPrelude {
     Type { tag: String },
     Class { name: String },
     Id { name: String },
+    /// `p.intro` — element must match `tag` **and** include `class` in its `class` list (HTML case-sensitive).
+    TypeClass { tag: String, class: String },
 }
 
 fn specificity(p: &SimpleSelectorPrelude) -> (u8, u8, u32) {
     match p {
         SimpleSelectorPrelude::Type { .. } => (0, 0, 1),
         SimpleSelectorPrelude::Class { .. } => (0, 1, 0),
+        SimpleSelectorPrelude::TypeClass { .. } => (0, 1, 1),
         SimpleSelectorPrelude::Id { .. } => (1, 0, 0),
     }
 }
@@ -49,6 +52,19 @@ pub fn parse_simple_prelude(prelude: &str) -> Option<SimpleSelectorPrelude> {
         return Some(SimpleSelectorPrelude::Class {
             name: rest.to_string(),
         });
+    }
+    if let Some(dot_idx) = s.find('.') {
+        if dot_idx > 0 {
+            let tag = &s[..dot_idx];
+            let cls = &s[dot_idx + 1..];
+            if cls.is_empty() || !is_simple_ident(cls) || !selector_token_is_simple_type(tag) {
+                return None;
+            }
+            return Some(SimpleSelectorPrelude::TypeClass {
+                tag: tag.to_ascii_lowercase(),
+                class: cls.to_string(),
+            });
+        }
     }
     if s.is_empty() || !selector_token_is_simple_type(s) {
         return None;
@@ -98,6 +114,9 @@ fn subject_matches(
         SimpleSelectorPrelude::Type { tag } => tag == element_tag_lower,
         SimpleSelectorPrelude::Class { name } => classes.iter().any(|c| c == name),
         SimpleSelectorPrelude::Id { name } => element_id.is_some_and(|id| id == name.as_str()),
+        SimpleSelectorPrelude::TypeClass { tag, class } => {
+            tag == element_tag_lower && classes.iter().any(|c| c == class)
+        }
     }
 }
 
@@ -333,6 +352,93 @@ mod tests {
             ],
         )];
         let m = cascade_document_defaults(&bundle);
+        assert_eq!(m.get("color").map(String::as_str), Some("navy"));
+    }
+
+    #[test]
+    fn parse_type_class_prelude() {
+        assert_eq!(
+            parse_simple_prelude("p.lead"),
+            Some(SimpleSelectorPrelude::TypeClass {
+                tag: "p".into(),
+                class: "lead".into(),
+            })
+        );
+        assert_eq!(
+            parse_simple_prelude("P.lead"),
+            Some(SimpleSelectorPrelude::TypeClass {
+                tag: "p".into(),
+                class: "lead".into(),
+            })
+        );
+        assert!(parse_simple_prelude("p.").is_none());
+        assert!(parse_simple_prelude("p.lead.extra").is_none());
+    }
+
+    #[test]
+    fn type_class_matches_tag_and_class() {
+        assert!(subject_matches(
+            &SimpleSelectorPrelude::TypeClass {
+                tag: "p".into(),
+                class: "lead".into(),
+            },
+            "p",
+            &["lead".into()],
+            None,
+        ));
+        assert!(!subject_matches(
+            &SimpleSelectorPrelude::TypeClass {
+                tag: "p".into(),
+                class: "lead".into(),
+            },
+            "p",
+            &[],
+            None,
+        ));
+        assert!(!subject_matches(
+            &SimpleSelectorPrelude::TypeClass {
+                tag: "p".into(),
+                class: "lead".into(),
+            },
+            "div",
+            &["lead".into()],
+            None,
+        ));
+    }
+
+    #[test]
+    fn type_class_beats_type_and_loses_to_id() {
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule("p", vec![("color", "red")]),
+                rule("p.lead", vec![("color", "blue")]),
+            ],
+        )];
+        let m = cascade_element_rules(&bundle, "p", &["lead".into()], None);
+        assert_eq!(m.get("color").map(String::as_str), Some("blue"));
+
+        let bundle2 = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule("p.lead", vec![("color", "blue")]),
+                rule("#x", vec![("color", "green")]),
+            ],
+        )];
+        let m2 = cascade_element_rules(&bundle2, "p", &["lead".into()], Some("x"));
+        assert_eq!(m2.get("color").map(String::as_str), Some("green"));
+    }
+
+    #[test]
+    fn type_class_beats_class_alone() {
+        let bundle = vec![(
+            "https://x/a.css".into(),
+            vec![
+                rule(".lead", vec![("color", "red")]),
+                rule("p.lead", vec![("color", "navy")]),
+            ],
+        )];
+        let m = cascade_element_rules(&bundle, "p", &["lead".into()], None);
         assert_eq!(m.get("color").map(String::as_str), Some("navy"));
     }
 }
