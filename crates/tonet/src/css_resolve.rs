@@ -1275,6 +1275,60 @@ mod tests {
     }
 
     #[test]
+    fn type_id_class_prelude_beats_id_class_and_type_id() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["lead".into()],
+            element_id: Some("main".into()),
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "#main.lead".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "color".into(),
+                        value_display: "blue".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: "p#main.lead".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "color".into(),
+                        value_display: "green".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].color, Some(Color32::GREEN));
+
+        let bundle2 = vec![(
+            "https://example.com/b.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "p#main".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "color".into(),
+                        value_display: "red".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: "p.lead#main".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "color".into(),
+                        value_display: "navy".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints2 = compute_dom_paint_hints(&nodes, &bundle2);
+        assert_eq!(hints2[0].color, Some(Color32::from_rgb(0, 0, 128)));
+    }
+
+    #[test]
     fn paragraph_inherits_body_color() {
         let nodes = vec![DomNode {
             kind: DomNodeType::Paragraph,
