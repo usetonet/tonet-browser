@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`).
 
 use std::collections::HashMap;
 
@@ -36,6 +36,8 @@ pub struct DomNodePaintHints {
     pub font_size: Option<f32>,
     /// Resolved line height in **points** for egui (`RichText::line_height`); `None` = CSS `normal` / default.
     pub line_height_px: Option<f32>,
+    /// Extra tracking in **points** (`RichText::extra_letter_spacing`); `None` = CSS `normal` / default.
+    pub letter_spacing_px: Option<f32>,
     /// Resolved CSS weight (`100`…`900`) when `font-weight` was set.
     pub font_weight: Option<u16>,
     /// When `Some(true)` / `Some(false)`, mirrors author `font-style` italic vs normal.
@@ -219,6 +221,35 @@ pub fn parse_line_height(value: &str, font_size_px: f32, root_px: f32) -> Option
     (n.is_finite() && n > 0.0).then_some(clamp_line_height(n * font_size_px))
 }
 
+fn clamp_letter_spacing(px: f32) -> f32 {
+    px.clamp(-24.0, 48.0)
+}
+
+/// Parse `letter-spacing`: `normal` → `None`; `px` / `em` / `rem` (negative allowed).
+pub fn parse_letter_spacing(value: &str, font_size_px: f32, root_px: f32) -> Option<f32> {
+    let s = trim_css_ascii_whitespace(value);
+    if s.is_empty() {
+        return None;
+    }
+    let lower = s.to_ascii_lowercase();
+    if lower == "normal" {
+        return None;
+    }
+    if lower.ends_with("px") {
+        let n: f32 = lower[..lower.len() - 2].trim().parse().ok()?;
+        return n.is_finite().then_some(clamp_letter_spacing(n));
+    }
+    if lower.ends_with("rem") {
+        let n: f32 = lower[..lower.len() - 3].trim().parse().ok()?;
+        return n.is_finite().then_some(clamp_letter_spacing(n * root_px));
+    }
+    if lower.ends_with("em") {
+        let n: f32 = lower[..lower.len() - 2].trim().parse().ok()?;
+        return n.is_finite().then_some(clamp_letter_spacing(n * font_size_px));
+    }
+    None
+}
+
 fn clamp_margin(px: f32) -> f32 {
     px.clamp(0.0, 240.0)
 }
@@ -357,6 +388,8 @@ pub fn compute_dom_paint_hints(
             let used_font_size = font_size.unwrap_or_else(|| default_font_size_px(n.kind));
             let line_height_px = merged_author_value(&m, &doc, "line-height")
                 .and_then(|v| parse_line_height(v, used_font_size, ROOT_PX));
+            let letter_spacing_px = merged_author_value(&m, &doc, "letter-spacing")
+                .and_then(|v| parse_letter_spacing(v, used_font_size, ROOT_PX));
             let font_weight =
                 merged_author_value(&m, &doc, "font-weight").and_then(parse_font_weight);
             let font_style_italic =
@@ -371,6 +404,7 @@ pub fn compute_dom_paint_hints(
                 color,
                 font_size,
                 line_height_px,
+                letter_spacing_px,
                 font_weight,
                 font_style_italic,
                 margin_top,
@@ -756,5 +790,37 @@ mod tests {
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].font_size, Some(20.0));
         assert_eq!(hints[0].line_height_px, Some(40.0));
+    }
+
+    #[test]
+    fn parse_letter_spacing_normal_px_em() {
+        assert_eq!(parse_letter_spacing("normal", 15.0, 16.0), None);
+        assert_eq!(parse_letter_spacing("2px", 15.0, 16.0), Some(2.0));
+        assert_eq!(parse_letter_spacing("-1px", 15.0, 16.0), Some(-1.0));
+        assert_eq!(parse_letter_spacing("0.1em", 20.0, 16.0), Some(2.0));
+        assert!((parse_letter_spacing("0.25rem", 15.0, 16.0).unwrap() - 4.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn letter_spacing_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "letter-spacing".into(),
+                    value_display: "3px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].letter_spacing_px, Some(3.0));
     }
 }
