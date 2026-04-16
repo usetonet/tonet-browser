@@ -1,6 +1,7 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`).
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use egui::Color32;
@@ -29,6 +30,53 @@ pub fn parse_text_align(value: &str) -> Option<TextAlignHint> {
     }
 }
 
+/// Subset of CSS `text-transform` for the read view (`full-width` / etc. → unsupported).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TextTransformHint {
+    #[default]
+    None,
+    Uppercase,
+    Lowercase,
+    Capitalize,
+}
+
+pub fn parse_text_transform(value: &str) -> Option<TextTransformHint> {
+    match trim_css_ascii_whitespace(value).to_ascii_lowercase().as_str() {
+        "none" => Some(TextTransformHint::None),
+        "uppercase" => Some(TextTransformHint::Uppercase),
+        "lowercase" => Some(TextTransformHint::Lowercase),
+        "capitalize" => Some(TextTransformHint::Capitalize),
+        _ => None,
+    }
+}
+
+fn capitalize_words_css(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut at_word_start = true;
+    for ch in s.chars() {
+        if ch.is_whitespace() {
+            out.push(ch);
+            at_word_start = true;
+        } else if at_word_start {
+            out.extend(ch.to_uppercase());
+            at_word_start = false;
+        } else {
+            out.extend(ch.to_lowercase());
+        }
+    }
+    out
+}
+
+/// Apply [`TextTransformHint`] to raw node text for display (merged from author CSS).
+pub fn display_text_cow<'a>(raw: &'a str, transform: Option<TextTransformHint>) -> Cow<'a, str> {
+    match transform {
+        None | Some(TextTransformHint::None) => Cow::Borrowed(raw),
+        Some(TextTransformHint::Uppercase) => Cow::Owned(raw.to_uppercase()),
+        Some(TextTransformHint::Lowercase) => Cow::Owned(raw.to_lowercase()),
+        Some(TextTransformHint::Capitalize) => Cow::Owned(capitalize_words_css(raw)),
+    }
+}
+
 /// Per-node overrides from author stylesheets (simple type / class / id selectors).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct DomNodePaintHints {
@@ -50,6 +98,8 @@ pub struct DomNodePaintHints {
     pub underline: Option<bool>,
     /// Horizontal alignment for the node’s text line(s); merged with `html`/`body`.
     pub text_align: Option<TextAlignHint>,
+    /// Casing of displayed text; merged with `html`/`body`.
+    pub text_transform: Option<TextTransformHint>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -400,6 +450,8 @@ pub fn compute_dom_paint_hints(
             let underline = merged_author_value(&m, &doc, "text-decoration")
                 .and_then(parse_text_decoration_underline);
             let text_align = merged_author_value(&m, &doc, "text-align").and_then(parse_text_align);
+            let text_transform =
+                merged_author_value(&m, &doc, "text-transform").and_then(parse_text_transform);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -411,6 +463,7 @@ pub fn compute_dom_paint_hints(
                 margin_bottom,
                 underline,
                 text_align,
+                text_transform,
             }
         })
         .collect()
@@ -822,5 +875,86 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].letter_spacing_px, Some(3.0));
+    }
+
+    #[test]
+    fn parse_text_transform_keywords() {
+        assert_eq!(parse_text_transform("none"), Some(TextTransformHint::None));
+        assert_eq!(
+            parse_text_transform("UPPERCASE"),
+            Some(TextTransformHint::Uppercase)
+        );
+        assert_eq!(parse_text_transform("full-width"), None);
+    }
+
+    #[test]
+    fn display_text_capitalize_words() {
+        assert_eq!(
+            display_text_cow("hello WORLD", Some(TextTransformHint::Capitalize)).as_ref(),
+            "Hello World"
+        );
+        assert_eq!(
+            display_text_cow("Hi", Some(TextTransformHint::Uppercase)).as_ref(),
+            "HI"
+        );
+        assert_eq!(
+            display_text_cow("NONE", Some(TextTransformHint::None)).as_ref(),
+            "NONE"
+        );
+    }
+
+    #[test]
+    fn text_transform_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "abc".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "text-transform".into(),
+                    value_display: "uppercase".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].text_transform, Some(TextTransformHint::Uppercase));
+    }
+
+    #[test]
+    fn text_transform_none_on_element_overrides_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "abc".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "body".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "text-transform".into(),
+                        value_display: "uppercase".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: "p".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "text-transform".into(),
+                        value_display: "none".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].text_transform, Some(TextTransformHint::None));
     }
 }
