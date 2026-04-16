@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -219,6 +219,70 @@ pub fn resolve_text_indent_px(
     raw.clamp(-2000.0, 2000.0)
 }
 
+/// Author `max-width` lengths (not inherited in CSS — only matching rules set this on each node).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MaxWidthSpec {
+    /// `max-width: none` on this element (overrides a wider cascade value when present on the same element map).
+    NoLimit,
+    Px(f32),
+    Em(f32),
+    Rem(f32),
+    Percent(f32),
+}
+
+fn clamp_max_width_px(px: f32) -> f32 {
+    px.clamp(0.0, 8000.0)
+}
+
+pub fn parse_max_width(value: &str) -> Option<MaxWidthSpec> {
+    let s = trim_css_ascii_whitespace(value).to_ascii_lowercase();
+    if s.is_empty() {
+        return None;
+    }
+    if s == "none" {
+        return Some(MaxWidthSpec::NoLimit);
+    }
+    if let Some(rest) = s.strip_suffix("px") {
+        let n: f32 = rest.trim().parse().ok()?;
+        return n.is_finite().then_some(MaxWidthSpec::Px(n));
+    }
+    if s.ends_with("rem") {
+        let n: f32 = s[..s.len() - 3].trim().parse().ok()?;
+        return n.is_finite().then_some(MaxWidthSpec::Rem(n));
+    }
+    if s.ends_with("em") {
+        let n: f32 = s[..s.len() - 2].trim().parse().ok()?;
+        return n.is_finite().then_some(MaxWidthSpec::Em(n));
+    }
+    if s.ends_with('%') {
+        let n: f32 = s[..s.len() - 1].trim().parse().ok()?;
+        return n.is_finite().then_some(MaxWidthSpec::Percent(n));
+    }
+    None
+}
+
+/// Returns a cap width in px, or `None` when there is no limit (`NoLimit` or unresolved ≤ 0).
+pub fn resolve_max_width_cap_px(
+    spec: MaxWidthSpec,
+    used_font_size: f32,
+    root_px: f32,
+    available_px: f32,
+) -> Option<f32> {
+    let avail = available_px.max(1.0);
+    let px = match spec {
+        MaxWidthSpec::NoLimit => return None,
+        MaxWidthSpec::Px(v) => clamp_max_width_px(v),
+        MaxWidthSpec::Em(e) => clamp_max_width_px(e * used_font_size),
+        MaxWidthSpec::Rem(r) => clamp_max_width_px(r * root_px),
+        MaxWidthSpec::Percent(p) => clamp_max_width_px(p / 100.0 * avail),
+    };
+    if px <= f32::EPSILON {
+        None
+    } else {
+        Some(px.min(avail))
+    }
+}
+
 fn titlecase_first_grapheme_cluster(g: &str) -> String {
     let mut it = g.chars();
     let Some(c0) = it.next() else {
@@ -304,6 +368,8 @@ pub struct DomNodePaintHints {
     pub word_break: Option<WordBreakHint>,
     /// `overflow-wrap` or legacy `word-wrap`; merged with `html`/`body`. If both names are set on the same element, `overflow-wrap` wins.
     pub overflow_wrap: Option<OverflowWrapHint>,
+    /// `max-width` (`none`, `px` / `em` / `rem` / `%`). **Not** merged from `html`/`body` (non-inherited); only rules matching this node.
+    pub max_width: Option<MaxWidthSpec>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -688,6 +754,7 @@ pub fn compute_dom_paint_hints(
             let word_break =
                 merged_author_value(&m, &doc, "word-break").and_then(parse_word_break);
             let overflow_wrap = merged_overflow_wrap(&m, &doc).and_then(parse_overflow_wrap);
+            let max_width = m.get("max-width").and_then(|v| parse_max_width(v));
             DomNodePaintHints {
                 color,
                 font_size,
@@ -707,6 +774,7 @@ pub fn compute_dom_paint_hints(
                 white_space,
                 word_break,
                 overflow_wrap,
+                max_width,
             }
         })
         .collect()
@@ -1617,5 +1685,80 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].overflow_wrap, Some(OverflowWrapHint::Anywhere));
+    }
+
+    #[test]
+    fn parse_max_width_none_and_units() {
+        assert_eq!(parse_max_width("none"), Some(MaxWidthSpec::NoLimit));
+        assert_eq!(parse_max_width("200px"), Some(MaxWidthSpec::Px(200.0)));
+        assert_eq!(parse_max_width("10em"), Some(MaxWidthSpec::Em(10.0)));
+        assert_eq!(parse_max_width("50%"), Some(MaxWidthSpec::Percent(50.0)));
+        assert_eq!(parse_max_width("min-content"), None);
+    }
+
+    #[test]
+    fn resolve_max_width_percent_uses_available_width() {
+        let cap = resolve_max_width_cap_px(
+            MaxWidthSpec::Percent(40.0),
+            16.0,
+            AUTHOR_STYLE_ROOT_PX,
+            500.0,
+        );
+        assert!((cap.unwrap() - 200.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn max_width_from_matching_rule_not_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["narrow".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![
+                ParsedQualifiedRule {
+                    prelude_display: "body".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "max-width".into(),
+                        value_display: "100px".into(),
+                    }],
+                },
+                ParsedQualifiedRule {
+                    prelude_display: ".narrow".into(),
+                    declarations: vec![SimpleDeclaration {
+                        property: "max-width".into(),
+                        value_display: "240px".into(),
+                    }],
+                },
+            ],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].max_width, Some(MaxWidthSpec::Px(240.0)));
+    }
+
+    #[test]
+    fn body_max_width_does_not_fill_paragraph_hint() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "max-width".into(),
+                    value_display: "100px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].max_width, None);
     }
 }

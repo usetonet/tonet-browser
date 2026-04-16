@@ -1,8 +1,8 @@
 //! Renders the simplified DOM into egui widgets.
 
 use crate::css_resolve::{
-    display_text_cow, resolve_text_indent_px, DisplayHint, DomNodePaintHints, OverflowWrapHint,
-    TextAlignHint, VisibilityHint, WhiteSpaceHint, WordBreakHint, AUTHOR_STYLE_ROOT_PX,
+    display_text_cow, resolve_max_width_cap_px, resolve_text_indent_px, DisplayHint, DomNodePaintHints,
+    OverflowWrapHint, TextAlignHint, VisibilityHint, WhiteSpaceHint, WordBreakHint, AUTHOR_STYLE_ROOT_PX,
 };
 use crate::i18n;
 use crate::i18n::Locale;
@@ -14,7 +14,7 @@ use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), and `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`) override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), and `max-width` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -49,8 +49,10 @@ pub fn render_nodes(
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
-                with_text_align(ui, hint, |ui| {
-                    paint_styled_text(ui, hint, size, rt, None, link_target);
+                with_max_width(ui, hint, size, |ui| {
+                    with_text_align(ui, hint, |ui| {
+                        paint_styled_text(ui, hint, size, rt, None, link_target);
+                    });
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -66,8 +68,10 @@ pub fn render_nodes(
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
-                with_text_align(ui, hint, |ui| {
-                    paint_styled_text(ui, hint, size, rt, None, link_target);
+                with_max_width(ui, hint, size, |ui| {
+                    with_text_align(ui, hint, |ui| {
+                        paint_styled_text(ui, hint, size, rt, None, link_target);
+                    });
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -83,8 +87,10 @@ pub fn render_nodes(
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
-                with_text_align(ui, hint, |ui| {
-                    paint_styled_text(ui, hint, size, rt, None, link_target);
+                with_max_width(ui, hint, size, |ui| {
+                    with_text_align(ui, hint, |ui| {
+                        paint_styled_text(ui, hint, size, rt, None, link_target);
+                    });
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -100,8 +106,10 @@ pub fn render_nodes(
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
-                with_text_align(ui, hint, |ui| {
-                    paint_styled_text(ui, hint, size, rt, None, link_target);
+                with_max_width(ui, hint, size, |ui| {
+                    with_text_align(ui, hint, |ui| {
+                        paint_styled_text(ui, hint, size, rt, None, link_target);
+                    });
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -121,15 +129,17 @@ pub fn render_nodes(
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
                 let rt = styled_rich_text(node, hint, size, color);
-                with_text_align(ui, hint, |ui| {
-                    paint_styled_text(
-                        ui,
-                        hint,
-                        size,
-                        rt,
-                        node.href.as_deref(),
-                        link_target,
-                    );
+                with_max_width(ui, hint, size, |ui| {
+                    with_text_align(ui, hint, |ui| {
+                        paint_styled_text(
+                            ui,
+                            hint,
+                            size,
+                            rt,
+                            node.href.as_deref(),
+                            link_target,
+                        );
+                    });
                 });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
@@ -267,6 +277,27 @@ fn with_text_align(ui: &mut Ui, hint: Option<DomNodePaintHints>, child: impl FnO
                 },
             );
         }
+    }
+}
+
+/// Narrows the child [`Ui`] when author `max-width` resolves smaller than the read area (CSS non-inheritance: only matching rules).
+fn with_max_width(ui: &mut Ui, hint: Option<DomNodePaintHints>, used_font_size: f32, child: impl FnOnce(&mut Ui)) {
+    let avail = ui.available_width();
+    let cap = hint
+        .and_then(|h| h.max_width)
+        .and_then(|spec| resolve_max_width_cap_px(spec, used_font_size, AUTHOR_STYLE_ROOT_PX, avail));
+    if let Some(mut w) = cap {
+        w = w.max(1.0).min(avail);
+        if avail - w > 0.5 {
+            ui.allocate_ui_with_layout(egui::vec2(w, 0.0), Layout::top_down(Align::Min), |ui| {
+                ui.set_width(w);
+                child(ui);
+            });
+        } else {
+            child(ui);
+        }
+    } else {
+        child(ui);
     }
 }
 
