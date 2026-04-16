@@ -13,7 +13,7 @@ use egui::{Align, Color32, FontSelection, Layout, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, and `text-indent` override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, and `opacity` override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -256,6 +256,10 @@ fn styled_rich_text(
     let weight = hint.and_then(|h| h.font_weight).unwrap_or(default_weight);
 
     let text = display_text_cow(&node.text, hint.and_then(|h| h.text_transform));
+    let mut color = color;
+    if let Some(o) = hint.and_then(|h| h.opacity) {
+        color = color.gamma_multiply(o);
+    }
     let mut rt = RichText::new(text.as_ref()).size(size).color(color);
     if weight >= 600 {
         rt = rt.strong();

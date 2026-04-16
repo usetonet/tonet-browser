@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -184,6 +184,8 @@ pub struct DomNodePaintHints {
     pub text_transform: Option<TextTransformHint>,
     /// First-line inset; merged with `html`/`body`. Resolved to px at paint time via [`resolve_text_indent_px`].
     pub text_indent: Option<TextIndentSpec>,
+    /// Opacity `0`…`1` (or `%` in author CSS); merged with `html`/`body`. Applied to the resolved text color when painting (not a full stacking-context / subtree model).
+    pub opacity: Option<f32>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -488,6 +490,21 @@ pub fn parse_font_style(value: &str) -> Option<bool> {
     }
 }
 
+/// Parse CSS `opacity`: unitless number `0`…`1` or percentage (`50` → `0.5`).
+pub fn parse_opacity(value: &str) -> Option<f32> {
+    let s = trim_css_ascii_whitespace(value);
+    if s.is_empty() {
+        return None;
+    }
+    let lower = s.to_ascii_lowercase();
+    if let Some(rest) = lower.strip_suffix('%') {
+        let n: f32 = rest.trim().parse().ok()?;
+        return (n.is_finite()).then_some((n / 100.0).clamp(0.0, 1.0));
+    }
+    let n: f32 = lower.parse().ok()?;
+    (n.is_finite()).then_some(n.clamp(0.0, 1.0))
+}
+
 fn merged_author_value<'a>(
     node: &'a HashMap<String, String>,
     doc: &'a HashMap<String, String>,
@@ -536,6 +553,7 @@ pub fn compute_dom_paint_hints(
             let text_transform =
                 merged_author_value(&m, &doc, "text-transform").and_then(parse_text_transform);
             let text_indent = merged_author_value(&m, &doc, "text-indent").and_then(parse_text_indent);
+            let opacity = merged_author_value(&m, &doc, "opacity").and_then(parse_opacity);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -549,6 +567,7 @@ pub fn compute_dom_paint_hints(
                 text_align,
                 text_transform,
                 text_indent,
+                opacity,
             }
         })
         .collect()
@@ -1099,5 +1118,38 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].text_indent, Some(TextIndentSpec::Px(20.0)));
+    }
+
+    #[test]
+    fn parse_opacity_number_and_percent() {
+        assert_eq!(parse_opacity("0.5"), Some(0.5));
+        assert_eq!(parse_opacity("50%"), Some(0.5));
+        assert_eq!(parse_opacity("1"), Some(1.0));
+        assert_eq!(parse_opacity("150%"), Some(1.0));
+        assert_eq!(parse_opacity("-1"), Some(0.0));
+        assert_eq!(parse_opacity("inherit"), None);
+    }
+
+    #[test]
+    fn opacity_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "opacity".into(),
+                    value_display: "0.25".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].opacity, Some(0.25));
     }
 }
