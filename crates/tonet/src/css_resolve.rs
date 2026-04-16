@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -33,6 +33,37 @@ pub fn parse_visibility(value: &str) -> Option<VisibilityHint> {
     match trim_css_ascii_whitespace(value).to_ascii_lowercase().as_str() {
         "visible" => Some(VisibilityHint::Visible),
         "hidden" | "collapse" => Some(VisibilityHint::Hidden),
+        _ => None,
+    }
+}
+
+/// Subset of CSS `display` for the flat read view.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DisplayHint {
+    /// `block`, `inline`, `flex`, etc. — drawn like other blocks.
+    Flow,
+    /// `display: none` — omit the node (no margins); unlike [`VisibilityHint::Hidden`], no layout space.
+    None,
+}
+
+/// Parse `display` for read layout. Only `none` is stored as [`DisplayHint::None`]; other keywords map to [`DisplayHint::Flow`] when recognized.
+pub fn parse_display(value: &str) -> Option<DisplayHint> {
+    let t = trim_css_ascii_whitespace(value).to_ascii_lowercase();
+    match t.as_str() {
+        "none" => Some(DisplayHint::None),
+        "block"
+        | "inline"
+        | "inline-block"
+        | "flow-root"
+        | "flex"
+        | "inline-flex"
+        | "grid"
+        | "inline-grid"
+        | "table"
+        | "table-row"
+        | "table-cell"
+        | "list-item"
+        | "contents" => Some(DisplayHint::Flow),
         _ => None,
     }
 }
@@ -204,6 +235,8 @@ pub struct DomNodePaintHints {
     pub opacity: Option<f32>,
     /// `visible` / `hidden` / `collapse` (see [`VisibilityHint`]); merged with `html`/`body`.
     pub visibility: Option<VisibilityHint>,
+    /// `display: none` removes the node from read layout (no margins). **Not** merged from `html`/`body` (CSS `display` is not inherited); only rules matching this node set it.
+    pub display: Option<DisplayHint>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -573,6 +606,8 @@ pub fn compute_dom_paint_hints(
             let text_indent = merged_author_value(&m, &doc, "text-indent").and_then(parse_text_indent);
             let opacity = merged_author_value(&m, &doc, "opacity").and_then(parse_opacity);
             let visibility = merged_author_value(&m, &doc, "visibility").and_then(parse_visibility);
+            // `display` is not inherited — do not read from `doc` or `body` would incorrectly hide all nodes.
+            let display = m.get("display").and_then(|v| parse_display(v));
             DomNodePaintHints {
                 color,
                 font_size,
@@ -588,6 +623,7 @@ pub fn compute_dom_paint_hints(
                 text_indent,
                 opacity,
                 visibility,
+                display,
             }
         })
         .collect()
@@ -1234,5 +1270,60 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].visibility, Some(VisibilityHint::Visible));
+    }
+
+    #[test]
+    fn parse_display_none_and_flow() {
+        assert_eq!(parse_display("none"), Some(DisplayHint::None));
+        assert_eq!(parse_display("BLOCK"), Some(DisplayHint::Flow));
+        assert_eq!(parse_display("flex"), Some(DisplayHint::Flow));
+        assert_eq!(parse_display("contents"), Some(DisplayHint::Flow));
+        assert_eq!(parse_display("bogus"), None);
+    }
+
+    #[test]
+    fn display_none_from_matching_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["x".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".x".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "display".into(),
+                    value_display: "none".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].display, Some(DisplayHint::None));
+    }
+
+    #[test]
+    fn display_not_merged_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "display".into(),
+                    value_display: "none".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].display, None);
     }
 }
