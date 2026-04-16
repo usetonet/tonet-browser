@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`, `background` shorthand (single `<color>` token only)).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`, `background` shorthand (single `<color>` token only), `border-radius` (uniform, first token)).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -454,6 +454,8 @@ pub struct DomNodePaintHints {
     /// Fill from `background-color`, or from `background` when that shorthand is a single color token; **not** inherited.
     /// When the cascade map contains **`background-color`**, that longhand wins (even `transparent`); otherwise `background` is consulted.
     pub background_color: Option<Color32>,
+    /// Uniform `border-radius` from the **first** length token (`px` / `em` / `rem` / `%`, plus bare `0`); **not** inherited. Per-corner / elliptical values are not modeled.
+    pub border_radius: Option<TextIndentSpec>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -495,6 +497,17 @@ pub fn parse_background_shorthand_color_only(value: &str) -> Option<Color32> {
         return None;
     }
     parse_css_color(tokens[0])
+}
+
+/// `border-radius`: uniform radius from the **first** token (`px` / `em` / `rem` / `%` via [`parse_text_indent`], or `0`).
+/// Extra tokens (`10px 20px`, slash forms) are ignored.
+fn parse_border_radius_uniform(value: &str) -> Option<TextIndentSpec> {
+    let s = trim_css_ascii_whitespace(value);
+    let first = trim_css_ascii_whitespace(s.split_whitespace().next()?);
+    if first == "0" {
+        return Some(TextIndentSpec::Px(0.0));
+    }
+    parse_text_indent(first)
 }
 
 fn parse_hex_color(hex: &str) -> Option<Color32> {
@@ -911,6 +924,10 @@ pub fn compute_dom_paint_hints(
                     .and_then(parse_background_shorthand_color_only)
                     .filter(|c| c.a() > 0)
             };
+            let border_radius = m
+                .get("border-radius")
+                .map(String::as_str)
+                .and_then(parse_border_radius_uniform);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -938,6 +955,7 @@ pub fn compute_dom_paint_hints(
                 padding_top,
                 padding_bottom,
                 background_color,
+                border_radius,
             }
         })
         .collect()
@@ -2407,5 +2425,97 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].background_color, None);
+    }
+
+    #[test]
+    fn border_radius_px_from_class_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["r".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".r".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "border-radius".into(),
+                    value_display: "12px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].border_radius, Some(TextIndentSpec::Px(12.0)));
+    }
+
+    #[test]
+    fn border_radius_uses_first_token_only() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["r".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".r".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "border-radius".into(),
+                    value_display: "10px 40px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].border_radius, Some(TextIndentSpec::Px(10.0)));
+    }
+
+    #[test]
+    fn border_radius_bare_zero() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["r".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".r".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "border-radius".into(),
+                    value_display: "0".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].border_radius, Some(TextIndentSpec::Px(0.0)));
+    }
+
+    #[test]
+    fn body_border_radius_not_on_paragraph_without_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "border-radius".into(),
+                    value_display: "99px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].border_radius, None);
     }
 }

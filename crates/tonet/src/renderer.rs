@@ -15,7 +15,7 @@ use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` (including `margin-left` / `margin-right` and shorthand), `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), `max-width`, `padding` / `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`, and single-color `background` shorthand (per-node only, not from `html`/`body`) override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` (including `margin-left` / `margin-right` and shorthand), `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), `max-width`, `padding` / `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`, single-color `background` shorthand, and uniform `border-radius` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -308,7 +308,7 @@ fn with_max_width(ui: &mut Ui, hint: Option<DomNodePaintHints>, used_font_size: 
     }
 }
 
-/// Optional `background-color` (per-node) via [`egui::Frame`], then `padding-top` / `padding-bottom`, horizontal `padding-left` / `padding-right`, `max-width`, `text-align`, and text.
+/// Optional [`egui::Frame`] (`background-color` fill and/or `border-radius`), then `padding-top` / `padding-bottom`, horizontal `padding-left` / `padding-right`, `max-width`, `text-align`, and text.
 fn paint_read_text_block(
     ui: &mut Ui,
     node: &DomNode,
@@ -317,6 +317,13 @@ fn paint_read_text_block(
     color: Color32,
     link_target: &mut Option<String>,
 ) {
+    let full_w_outer = ui.available_width().max(1.0);
+    let mut corner_r = hint
+        .and_then(|h| h.border_radius)
+        .map(|s| resolve_padding_inset_px(s, size, AUTHOR_STYLE_ROOT_PX, full_w_outer))
+        .unwrap_or(0.0);
+    corner_r = corner_r.min(full_w_outer * 0.5).clamp(0.0, 500.0);
+
     let fill_bg = hint
         .and_then(|h| h.background_color)
         .map(|mut bg| {
@@ -388,11 +395,13 @@ fn paint_read_text_block(
         }
     };
 
-    if let Some(bg) = fill_bg {
+    let use_frame = fill_bg.is_some() || corner_r > 0.01;
+    if use_frame {
+        let fill = fill_bg.unwrap_or(Color32::TRANSPARENT);
         egui::Frame::none()
-            .fill(bg)
+            .fill(fill)
             .inner_margin(0.0)
-            .rounding(0.0)
+            .rounding(corner_r)
             .show(ui, |ui| paint_insets(ui));
     } else {
         paint_insets(ui);
