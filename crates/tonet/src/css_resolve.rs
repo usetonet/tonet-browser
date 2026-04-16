@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `font-weight`, `font-style`).
+//! `font-weight`, `font-style`, `margin-top`, `margin-bottom`).
 
 use std::collections::HashMap;
 
@@ -17,6 +17,10 @@ pub struct DomNodePaintHints {
     pub font_weight: Option<u16>,
     /// When `Some(true)` / `Some(false)`, mirrors author `font-style` italic vs normal.
     pub font_style_italic: Option<bool>,
+    /// Vertical spacing before the block (`margin-top`). **Not** inherited from `html`/`body`.
+    pub margin_top: Option<f32>,
+    /// Vertical spacing after the block (`margin-bottom`). **Not** inherited from `html`/`body`.
+    pub margin_bottom: Option<f32>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -142,6 +146,10 @@ fn clamp_font(px: f32) -> f32 {
     px.clamp(6.0, 256.0)
 }
 
+fn clamp_margin(px: f32) -> f32 {
+    px.clamp(0.0, 240.0)
+}
+
 /// Parse `font-weight` keywords and numeric `100`…`900`.
 pub fn parse_font_weight(value: &str) -> Option<u16> {
     let s = trim_css_ascii_whitespace(value);
@@ -209,11 +217,22 @@ pub fn compute_dom_paint_hints(
                 merged_author_value(&m, &doc, "font-weight").and_then(parse_font_weight);
             let font_style_italic =
                 merged_author_value(&m, &doc, "font-style").and_then(parse_font_style);
+            // Margins are not inherited in CSS; only match the element’s own rules.
+            let margin_top = m
+                .get("margin-top")
+                .and_then(|v| parse_font_size_px(v, ROOT_PX))
+                .map(clamp_margin);
+            let margin_bottom = m
+                .get("margin-bottom")
+                .and_then(|v| parse_font_size_px(v, ROOT_PX))
+                .map(clamp_margin);
             DomNodePaintHints {
                 color,
                 font_size,
                 font_weight,
                 font_style_italic,
+                margin_top,
+                margin_bottom,
             }
         })
         .collect()
@@ -360,5 +379,52 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].color, Some(Color32::GREEN));
+    }
+
+    #[test]
+    fn margin_top_on_paragraph() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "p".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "margin-top".into(),
+                    value_display: "12px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].margin_top, Some(12.0));
+        assert!(hints[0].margin_bottom.is_none());
+    }
+
+    #[test]
+    fn margin_not_inherited_from_body() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "margin-top".into(),
+                    value_display: "40px".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert!(hints[0].margin_top.is_none());
     }
 }
