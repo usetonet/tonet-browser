@@ -1,6 +1,6 @@
 //! Renders the simplified DOM into egui widgets.
 
-use crate::css_resolve::{DomNodePaintHints, TextAlignHint};
+use crate::css_resolve::{display_text_cow, DomNodePaintHints, TextAlignHint};
 use crate::i18n;
 use crate::i18n::Locale;
 use crate::parser::{DomNode, DomNodeType};
@@ -10,7 +10,7 @@ use egui::{Align, Color32, Layout, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, and `text-align` override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, and `text-transform` override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -197,7 +197,8 @@ fn styled_rich_text(
     let default_weight = if default_bold { 700u16 } else { 400u16 };
     let weight = hint.and_then(|h| h.font_weight).unwrap_or(default_weight);
 
-    let mut rt = RichText::new(&node.text).size(size).color(color);
+    let text = display_text_cow(&node.text, hint.and_then(|h| h.text_transform));
+    let mut rt = RichText::new(text.as_ref()).size(size).color(color);
     if weight >= 600 {
         rt = rt.strong();
     }
