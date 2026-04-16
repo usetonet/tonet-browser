@@ -15,7 +15,7 @@ use egui::{Align, Color32, FontSelection, Label, Layout, Link, RichText, Ui};
 /// Draws parsed nodes in the scrollable page area. `link_target` receives an absolute URL when a link is activated.
 ///
 /// When `author_hints` is `Some` and has the same length as `nodes`, author `color`, `font-size`,
-/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / margins, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), `max-width`, and `padding` / `padding-left` / `padding-right` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
+/// `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` (including `margin-left` / `margin-right` and shorthand), `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display` (`none` skips the node, including when `html`/`body` defaults resolve to `none`), `white-space` (`nowrap` → no soft wrap), `word-break` (`break-all`), `overflow-wrap` / `word-wrap` (`anywhere` / `break-word`), `max-width`, and `padding` / `padding-left` / `padding-right` (per-node only, not from `html`/`body`) override or extend built-in page chrome.
 pub fn render_nodes(
     ui: &mut Ui,
     loc: Locale,
@@ -49,7 +49,9 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                paint_read_text_block(ui, node, hint, size, color, link_target);
+                with_horizontal_margins(ui, hint, |ui| {
+                    paint_read_text_block(ui, node, hint, size, color, link_target);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -63,7 +65,9 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                paint_read_text_block(ui, node, hint, size, color, link_target);
+                with_horizontal_margins(ui, hint, |ui| {
+                    paint_read_text_block(ui, node, hint, size, color, link_target);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -77,7 +81,9 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                paint_read_text_block(ui, node, hint, size, color, link_target);
+                with_horizontal_margins(ui, hint, |ui| {
+                    paint_read_text_block(ui, node, hint, size, color, link_target);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -91,7 +97,9 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                paint_read_text_block(ui, node, hint, size, color, link_target);
+                with_horizontal_margins(ui, hint, |ui| {
+                    paint_read_text_block(ui, node, hint, size, color, link_target);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -109,7 +117,9 @@ pub fn render_nodes(
                     .and_then(|h| h.margin_top)
                     .unwrap_or_else(|| default_margin_top(node.kind));
                 ui.add_space(top);
-                paint_read_text_block(ui, node, hint, size, color, link_target);
+                with_horizontal_margins(ui, hint, |ui| {
+                    paint_read_text_block(ui, node, hint, size, color, link_target);
+                });
                 let bottom = hint
                     .and_then(|h| h.margin_bottom)
                     .unwrap_or_else(|| default_margin_bottom(node.kind));
@@ -246,6 +256,34 @@ fn with_text_align(ui: &mut Ui, hint: Option<DomNodePaintHints>, child: impl FnO
                 },
             );
         }
+    }
+}
+
+/// Outer horizontal `margin-left` / `margin-right` (per-node); inner width is read width minus both.
+fn with_horizontal_margins(ui: &mut Ui, hint: Option<DomNodePaintHints>, child: impl FnOnce(&mut Ui)) {
+    let ml = hint.and_then(|h| h.margin_left).unwrap_or(0.0);
+    let mr = hint.and_then(|h| h.margin_right).unwrap_or(0.0);
+    let full_w = ui.available_width().max(1.0);
+    let inner_w = (full_w - ml - mr).max(1.0);
+    if ml <= f32::EPSILON && mr <= f32::EPSILON {
+        child(ui);
+    } else {
+        ui.horizontal(|ui| {
+            if ml > 0.01 {
+                ui.add_space(ml);
+            }
+            ui.allocate_ui_with_layout(
+                egui::vec2(inner_w, 0.0),
+                Layout::top_down(Align::Min),
+                |ui| {
+                    ui.set_width(inner_w);
+                    child(ui);
+                },
+            );
+            if mr > 0.01 {
+                ui.add_space(mr);
+            }
+        });
     }
 }
 
