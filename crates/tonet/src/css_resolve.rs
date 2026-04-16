@@ -1,5 +1,5 @@
 //! Map fetched author CSS (`ParsedQualifiedRule` bundles) into egui paint hints (`color`, `font-size`,
-//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right` / `padding-top` / `padding-bottom`).
+//! `line-height`, `letter-spacing`, `font-weight`, `font-style`, `margin` / `margin-top` / `margin-bottom` / `margin-left` / `margin-right`, `text-decoration`, `text-align`, `text-transform`, `text-indent`, `opacity`, `visibility`, `display`, `white-space`, `word-break`, `overflow-wrap` / `word-wrap`, `max-width`, `padding` shorthand, `padding-left` / `padding-right` / `padding-top` / `padding-bottom`, `background-color`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -451,6 +451,8 @@ pub struct DomNodePaintHints {
     pub padding_top: Option<TextIndentSpec>,
     /// `padding-bottom`; same as [`Self::padding_top`].
     pub padding_bottom: Option<TextIndentSpec>,
+    /// `background-color` (same syntax as `color`); **not** inherited. Omitted when `transparent` or alpha zero.
+    pub background_color: Option<Color32>,
 }
 
 fn trim_css_ascii_whitespace(s: &str) -> &str {
@@ -879,6 +881,11 @@ pub fn compute_dom_paint_hints(
                 .map(String::as_str)
                 .and_then(parse_text_indent)
                 .or(pad_sh_bottom);
+            let background_color = m
+                .get("background-color")
+                .map(String::as_str)
+                .and_then(parse_css_color)
+                .filter(|c| c.a() > 0);
             DomNodePaintHints {
                 color,
                 font_size,
@@ -905,6 +912,7 @@ pub fn compute_dom_paint_hints(
                 padding_right,
                 padding_top,
                 padding_bottom,
+                background_color,
             }
         })
         .collect()
@@ -2172,5 +2180,77 @@ mod tests {
         )];
         let hints = compute_dom_paint_hints(&nodes, &bundle);
         assert_eq!(hints[0].padding_top, None);
+    }
+
+    #[test]
+    fn background_color_from_class_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["box".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".box".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "background-color".into(),
+                    value_display: "#ffeedd".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(
+            hints[0].background_color,
+            Some(Color32::from_rgb(0xff, 0xee, 0xdd))
+        );
+    }
+
+    #[test]
+    fn background_color_transparent_yields_none() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: vec!["box".into()],
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: ".box".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "background-color".into(),
+                    value_display: "transparent".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].background_color, None);
+    }
+
+    #[test]
+    fn body_background_color_not_on_paragraph_without_rule() {
+        let nodes = vec![DomNode {
+            kind: DomNodeType::Paragraph,
+            text: "Hi".into(),
+            href: None,
+            classes: Vec::new(),
+            element_id: None,
+        }];
+        let bundle = vec![(
+            "https://example.com/a.css".into(),
+            vec![ParsedQualifiedRule {
+                prelude_display: "body".into(),
+                declarations: vec![SimpleDeclaration {
+                    property: "background-color".into(),
+                    value_display: "red".into(),
+                }],
+            }],
+        )];
+        let hints = compute_dom_paint_hints(&nodes, &bundle);
+        assert_eq!(hints[0].background_color, None);
     }
 }
