@@ -437,10 +437,10 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Short guides for users and maintainers.",
     installH: "Installation",
     installP:
-      "See the <a href=\"/#download\">downloads section</a>. The landing reads <code>version.json</code> (built from <code>crates/tonet</code>) and points primary buttons at filenames that exist on GitHub <code>releases/latest/download</code> (for example the Inno EXE and <code>.deb</code>). Optional MSI and tag-scoped links use <code>releases/download/vX.Y.Z/…</code>. The optional <strong>TonetSetup</strong> web installer is uploaded when the release workflow attaches it.",
+      "See the <a href=\"/#download\">downloads section</a>. The landing reads <code>version.json</code> (built from <code>crates/tonet</code>) and points all download buttons to your configured CDN base URL. MSI/EXE/DEB/tarball links are generated from that CDN path.",
     updatesH: "In-browser updates",
     updatesP:
-      "Tonet checks the GitHub Releases API (it does not install binaries for you). By default it checks on startup. In <strong>Settings (⚙)</strong> you can choose:",
+      "Tonet checks your update manifest URL (it does not install binaries for you). By default it checks on startup. In <strong>Settings (⚙)</strong> you can choose:",
     updatesLi1: "<strong>On startup only</strong> — one check when the app opens.",
     updatesLi2: "<strong>Automatic (24 h)</strong> — repeats while Tonet is running.",
     updatesLi3: "<strong>Manual only</strong> — only with “Check now”.",
@@ -473,10 +473,10 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Guías breves para usuarios y mantenedores del proyecto.",
     installH: "Instalación",
     installP:
-      "Consulta la <a href=\"/#download\">sección de descargas</a>. La landing lee <code>version.json</code> (generado desde <code>crates/tonet</code>) y enlaza nombres de archivo reales en <code>releases/latest/download</code> (por ejemplo el EXE Inno y el <code>.deb</code>). El MSI y enlaces por tag usan <code>releases/download/vX.Y.Z/…</code>. El instalador web opcional <strong>TonetSetup</strong> aparece cuando el workflow de release lo adjunta.",
+      "Consulta la <a href=\"/#download\">sección de descargas</a>. La landing lee <code>version.json</code> (generado desde <code>crates/tonet</code>) y apunta todos los botones a la URL base de tu CDN configurada. Los enlaces MSI/EXE/DEB/tarball se generan desde esa base.",
     updatesH: "Actualizaciones en el navegador",
     updatesP:
-      "Tonet consulta la API de GitHub Releases (sin instalar binarios por ti). Por defecto comprueba al iniciar. En <strong>Ajustes (⚙)</strong> puedes elegir:",
+      "Tonet consulta tu URL de manifiesto de actualizaciones (sin instalar binarios por ti). Por defecto comprueba al iniciar. En <strong>Ajustes (⚙)</strong> puedes elegir:",
     updatesLi1: "<strong>Solo al iniciar</strong> — una comprobación al abrir la app.",
     updatesLi2: "<strong>Automático (24 h)</strong> — repite mientras Tonet está abierto.",
     updatesLi3: "<strong>Solo manual</strong> — únicamente con «Comprobar ahora».",
@@ -508,10 +508,10 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Kurze Anleitungen für Nutzer und Maintainer.",
     installH: "Installation",
     installP:
-      "Siehe den <a href=\"/#download\">Download-Bereich</a>. Die Landing liest <code>version.json</code> (aus <code>crates/tonet</code>) und verweist auf Dateinamen unter GitHub <code>releases/latest/download</code> (z. B. Inno-EXE und <code>.deb</code>). MSI und Tag-Links nutzen <code>releases/download/vX.Y.Z/…</code>. Der optionale Web-Installer <strong>TonetSetup</strong> erscheint, wenn die Release-Pipeline ihn anhängt.",
+      "Siehe den <a href=\"/#download\">Download-Bereich</a>. Die Landing liest <code>version.json</code> (aus <code>crates/tonet</code>) und generiert alle Download-Links über die konfigurierte CDN-Basis-URL.",
     updatesH: "Updates in der App",
     updatesP:
-      "Tonet nutzt die GitHub-Releases-API (installiert keine Binärdateien für Sie). Standard: Prüfung beim Start. Unter <strong>Einstellungen (⚙)</strong> wählen Sie:",
+      "Tonet nutzt Ihre Update-Manifest-URL (installiert keine Binärdateien für Sie). Standard: Prüfung beim Start. Unter <strong>Einstellungen (⚙)</strong> wählen Sie:",
     updatesLi1: "<strong>Nur beim Start</strong> — eine Prüfung beim Öffnen.",
     updatesLi2: "<strong>Automatisch (24 h)</strong> — wiederholt, solange Tonet läuft.",
     updatesLi3: "<strong>Nur manuell</strong> — nur mit „Jetzt prüfen“.",
@@ -544,10 +544,10 @@ const docs: Record<SiteLang, DocsStrings> = {
     lead: "Guides courts pour les utilisateurs et les mainteneurs.",
     installH: "Installation",
     installP:
-      "Voir la <a href=\"/#download\">section téléchargements</a>. La page lit <code>version.json</code> (généré depuis <code>crates/tonet</code>) et pointe vers des noms de fichiers réels sur <code>releases/latest/download</code> (EXE Inno, <code>.deb</code>, etc.). Le MSI et les liens par tag utilisent <code>releases/download/vX.Y.Z/…</code>. L’installateur web optionnel <strong>TonetSetup</strong> apparaît lorsque le workflow de release l’ajoute.",
+      "Voir la <a href=\"/#download\">section téléchargements</a>. La page lit <code>version.json</code> (généré depuis <code>crates/tonet</code>) et génère les liens MSI/EXE/DEB/tarball depuis votre base CDN configurée.",
     updatesH: "Mises à jour dans le navigateur",
     updatesP:
-      "Tonet interroge l’API GitHub Releases (sans installer les binaires à votre place). Par défaut : vérification au lancement. Dans <strong>Réglages (⚙)</strong> vous pouvez choisir :",
+      "Tonet interroge votre URL de manifeste de mises à jour (sans installer les binaires à votre place). Par défaut : vérification au lancement. Dans <strong>Réglages (⚙)</strong> vous pouvez choisir :",
     updatesLi1: "<strong>Au lancement uniquement</strong> — une vérification à l’ouverture.",
     updatesLi2: "<strong>Automatique (24 h)</strong> — tant que Tonet est ouvert.",
     updatesLi3: "<strong>Manuel seulement</strong> — uniquement via « Vérifier maintenant ».",
