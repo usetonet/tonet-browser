@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
-/// When to check GitHub Releases for updates.
+/// When to check the update manifest for updates.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum UpdatePolicy {

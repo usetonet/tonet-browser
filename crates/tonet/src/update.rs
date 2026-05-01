@@ -1,17 +1,29 @@
-//! Version check against GitHub Releases (does not auto-install binaries).
+//! Version check against a CDN-hosted manifest (does not auto-install binaries).
 
 use anyhow::Context;
 use semver::Version;
 use serde::Deserialize;
 
-const RELEASES_LATEST: &str = "https://api.github.com/repos/usetonet/tonet-browser/releases/latest";
-
-#[derive(Debug, Deserialize)]
-struct GitHubRelease {
-    tag_name: String,
+fn update_manifest_url() -> &'static str {
+    match option_env!("TONET_UPDATE_MANIFEST_URL") {
+        Some(v) => v,
+        None => "https://downloads.usetonet.com/version.json",
+    }
 }
 
-/// If GitHub has a release with semver **strictly greater** than this binary, returns that version.
+fn downloads_page_url() -> &'static str {
+    match option_env!("TONET_DOWNLOADS_PAGE_URL") {
+        Some(v) => v,
+        None => "https://downloads.usetonet.com/",
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct ManifestRelease {
+    version: String,
+}
+
+/// If the manifest reports a semver **strictly greater** than this binary, returns that version.
 pub fn check_for_newer_release() -> anyhow::Result<Option<Version>> {
     let current = Version::parse(env!("CARGO_PKG_VERSION")).context("invalid local version")?;
 
@@ -24,20 +36,21 @@ pub fn check_for_newer_release() -> anyhow::Result<Option<Version>> {
         .context("HTTP client")?;
 
     let resp = client
-        .get(RELEASES_LATEST)
+        .get(update_manifest_url())
         .send()
-        .context("request latest release")?;
+        .context("request update manifest")?;
 
     if !resp.status().is_success() {
         anyhow::bail!(
-            "GitHub returned {} while checking for updates.",
+            "Update manifest endpoint returned {} while checking for updates.",
             resp.status()
         );
     }
 
-    let body: GitHubRelease = resp.json().context("parse GitHub JSON")?;
-    let tag = body.tag_name.trim().trim_start_matches('v');
-    let remote = Version::parse(tag).with_context(|| format!("invalid remote version: {tag}"))?;
+    let body: ManifestRelease = resp.json().context("parse update manifest JSON")?;
+    let remote_text = body.version.trim().trim_start_matches('v');
+    let remote = Version::parse(remote_text)
+        .with_context(|| format!("invalid remote version: {remote_text}"))?;
 
     if remote > current {
         Ok(Some(remote))
@@ -48,5 +61,5 @@ pub fn check_for_newer_release() -> anyhow::Result<Option<Version>> {
 
 /// Opens the downloads page in the system default browser.
 pub fn open_downloads_page() {
-    let _ = webbrowser::open("https://github.com/usetonet/tonet-browser/releases/latest");
+    let _ = webbrowser::open(downloads_page_url());
 }

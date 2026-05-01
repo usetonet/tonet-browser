@@ -10,22 +10,25 @@ const dist = path.join(__dirname, "..", "dist");
 const cargo = fs.readFileSync(cargoPath, "utf8");
 const m = cargo.match(/^version = "([^"]+)"/m);
 const version = m ? m[1] : "0.0.0";
+const cdnBase = (process.env.TONET_CDN_BASE_URL || "https://downloads.usetonet.com").replace(/\/+$/, "");
+const versionPath = process.env.TONET_CDN_VERSION_PATH || "/version.json";
+const downloadsPage = process.env.TONET_SITE_DOWNLOADS_PAGE || `${cdnBase}/`;
 
 const payload = {
   version,
   repo: "usetonet/tonet-browser",
-  releasesUrl: "https://github.com/usetonet/tonet-browser/releases/latest",
+  releasesUrl: downloadsPage,
+  updateManifestUrl: `${cdnBase}${versionPath.startsWith("/") ? versionPath : `/${versionPath}`}`,
+  cdnBaseUrl: cdnBase,
   download: {
-    // Match CI asset names (see .github/workflows/release-on-version-bump.yml). TonetSetup-* may be added later.
-    windowsSetup: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-Setup-${version}-x64.exe`,
-    linuxSetup: `https://github.com/usetonet/tonet-browser/releases/latest/download/tonet_${version}_amd64.deb`,
-    // macOS tarball + TonetSetup are not on every historical release; link to the release page until assets are stable.
-    macSetup: "https://github.com/usetonet/tonet-browser/releases/latest",
-    windowsMsi: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-x64.msi`,
-    windowsExe: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-Setup-${version}-x64.exe`,
-    windowsPortableZip: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-windows-x64-portable.zip`,
-    deb: `https://github.com/usetonet/tonet-browser/releases/latest/download/tonet_${version}_amd64.deb`,
-    macTarball: `https://github.com/usetonet/tonet-browser/releases/latest/download/Tonet-${version}-macos.tar.gz`,
+    windowsSetup: `${cdnBase}/Tonet-Setup-${version}-x64.exe`,
+    linuxSetup: `${cdnBase}/tonet_${version}_amd64.deb`,
+    macSetup: `${cdnBase}/Tonet-${version}-macos.tar.gz`,
+    windowsMsi: `${cdnBase}/Tonet-${version}-x64.msi`,
+    windowsExe: `${cdnBase}/Tonet-Setup-${version}-x64.exe`,
+    windowsPortableZip: `${cdnBase}/Tonet-${version}-windows-x64-portable.zip`,
+    deb: `${cdnBase}/tonet_${version}_amd64.deb`,
+    macTarball: `${cdnBase}/Tonet-${version}-macos.tar.gz`,
   },
 };
 

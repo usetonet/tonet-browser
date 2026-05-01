@@ -582,10 +582,10 @@ pub fn installed_version(loc: Locale, ver: &str) -> String {
 
 pub fn update_policy_question(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "¿Cuándo debe comprobar Tonet si hay versiones nuevas en GitHub?",
-        Locale::De => "Wann soll Tonet auf neue Versionen auf GitHub prüfen?",
-        Locale::Fr => "Quand Tonet doit-il vérifier les nouvelles versions sur GitHub ?",
-        Locale::En => "When should Tonet check GitHub for new releases?",
+        Locale::Es => "¿Cuándo debe comprobar Tonet si hay versiones nuevas en el manifiesto de actualizaciones?",
+        Locale::De => "Wann soll Tonet das Update-Manifest auf neue Versionen prüfen?",
+        Locale::Fr => "Quand Tonet doit-il vérifier le manifeste de mises à jour pour de nouvelles versions ?",
+        Locale::En => "When should Tonet check the update manifest for new releases?",
     }
 }
 
@@ -627,7 +627,7 @@ pub fn update_policy_help(loc: Locale, policy: UpdatePolicy) -> &'static str {
             Locale::En => "On startup and every 24 hours while Tonet is open.",
         },
         (_, UpdatePolicy::ManualOnly) => match loc {
-            Locale::Es => "No consultar GitHub hasta que pulses «Comprobar ahora».",
+            Locale::Es => "No consultar el manifiesto hasta que pulses «Comprobar ahora».",
             Locale::De => "Keine Prüfung, bis du auf „Jetzt prüfen“ klickst.",
             Locale::Fr => "Pas de vérification tant que vous n’utilisez pas « Vérifier maintenant ».",
             Locale::En => "No checks until you press “Check now”.",
@@ -682,10 +682,10 @@ pub fn open_downloads_page(loc: Locale) -> &'static str {
 
 pub fn open_downloads_tooltip(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "Abre el navegador del sistema en GitHub Releases",
-        Locale::De => "Öffnet GitHub Releases im Standardbrowser",
-        Locale::Fr => "Ouvre GitHub Releases dans le navigateur",
-        Locale::En => "Opens GitHub Releases in your default browser",
+        Locale::Es => "Abre la página de descargas en el navegador del sistema",
+        Locale::De => "Öffnet die Download-Seite im Standardbrowser",
+        Locale::Fr => "Ouvre la page de téléchargement dans le navigateur",
+        Locale::En => "Opens the downloads page in your default browser",
     }
 }
 
@@ -693,10 +693,10 @@ pub fn open_downloads_tooltip(loc: Locale) -> &'static str {
 
 pub fn update_checking_github(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "Consultando GitHub…",
-        Locale::De => "GitHub wird abgefragt…",
-        Locale::Fr => "Interrogation de GitHub…",
-        Locale::En => "Contacting GitHub…",
+        Locale::Es => "Consultando manifiesto de actualizaciones…",
+        Locale::De => "Update-Manifest wird abgefragt…",
+        Locale::Fr => "Interrogation du manifeste de mises à jour…",
+        Locale::En => "Checking update manifest…",
     }
 }
 

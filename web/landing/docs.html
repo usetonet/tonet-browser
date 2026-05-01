@@ -18,6 +18,8 @@
         <nav class="nav-links" id="site-nav-links">
           <a id="docs-nav-home" href="/">Home</a>
           <a id="docs-nav-download" href="/#download">Download</a>
+          <a href="/compare.html">Compare</a>
+          <a href="/roadmap.html">Roadmap</a>
           <a href="https://github.com/usetonet/tonet-browser" target="_blank" rel="noopener">GitHub</a>
         </nav>
       </div>
@@ -26,6 +28,28 @@
     <main class="section" style="padding-top: 40px">
       <h1 id="docs-h1">Documentation</h1>
       <p class="lead" id="docs-lead">Short guides for users and maintainers.</p>
+
+      <article class="card" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">Documentation map</h2>
+        <p style="color: var(--muted)">
+          This site now follows a structured portal style (like Vercel/Netlify docs): clear sections, deep guides, and public roadmap
+          visibility.
+        </p>
+        <div class="grid">
+          <a class="card" href="#product-docs" style="text-decoration: none">
+            <h3 style="margin-top: 0">Product and use cases</h3>
+            <p>Target users, deployment scenarios, and comparison framing.</p>
+          </a>
+          <a class="card" href="#ops-docs" style="text-decoration: none">
+            <h3 style="margin-top: 0">Operations and delivery</h3>
+            <p>CDN, release assets, update manifest, and signing flow.</p>
+          </a>
+          <a class="card" href="#engineering-docs" style="text-decoration: none">
+            <h3 style="margin-top: 0">Engineering</h3>
+            <p>Architecture, implementation phases, and future work tracking.</p>
+          </a>
+        </div>
+      </article>
 
       <article class="card" style="margin-bottom: 20px">
         <h2 style="margin-top: 0" id="docs-install-h">Installation</h2>
@@ -39,7 +63,7 @@
       <article class="card" style="margin-bottom: 20px">
         <h2 style="margin-top: 0" id="docs-updates-h">In-browser updates</h2>
         <p id="docs-updates-p">
-          Tonet checks the GitHub Releases API (it does not install binaries for you). By default it checks on startup. In
+          Tonet checks your update manifest endpoint (it does not install binaries for you). By default it checks on startup. In
           <strong>Settings (⚙)</strong> you can choose:
         </p>
         <ul style="color: var(--muted); line-height: 1.7">
@@ -91,7 +115,7 @@ signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-S
         </p>
       </article>
 
-      <article class="card">
+      <article class="card" style="margin-bottom: 20px">
         <h2 style="margin-top: 0" id="docs-cf-h">Deploy this landing (Cloudflare Workers)</h2>
         <p id="docs-cf-p1">From the <code>web/landing</code> directory:</p>
         <div class="code-block" style="padding-top: 44px">
@@ -100,8 +124,59 @@ signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-S
 npm run deploy</pre>
         </div>
         <p style="color: var(--muted)" id="docs-cf-p2">
-          Set <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code> in GitHub Actions, or run <code>wrangler login</code>
-          locally.
+          Set <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code> in GitHub Actions, or run
+          <code>wrangler login</code> locally.
+        </p>
+      </article>
+
+      <article class="card" id="ops-docs" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">CDN configuration (required variables)</h2>
+        <p style="color: var(--muted)">
+          To stop depending on GitHub releases endpoints, define CDN URLs in the landing build and in Tonet runtime.
+        </p>
+        <div class="code-block" style="padding-top: 44px">
+          <button type="button" class="copy-btn" data-copy="cdn-env">Copy</button>
+          <pre id="cdn-env"># web/landing/.env(.production)
+TONET_CDN_BASE_URL=https://downloads.example.com
+TONET_CDN_VERSION_PATH=/version.json
+TONET_SITE_DOWNLOADS_PAGE=https://downloads.example.com/
+
+# rust build environment for Tonet app updates
+TONET_UPDATE_MANIFEST_URL=https://downloads.example.com/version.json
+TONET_DOWNLOADS_PAGE_URL=https://downloads.example.com/</pre>
+        </div>
+      </article>
+
+      <article class="card" id="product-docs" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">Use cases and audience</h2>
+        <ul style="line-height: 1.7; color: var(--muted)">
+          <li>Minimal browsing environments where deterministic behavior matters.</li>
+          <li>Teams that need transparent browser internals and release control.</li>
+          <li>Operators that prefer CDN-governed artifacts and update manifests.</li>
+          <li>Power users who want a focused browser without broad platform noise.</li>
+        </ul>
+      </article>
+
+      <article class="card" id="engineering-docs" style="margin-bottom: 20px">
+        <h2 style="margin-top: 0">Implementation and future work</h2>
+        <ul style="line-height: 1.7; color: var(--muted)">
+          <li><strong>Current:</strong> Servo integration foundation, policy modules, and CI coverage.</li>
+          <li><strong>Next:</strong> broader web compatibility layers and stronger packaging parity.</li>
+          <li><strong>Planned:</strong> deeper conformance targets, perf budgets, and expanded platform support.</li>
+        </ul>
+        <p style="color: var(--muted)">
+          For detailed milestones, consult <code>TONET_VISION.md</code> and <code>docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
+        </p>
+        <p style="color: var(--muted)">
+          Structured docs source (MkDocs-style): <code>web/landing/docs-site</code>.
+        </p>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top: 0">Additional pages</h2>
+        <p style="color: var(--muted)">
+          Explore focused subpages:
+          <a href="/handbook.html">Handbook</a>, <a href="/compare.html">Compare</a>, and <a href="/roadmap.html">Roadmap</a>.
         </p>
       </article>
     </main>

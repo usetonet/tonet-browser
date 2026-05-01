@@ -24,6 +24,8 @@ type VersionMeta = {
   version: string;
   repo?: string;
   releasesUrl?: string;
+  updateManifestUrl?: string;
+  cdnBaseUrl?: string;
   download?: VersionDownload;
 };
 
@@ -87,33 +89,22 @@ async function main(): Promise<void> {
   const pill = document.getElementById("version-pill");
   if (pill) pill.textContent = `${versionPillPrefix(lang)} ${ver}`;
 
-  const latestDl =
-    "https://github.com/usetonet/tonet-browser/releases/latest/download";
-  const releasesLatest = "https://github.com/usetonet/tonet-browser/releases/latest";
+  const releasesLatest = meta?.releasesUrl ?? "https://downloads.usetonet.com/";
   const winSetup = document.getElementById("win-setup") as HTMLAnchorElement | null;
   const linuxSetup = document.getElementById("linux-setup") as HTMLAnchorElement | null;
   const macSetup = document.getElementById("mac-setup") as HTMLAnchorElement | null;
   const d = meta?.download;
   if (winSetup) {
-    winSetup.href =
-      d?.windowsSetup ??
-      (meta?.version
-        ? `${latestDl}/Tonet-Setup-${meta.version}-x64.exe`
-        : releasesLatest);
+    winSetup.href = d?.windowsSetup ?? releasesLatest;
   }
   if (linuxSetup) {
-    linuxSetup.href =
-      d?.linuxSetup ??
-      (meta?.version
-        ? `${latestDl}/tonet_${meta.version}_amd64.deb`
-        : releasesLatest);
+    linuxSetup.href = d?.linuxSetup ?? releasesLatest;
   }
   if (macSetup) {
     macSetup.href = d?.macSetup ?? releasesLatest;
   }
 
-  const tag = `v${ver}`;
-  const base = `https://github.com/usetonet/tonet-browser/releases/download/${tag}`;
+  const base = meta?.cdnBaseUrl ?? "https://downloads.usetonet.com";
   const winMsi = document.getElementById("win-msi") as HTMLAnchorElement | null;
   const winExe = document.getElementById("win-exe") as HTMLAnchorElement | null;
   const linuxDeb = document.getElementById("linux-deb") as HTMLAnchorElement | null;
