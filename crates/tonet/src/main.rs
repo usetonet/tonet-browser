@@ -8,13 +8,23 @@ mod branding;
 mod browser_log;
 mod chrome;
 mod css_resolve;
+#[allow(dead_code, unused_imports)]
+#[path = "../../tonet-engine/src/css/mod.rs"]
+mod css;
+mod document_url;
+#[allow(dead_code, unused_imports)]
+#[path = "../../tonet-engine/src/html/mod.rs"]
+mod html;
 mod i18n;
 mod internal_pages;
+mod limits;
 mod network;
 mod new_tab;
 mod parser;
+mod policy;
 mod renderer;
 mod session_snapshot;
+mod servo_engine;
 mod settings;
 mod shortcut_catalog;
 mod tab;
@@ -48,6 +58,13 @@ fn window_icon_from_svg() -> Option<egui::IconData> {
 }
 
 fn main() -> eframe::Result<()> {
+    // Unify rustls 0.23 crypto for Tonet (reqwest) and Servo (servo-net): both use aws-lc-rs only.
+    // Must run before any thread (e.g. Servo ResourceManager) builds a TLS client.
+    static RUSTLS_CRYPTO: std::sync::Once = std::sync::Once::new();
+    RUSTLS_CRYPTO.call_once(|| {
+        let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+    });
+
     let mut viewport = egui::ViewportBuilder::default()
         .with_app_id("tonet")
         .with_title("Tonet")
@@ -61,9 +78,23 @@ fn main() -> eframe::Result<()> {
         viewport = viewport.with_icon(icon);
     }
 
-    let native_options = eframe::NativeOptions {
-        viewport,
-        ..Default::default()
+    let native_options = {
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            eframe::NativeOptions {
+                viewport,
+                // Slint-style Servo uses surfman GL in-process; egui uses wgpu (shared device interop is future work).
+                renderer: eframe::Renderer::Wgpu,
+                ..Default::default()
+            }
+        }
+        #[cfg(not(all(feature = "servo-engine", windows)))]
+        {
+            eframe::NativeOptions {
+                viewport,
+                ..Default::default()
+            }
+        }
     };
 
     eframe::run_native(

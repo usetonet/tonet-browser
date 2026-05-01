@@ -222,6 +222,63 @@ impl BrowserLog {
     }
 }
 
+/// One row for omnibox history autocomplete (MVP: visit log only; no separate product “chip” spec).
+#[derive(Clone, Debug)]
+pub struct OmniboxHistorySuggestion {
+    pub url: String,
+    pub title: Option<String>,
+}
+
+#[inline]
+fn is_http_s_history_url(url: &str) -> bool {
+    let t = url.trim();
+    t.starts_with("http://") || t.starts_with("https://")
+}
+
+/// Recent `http(s)` visits matching `input_trim` (substring, ASCII-lowercased). Newest first, de-duped by URL.
+/// Empty `input_trim` yields up to `max` recent web visits (still `http`/`https` only).
+pub fn history_suggestions_for_omnibox(
+    visits: &[VisitRecord],
+    input_trim: &str,
+    max: usize,
+) -> Vec<OmniboxHistorySuggestion> {
+    if max == 0 {
+        return Vec::new();
+    }
+    let needle = input_trim.trim();
+    let needle_lc = needle.to_ascii_lowercase();
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for v in visits.iter().rev() {
+        if !is_http_s_history_url(&v.url) {
+            continue;
+        }
+        if !needle_lc.is_empty() {
+            let url_lc = v.url.to_ascii_lowercase();
+            let title_hit = v
+                .title
+                .as_deref()
+                .map(|t| t.to_ascii_lowercase().contains(&needle_lc))
+                .unwrap_or(false);
+            if !url_lc.contains(&needle_lc) && !title_hit {
+                continue;
+            }
+        }
+        if seen.contains(&v.url) {
+            continue;
+        }
+        seen.insert(v.url.clone());
+        out.push(OmniboxHistorySuggestion {
+            url: v.url.clone(),
+            title: v.title.clone(),
+        });
+        if out.len() >= max {
+            break;
+        }
+    }
+    out
+}
+
 fn display_name_from_url(url: &str) -> String {
     Url::parse(url)
         .ok()
@@ -273,6 +330,47 @@ pub fn save_page_html_snapshot(download_root: &Path, url: &str, html: &str) -> O
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn history_suggestions_empty_input_is_recent_web_only() {
+        let visits = vec![
+            VisitRecord {
+                id: 1,
+                url: "https://old.example/".into(),
+                title: None,
+                visited_at_unix: 1,
+            },
+            VisitRecord {
+                id: 2,
+                url: "tonet://settings".into(),
+                title: None,
+                visited_at_unix: 2,
+            },
+            VisitRecord {
+                id: 3,
+                url: "https://new.example/page".into(),
+                title: Some("New page".into()),
+                visited_at_unix: 3,
+            },
+        ];
+        let s = history_suggestions_for_omnibox(&visits, "", 8);
+        assert_eq!(s.len(), 2);
+        assert_eq!(s[0].url, "https://new.example/page");
+        assert_eq!(s[1].url, "https://old.example/");
+    }
+
+    #[test]
+    fn history_suggestions_filter_by_url_substring() {
+        let visits = vec![VisitRecord {
+            id: 1,
+            url: "https://cdn.example/assets/app.zip".into(),
+            title: None,
+            visited_at_unix: 1,
+        }];
+        let s = history_suggestions_for_omnibox(&visits, "cdn", 8);
+        assert_eq!(s.len(), 1);
+        assert!(s[0].url.contains("cdn"));
+    }
 
     #[test]
     fn snapshot_stem_and_write() {

@@ -112,8 +112,12 @@ pub fn tab_title(route: InternalRoute, loc: Locale) -> &'static str {
     }
 }
 
+#[derive(Default)]
 pub struct InternalPageOutput {
     pub navigate_to: Option<String>,
+    /// User clicked “Clear Servo site permissions” in Settings → System (Windows + `servo-engine` only).
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub clear_servo_site_permissions: bool,
 }
 
 fn top_route_tabs(ui: &mut Ui, loc: Locale, current: InternalRoute) -> Option<InternalRoute> {
@@ -186,7 +190,7 @@ pub fn settings_nav_from_path(path: &str) -> SettingsNav {
     }
 }
 
-fn settings_sidebar_label(loc: Locale, nav: SettingsNav) -> &'static str {
+pub(crate) fn settings_sidebar_label(loc: Locale, nav: SettingsNav) -> &'static str {
     use SettingsNav::*;
     match (loc, nav) {
         (_, GetStarted) => i18n::internal_settings_nav_general(loc),
@@ -673,6 +677,46 @@ fn render_system_page(
         i18n::internal_settings_hw_accel(loc),
         &mut s.use_hardware_acceleration,
     );
+    #[cfg(feature = "servo-engine")]
+    {
+        ui.add_space(12.0);
+        ui.label(
+            RichText::new(i18n::internal_settings_servo_heading(loc))
+                .strong()
+                .color(theme::settings_heading()),
+        );
+        ui.add_space(4.0);
+        ui.label(
+            RichText::new(i18n::internal_settings_servo_body(loc))
+                .small()
+                .color(theme::loading_muted()),
+        );
+        ui.add_space(6.0);
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            ui.label(
+                RichText::new(i18n::internal_settings_servo_windows_note(loc))
+                    .small()
+                    .color(theme::loading_muted()),
+            );
+            ui.add_space(8.0);
+            if ui
+                .button(i18n::internal_settings_servo_clear_permissions(loc))
+                .on_hover_text(i18n::internal_settings_servo_clear_permissions_hint(loc))
+                .clicked()
+            {
+                out.clear_servo_site_permissions = true;
+            }
+        }
+        #[cfg(all(feature = "servo-engine", not(windows)))]
+        {
+            toggle_row(
+                ui,
+                i18n::internal_settings_servo_viewport(loc),
+                &mut s.experimental_servo_viewport,
+            );
+        }
+    }
     ui.horizontal(|ui| {
         ui.label(RichText::new(i18n::internal_settings_proxy(loc)).color(theme::tab_text()));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -900,7 +944,7 @@ pub fn show_settings_page(
     mut on_save: impl FnMut(&AppSettings),
     mut on_check_now: impl FnMut(),
 ) -> InternalPageOutput {
-    let mut out = InternalPageOutput { navigate_to: None };
+    let mut out = InternalPageOutput::default();
     let parsed = parse_tonet_url(settings_url);
     let path = parsed
         .as_ref()
@@ -1115,7 +1159,7 @@ pub fn show_downloads_page(
     search: &mut String,
     confirm_clear: &mut bool,
 ) -> InternalPageOutput {
-    let mut out = InternalPageOutput { navigate_to: None };
+    let mut out = InternalPageOutput::default();
     ui.vertical(|ui| {
         if let Some(r) = top_route_tabs(ui, loc, current) {
             out.navigate_to = Some(r.canonical_url().to_string());
@@ -1291,7 +1335,7 @@ pub fn show_history_page(
     selected: &mut HashSet<u64>,
     confirm_clear: &mut bool,
 ) -> InternalPageOutput {
-    let mut out = InternalPageOutput { navigate_to: None };
+    let mut out = InternalPageOutput::default();
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
             ui.set_width(SIDEBAR_W);
@@ -1465,6 +1509,7 @@ fn history_row(
     ui.add_space(6.0);
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ClearTarget {
     History,
     Downloads,
@@ -1506,6 +1551,7 @@ pub fn show_clear_confirm_modal(
     message: &str,
     log: &mut BrowserLog,
     target: ClearTarget,
+    on_cleared: &mut dyn FnMut(ClearTarget),
 ) {
     if !*open {
         return;
@@ -1523,9 +1569,14 @@ pub fn show_clear_confirm_modal(
                 }
                 if ui.button(i18n::internal_btn_clear(loc)).clicked() {
                     match target {
-                        ClearTarget::History => log.clear_visits(),
-                        ClearTarget::Downloads => log.clear_downloads(),
+                        ClearTarget::History => {
+                            log.clear_visits();
+                        }
+                        ClearTarget::Downloads => {
+                            log.clear_downloads();
+                        }
                     }
+                    on_cleared(target);
                     *open = false;
                 }
             });

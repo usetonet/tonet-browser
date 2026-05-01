@@ -16,15 +16,20 @@ unsafe extern "system" {
     ) -> i32;
 }
 
+/// Best-effort Win32 HWND for the eframe window (native integration).
+#[inline]
+pub fn win32_hwnd_from_frame(frame: &eframe::Frame) -> Option<isize> {
+    let handle = frame.window_handle().ok()?;
+    match handle.as_raw() {
+        RawWindowHandle::Win32(w) => Some(w.hwnd.get()),
+        _ => None,
+    }
+}
+
 /// Returns `true` if the attribute was applied (best effort; older Windows may ignore it).
 pub fn try_apply_round_corners(frame: &eframe::Frame) -> bool {
-    let Ok(handle) = frame.window_handle() else {
+    let Some(hwnd) = win32_hwnd_from_frame(frame) else {
         return false;
-    };
-    let raw = handle.as_raw();
-    let hwnd = match raw {
-        RawWindowHandle::Win32(w) => w.hwnd.get(),
-        _ => return false,
     };
     let pref = DWMWCP_ROUNDSMALL;
     // SAFETY: HWND is valid for the lifetime of the frame; DWM accepts a DWORD attribute.

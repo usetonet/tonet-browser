@@ -27,10 +27,21 @@ use crate::ui::{show_error_panel, show_loading, show_settings_window, show_updat
 use crate::update;
 use crate::window_chrome;
 use crate::window_resize;
-use tonet_engine::css::{
+use crate::css::{
     parse_stylesheet_bundle_rule_declarations, parse_stylesheet_bundle_to_rules,
     tokenize_stylesheet_bundle,
 };
+
+#[cfg(all(feature = "servo-engine", windows))]
+fn servo_console_line_color(level: crate::tab::ServoConsoleLevel) -> Color32 {
+    use crate::tab::ServoConsoleLevel as L;
+    match level {
+        L::Error => theme::error_title(),
+        L::Warn => Color32::from_rgb(230, 178, 92),
+        L::Info | L::Log => theme::accent(),
+        L::Debug | L::Trace => theme::loading_muted(),
+    }
+}
 
 fn url_encode_query(query: &str) -> String {
     let mut encoded = String::with_capacity(query.len() * 3);
@@ -58,7 +69,7 @@ fn search_url_for_query(engine: SearchEngine, query: &str) -> String {
     }
 }
 
-fn favicon_cache_uri(page_url: &str, ext: &str) -> String {
+pub(crate) fn favicon_cache_uri(page_url: &str, ext: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     let mut h = DefaultHasher::new();
@@ -207,6 +218,17 @@ pub struct TonetApp {
 
     /// Native `pixels_per_point` from egui at startup (HiDPI baseline before user UI scale).
     integration_pixels_per_point: f32,
+
+    /// Experimental Servo viewport (Windows popup when `servo-engine` + setting/env).
+    servo_viewport: crate::servo_engine::ServoViewportRuntime,
+
+    /// Central panel rect (egui points) when the active tab shows an `http(s)` page; drives Servo window placement.
+    servo_content_rect: Option<egui::Rect>,
+
+    /// Previous-frame [`Self::servo_content_rect`], used at the start of `update` to drop Servo keyboard capture
+    /// on a chrome click before `forward_captured_keyboard` runs.
+    #[cfg(all(feature = "servo-engine", windows))]
+    servo_prev_content_rect: Option<egui::Rect>,
 }
 
 impl TonetApp {
@@ -251,6 +273,7 @@ impl TonetApp {
         );
 
         let settings = AppSettings::load();
+        crate::servo_engine::link_servo_when_enabled();
         let integration_pixels_per_point = cc.egui_ctx.pixels_per_point().max(0.01);
         Self::apply_egui_visuals(&cc.egui_ctx, &settings, integration_pixels_per_point);
 
@@ -297,6 +320,10 @@ impl TonetApp {
             new_tab_add: crate::new_tab::NewTabAddState::default(),
             pending_startup_fetch: true,
             integration_pixels_per_point,
+            servo_viewport: crate::servo_engine::ServoViewportRuntime::default(),
+            servo_content_rect: None,
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_prev_content_rect: None,
         };
         this.sync_window_title(&cc.egui_ctx);
         this
@@ -309,9 +336,20 @@ impl TonetApp {
     }
 
     fn ensure_http_tab_loaded(&mut self, ctx: &egui::Context) {
+        #[cfg(all(feature = "servo-engine", windows))]
+        let servo_viewport = self.settings.system.experimental_servo_viewport;
         let tab = self.active_tab_mut();
         let u = tab.url_input.trim();
         if tab.is_new_tab() {
+            return;
+        }
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            if crate::servo_engine::servo_supersedes_dom_paint(servo_viewport, u) {
+                return;
+            }
+        }
+        if internal_pages::parse_tonet_url(u).is_some() {
             return;
         }
         if !(u.starts_with("http://") || u.starts_with("https://")) {
@@ -338,6 +376,13 @@ impl TonetApp {
     fn tab_strip_title(tab: &Tab, loc: Locale) -> String {
         if let Some(p) = internal_pages::parse_tonet_url(&tab.url_input) {
             return Self::clamp_strip_label(internal_pages::tab_title(p.route, loc), 24);
+        }
+        #[cfg(all(feature = "servo-engine", windows))]
+        if let Some(ref t) = tab.servo_document_title {
+            let t = t.trim();
+            if !t.is_empty() {
+                return Self::clamp_strip_label(t, 24);
+            }
         }
         if let Some(t) = tab.doc_title_trimmed() {
             Self::clamp_strip_label(t, 24)
@@ -388,6 +433,24 @@ impl TonetApp {
         self.sync_window_title(ctx);
     }
 
+    /// New tab with a concrete URL (e.g. Servo context menu → “Open link in new Tonet tab”).
+    #[cfg(all(feature = "servo-engine", windows))]
+    fn open_new_tab_with_url(&mut self, ctx: &egui::Context, url: String) {
+        if self.tabs.len() >= MAX_TABS {
+            if !self.max_tabs_overflow_spawned {
+                self.max_tabs_overflow_spawned = true;
+                if let Ok(exe) = std::env::current_exe() {
+                    let _ = std::process::Command::new(exe).spawn();
+                }
+            }
+            return;
+        }
+        self.tabs.push(Tab::new(url));
+        self.active_tab = self.tabs.len() - 1;
+        self.sync_window_title(ctx);
+        self.start_fetch_with_intent(NavigateIntent::NewPage, ctx);
+    }
+
     fn close_tab_at(&mut self, index: usize, ctx: &egui::Context) {
         self.tabs[index].cancel_in_flight();
         if self.tabs.len() <= 1 {
@@ -405,42 +468,55 @@ impl TonetApp {
 
     fn start_fetch_with_intent(&mut self, intent: NavigateIntent, ctx: &egui::Context) {
         let search_engine = self.settings.search_engine;
+        #[cfg(all(feature = "servo-engine", windows))]
+        let servo_viewport = self.settings.system.experimental_servo_viewport;
         let tab = self.active_tab_mut();
         let trimmed = tab.url_input.trim().to_string();
         if trimmed.is_empty() {
             return;
         }
 
+        #[cfg(all(feature = "servo-engine", windows))]
+        let tonet_via_servo = internal_pages::parse_tonet_url(&trimmed).is_some()
+            && crate::servo_engine::servo_supersedes_dom_paint(servo_viewport, trimmed.as_str());
+        #[cfg(not(all(feature = "servo-engine", windows)))]
+        let tonet_via_servo = false;
+
         if let Some(parsed) = internal_pages::parse_tonet_url(&trimmed) {
-            let canonical = parsed.normalized_url();
-            let was_new_tab = tab.show_new_tab;
-            tab.cancel_in_flight();
-            tab.show_new_tab = false;
-            tab.loading = false;
-            tab.error_message = None;
-            tab.fetch_rx = None;
-            tab.favicon_fetch_rx = None;
-            tab.favicon_uri.clear();
-            tab.dom.clear();
-            tab.stylesheet_urls.clear();
-            tab.url_input = canonical.clone();
-            if was_new_tab && matches!(intent, NavigateIntent::NewPage) {
-                tab.history.push(HistoryEntry {
-                    url: String::new(),
-                    nodes: Vec::new(),
-                    stylesheet_urls: Vec::new(),
-                });
-                tab.hist_index = 0;
+            if !tonet_via_servo {
+                let canonical = parsed.normalized_url();
+                let was_new_tab = tab.show_new_tab;
+                tab.cancel_in_flight();
+                tab.show_new_tab = false;
+                tab.loading = false;
+                tab.error_message = None;
+                tab.fetch_rx = None;
+                tab.favicon_fetch_rx = None;
+                tab.favicon_uri.clear();
+                tab.dom.clear();
+                tab.stylesheet_urls.clear();
+                tab.url_input = canonical.clone();
+                if was_new_tab && matches!(intent, NavigateIntent::NewPage) {
+                    tab.history.push(HistoryEntry {
+                        url: String::new(),
+                        nodes: Vec::new(),
+                        stylesheet_urls: Vec::new(),
+                    });
+                    tab.hist_index = 0;
+                }
+                tab.pending_nav = Some((canonical.clone(), intent));
+                tab.apply_successful_navigation(Vec::new());
+                self.sync_window_title(ctx);
+                return;
             }
-            tab.pending_nav = Some((canonical.clone(), intent));
-            tab.apply_successful_navigation(Vec::new());
-            self.sync_window_title(ctx);
-            return;
         }
 
         let was_new_tab = tab.show_new_tab;
 
-        let resolved = resolve_omnibox_input(&trimmed, search_engine);
+        let mut resolved = resolve_omnibox_input(&trimmed, search_engine);
+        if let Some(p) = internal_pages::parse_tonet_url(resolved.trim()) {
+            resolved = p.normalized_url();
+        }
         tab.url_input = resolved.clone();
         tab.show_new_tab = false;
 
@@ -451,6 +527,35 @@ impl TonetApp {
                 stylesheet_urls: Vec::new(),
             });
             tab.hist_index = 0;
+        }
+
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            if crate::servo_engine::servo_supersedes_dom_paint(servo_viewport, tab.url_input.trim()) {
+                tab.cancel_in_flight();
+                tab.loading = true;
+                tab.error_message = None;
+                tab.favicon_uri.clear();
+                tab.favicon_fetch_rx = None;
+                tab.stylesheet_fetch_rx = None;
+                tab.stylesheet_urls.clear();
+                tab.loaded_stylesheets.clear();
+                tab.loaded_stylesheet_tokens.clear();
+                tab.loaded_stylesheet_rules.clear();
+                tab.loaded_stylesheet_parsed.clear();
+                if matches!(intent, NavigateIntent::NewPage) {
+                    tab.dom.clear();
+                }
+                tab.pending_nav = Some((resolved.clone(), intent));
+                tab.apply_successful_navigation(Vec::new());
+                tab.fetch_rx = None;
+                if matches!(intent, NavigateIntent::Reload) {
+                    self.servo_viewport.webview_reload();
+                }
+                self.sync_window_title(ctx);
+                ctx.request_repaint();
+                return;
+            }
         }
 
         tab.loading = true;
@@ -496,10 +601,34 @@ impl TonetApp {
     }
 
     fn reload_page(&mut self, ctx: &egui::Context) {
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            let t = self.active_tab().url_input.trim();
+            if crate::servo_engine::servo_supersedes_dom_paint(self.settings.system.experimental_servo_viewport, t)
+            {
+                self.active_tab_mut().loading = true;
+                self.servo_viewport.webview_reload();
+                self.sync_window_title(ctx);
+                ctx.request_repaint();
+                return;
+            }
+        }
         self.start_fetch_with_intent(NavigateIntent::Reload, ctx);
     }
 
     fn go_back(&mut self, ctx: &egui::Context) {
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            let t = self.active_tab().url_input.trim();
+            if crate::servo_engine::servo_supersedes_dom_paint(self.settings.system.experimental_servo_viewport, t)
+            {
+                if self.servo_viewport.webview_go_back() {
+                    self.sync_window_title(ctx);
+                    ctx.request_repaint();
+                }
+                return;
+            }
+        }
         let tab = self.active_tab_mut();
         if tab.hist_index == 0 {
             return;
@@ -520,6 +649,18 @@ impl TonetApp {
     }
 
     fn go_forward(&mut self, ctx: &egui::Context) {
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            let t = self.active_tab().url_input.trim();
+            if crate::servo_engine::servo_supersedes_dom_paint(self.settings.system.experimental_servo_viewport, t)
+            {
+                if self.servo_viewport.webview_go_forward() {
+                    self.sync_window_title(ctx);
+                    ctx.request_repaint();
+                }
+                return;
+            }
+        }
         let tab = self.active_tab_mut();
         if tab.hist_index + 1 >= tab.history.len() {
             return;
@@ -542,9 +683,24 @@ impl TonetApp {
     fn sync_window_title(&mut self, ctx: &egui::Context) {
         let tab = self.active_tab();
         let loc = self.loc();
+        let servo_win_title = {
+            #[cfg(all(feature = "servo-engine", windows))]
+            {
+                tab.servo_document_title.as_ref().and_then(|t| {
+                    let t = t.trim();
+                    (!t.is_empty()).then(|| t.to_string())
+                })
+            }
+            #[cfg(not(all(feature = "servo-engine", windows)))]
+            {
+                None::<String>
+            }
+        };
         let new_title: String =
             if let Some(p) = internal_pages::parse_tonet_url(tab.url_input.trim()) {
                 internal_pages::tab_title(p.route, loc).to_string()
+            } else if let Some(t) = servo_win_title {
+                t
             } else if let Some(t) = tab.doc_title_trimmed() {
                 t.to_string()
             } else {
@@ -831,9 +987,6 @@ impl eframe::App for TonetApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         Self::apply_egui_visuals(ctx, &self.settings, self.integration_pixels_per_point);
 
-        #[cfg(not(windows))]
-        let _ = frame;
-
         #[cfg(windows)]
         {
             if self.integrated_title_chrome && self.dwm_corner_attempts < 60 {
@@ -865,6 +1018,18 @@ impl eframe::App for TonetApp {
         self.poll_stylesheets(ctx);
         self.poll_update_job(ctx);
         self.maybe_schedule_update_checks(ctx);
+
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            self.servo_viewport
+                .release_servo_keyboard_capture(ctx, self.servo_prev_content_rect);
+            let tab_url = self.active_tab().url_input.clone();
+            self.servo_viewport.forward_captured_keyboard(
+                ctx,
+                self.settings.system.experimental_servo_viewport,
+                tab_url.as_str(),
+            );
+        }
 
         if ctx.input(|i| {
             i.key_pressed(egui::Key::F5) || (i.modifiers.command && i.key_pressed(egui::Key::R))
@@ -965,8 +1130,21 @@ impl eframe::App for TonetApp {
 
         let loc = self.loc();
         let tab = self.active_tab();
-        let can_back = tab.hist_index > 0;
-        let can_forward = tab.hist_index + 1 < tab.history.len();
+        #[cfg(all(feature = "servo-engine", windows))]
+        let (can_back, can_forward) = {
+            let mut b = tab.hist_index > 0;
+            let mut f = tab.hist_index + 1 < tab.history.len();
+            let servo_viewport = self.settings.system.experimental_servo_viewport;
+            if crate::servo_engine::servo_supersedes_dom_paint(servo_viewport, tab.url_input.trim()) {
+                if let Some((bb, ff)) = tab.servo_chrome_nav {
+                    b = bb;
+                    f = ff;
+                }
+            }
+            (b, f)
+        };
+        #[cfg(not(all(feature = "servo-engine", windows)))]
+        let (can_back, can_forward) = (tab.hist_index > 0, tab.hist_index + 1 < tab.history.len());
         let tab_titles: Vec<String> = self
             .tabs
             .iter()
@@ -1017,6 +1195,14 @@ impl eframe::App for TonetApp {
                     }
                 }
 
+                #[cfg(all(feature = "servo-engine", windows))]
+                if crate::servo_engine::viewport_runtime_requested(
+                    self.settings.system.experimental_servo_viewport,
+                ) {
+                    self.servo_viewport
+                        .show_web_notification_toast(ctx, loc);
+                }
+
                 let tb_tabs = show_tab_bar(
                     ui,
                     ctx,
@@ -1046,6 +1232,12 @@ impl eframe::App for TonetApp {
                 );
                 ui.add_space(1.0);
 
+                let omnibox_history_suggestions =
+                    crate::browser_log::history_suggestions_for_omnibox(
+                        &self.browser_log.visits,
+                        self.active_tab().url_input.trim(),
+                        8,
+                    );
                 let omnibox_focus = std::mem::take(&mut self.omnibox_focus_select_all);
                 let active = self.active_tab_mut();
                 let chip_preview = active.url_input.trim().to_string();
@@ -1058,6 +1250,7 @@ impl eframe::App for TonetApp {
                     can_back,
                     can_forward,
                     omnibox_focus,
+                    omnibox_history_suggestions.as_slice(),
                 );
                 if tb.go_back {
                     self.go_back(ctx);
@@ -1069,7 +1262,19 @@ impl eframe::App for TonetApp {
                     self.reload_page(ctx);
                 }
                 if tb.stop_loading {
-                    self.active_tab_mut().cancel_in_flight();
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    let servo_supersedes = crate::servo_engine::servo_supersedes_dom_paint(
+                        self.settings.system.experimental_servo_viewport,
+                        self.active_tab().url_input.trim(),
+                    );
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    let servo_supersedes = false;
+
+                    // Servo’s public `WebView` API has no documented “stop load”; avoid
+                    // `cancel_in_flight` here so we do not wipe shell state synced from Servo.
+                    if !servo_supersedes {
+                        self.active_tab_mut().cancel_in_flight();
+                    }
                 }
                 if tb.navigate {
                     self.start_fetch_new(ctx);
@@ -1088,7 +1293,27 @@ impl eframe::App for TonetApp {
         let active_i = self.active_tab;
         let is_new_tab = self.tabs[active_i].is_new_tab();
         let internal_route = if !is_new_tab {
-            internal_pages::parse_tonet_url(self.tabs[active_i].url_input.trim())
+            let u = self.tabs[active_i].url_input.trim();
+            match internal_pages::parse_tonet_url(u) {
+                Some(p) => {
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    {
+                        if crate::servo_engine::servo_supersedes_dom_paint(
+                            self.settings.system.experimental_servo_viewport,
+                            u,
+                        ) {
+                            None
+                        } else {
+                            Some(p)
+                        }
+                    }
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    {
+                        Some(p)
+                    }
+                }
+                None => None,
+            }
         } else {
             None
         };
@@ -1096,6 +1321,7 @@ impl eframe::App for TonetApp {
         let check_now_settings = check_now.clone();
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            self.servo_content_rect = None;
             let tab = &mut self.tabs[active_i];
             if is_new_tab {
                 let nta = crate::new_tab::show_new_tab_page(
@@ -1158,7 +1384,27 @@ impl eframe::App for TonetApp {
                 if let Some(url) = out.navigate_to {
                     tab.pending_link_navigation = Some(url);
                 }
+                #[cfg(all(feature = "servo-engine", windows))]
+                if out.clear_servo_site_permissions {
+                    crate::servo_engine::permission_store::remove_file();
+                    self.servo_viewport.clear_servo_permission_memory();
+                }
             } else {
+                let url_trim = tab.url_input.trim();
+                #[cfg(all(feature = "servo-engine", windows))]
+                let tonet_servo_paint = internal_pages::parse_tonet_url(url_trim).is_some()
+                    && crate::servo_engine::servo_supersedes_dom_paint(
+                        self.settings.system.experimental_servo_viewport,
+                        url_trim,
+                    );
+                #[cfg(not(all(feature = "servo-engine", windows)))]
+                let tonet_servo_paint = false;
+                if url_trim.starts_with("http://")
+                    || url_trim.starts_with("https://")
+                    || tonet_servo_paint
+                {
+                    self.servo_content_rect = Some(ui.max_rect());
+                }
                 if let Some(err) = &tab.error_message {
                     show_error_panel(ui, loc, err);
                     ui.add_space(8.0);
@@ -1168,52 +1414,227 @@ impl eframe::App for TonetApp {
                     show_loading(ui, loc);
                 }
 
-                egui::ScrollArea::vertical()
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| {
-                        if !tab.loading && tab.error_message.is_none() {
-                            let author_hints =
-                                compute_dom_paint_hints(&tab.dom, &tab.loaded_stylesheet_parsed);
-                            render_nodes(
-                                ui,
-                                loc,
-                                &tab.dom,
-                                Some(&author_hints),
-                                &mut tab.pending_link_navigation,
-                            );
-                        } else if !tab.loading && tab.error_message.is_some() {
+                #[cfg(feature = "servo-engine")]
+                {
+                    let http = url_trim.starts_with("http://") || url_trim.starts_with("https://");
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    if http && !crate::servo_engine::servo_supersedes_dom_paint(false, tab.url_input.trim())
+                    {
+                        ui.horizontal_wrapped(|ui| {
                             ui.label(
-                                egui::RichText::new(i18n::suggestion_fix_url(loc))
-                                    .italics()
+                                egui::RichText::new(i18n::servo_windows_engine_disabled_hint(loc))
+                                    .small()
                                     .color(theme::loading_muted()),
                             );
+                        });
+                        ui.add_space(6.0);
+                    }
+                    #[cfg(all(feature = "servo-engine", not(windows)))]
+                    {
+                        let env_on = std::env::var_os("TONET_SERVO_VIEWPORT")
+                            .as_deref()
+                            .is_some_and(|v| v == "1");
+                        if http && !self.settings.system.experimental_servo_viewport && !env_on {
+                            ui.horizontal_wrapped(|ui| {
+                                ui.label(
+                                    egui::RichText::new(i18n::servo_compiled_activate_hint(loc))
+                                        .small()
+                                        .color(theme::loading_muted()),
+                                );
+                            });
+                            ui.add_space(6.0);
                         }
-                    });
+                    }
+                }
+
+                let servo_dom = crate::servo_engine::servo_supersedes_dom_paint(
+                    self.settings.system.experimental_servo_viewport,
+                    tab.url_input.as_str(),
+                ) && !tab.loading
+                    && tab.error_message.is_none();
+
+                if servo_dom {
+                    // Leave a right gutter for a visible scrollbar strip; Win32 popup matches `inner` only.
+                    const SERVO_SCROLL_GUTTER: f32 = 14.0;
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    const SERVO_CONSOLE_STRIP_H: f32 = 120.0;
+                    let full = ui.max_rect();
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    let console_h = if tab.servo_console.is_empty() {
+                        0.0
+                    } else {
+                        SERVO_CONSOLE_STRIP_H
+                    };
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    let console_h = 0.0_f32;
+                    let inner = egui::Rect::from_min_max(
+                        full.min,
+                        full.max - egui::vec2(SERVO_SCROLL_GUTTER, console_h),
+                    );
+                    self.servo_content_rect = Some(inner);
+                    ui.allocate_rect(inner, egui::Sense::click_and_drag());
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    {
+                        let ppp = ui.ctx().pixels_per_point();
+                        self.servo_viewport
+                            .feed_servo_slint_egui_pointer(ctx, inner, ppp);
+                        self.servo_viewport
+                            .paint_servo_slint_embed_in_rect(ctx, ui, inner);
+                    }
+                    let track = egui::Rect::from_min_max(
+                        egui::pos2(inner.right(), inner.top()),
+                        egui::pos2(full.max.x, inner.max.y),
+                    );
+                    let p = ui.painter();
+                    p.rect_filled(track, 3.0, theme::servo_scroll_gutter_fill());
+                    p.rect_stroke(
+                        track,
+                        3.0,
+                        egui::Stroke::new(1.0, theme::separator()),
+                    );
+                    let cx = track.center().x;
+                    p.line_segment(
+                        [
+                            egui::pos2(cx, track.top() + 5.0),
+                            egui::pos2(cx, track.bottom() - 5.0),
+                        ],
+                        egui::Stroke::new(3.5, theme::servo_scroll_thumb()),
+                    );
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    if console_h > 0.0 {
+                        let console_rect = egui::Rect::from_min_max(
+                            egui::pos2(full.min.x, inner.max.y),
+                            egui::pos2(full.max.x - SERVO_SCROLL_GUTTER, full.max.y),
+                        );
+                        ui.allocate_new_ui(
+                            egui::UiBuilder::new()
+                                .id_salt("tonet_servo_page_console")
+                                .max_rect(console_rect)
+                                .layout(egui::Layout::top_down(egui::Align::Min)),
+                            |ui| {
+                            ui.set_min_size(console_rect.size());
+                            egui::Frame::default()
+                                .fill(theme::content_bg())
+                                .stroke(egui::Stroke::new(1.0, theme::separator()))
+                                .show(ui, |ui| {
+                                    ui.horizontal(|ui| {
+                                        ui.label(
+                                            egui::RichText::new(i18n::servo_page_console_header(loc))
+                                                .strong(),
+                                        );
+                                        if ui
+                                            .small_button(i18n::servo_page_console_clear(loc))
+                                            .clicked()
+                                        {
+                                            tab.servo_console.clear();
+                                        }
+                                    });
+                                    egui::ScrollArea::vertical()
+                                        .max_height(console_h - 28.0)
+                                        .stick_to_bottom(true)
+                                        .show(ui, |ui| {
+                                            ui.style_mut().override_font_id = Some(
+                                                egui::FontId::monospace(11.0),
+                                            );
+                                            for (lvl, text) in &tab.servo_console {
+                                                let c = servo_console_line_color(*lvl);
+                                                let line = format!("[{}] {}", lvl.as_label(), text);
+                                                ui.label(
+                                                    egui::RichText::new(line)
+                                                        .small()
+                                                        .color(c),
+                                                );
+                                            }
+                                        });
+                                });
+                            },
+                        );
+                    }
+                } else {
+                    egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            if !tab.loading && tab.error_message.is_none() {
+                                let author_hints =
+                                    compute_dom_paint_hints(&tab.dom, &tab.loaded_stylesheet_parsed);
+                                render_nodes(
+                                    ui,
+                                    loc,
+                                    &tab.dom,
+                                    Some(&author_hints),
+                                    &mut tab.pending_link_navigation,
+                                );
+                            } else if !tab.loading && tab.error_message.is_some() {
+                                ui.label(
+                                    egui::RichText::new(i18n::suggestion_fix_url(loc))
+                                        .italics()
+                                        .color(theme::loading_muted()),
+                                );
+                            }
+                        });
+                }
             }
         });
 
-        internal_pages::show_clear_confirm_modal(
-            ctx,
-            &mut self.confirm_clear_history,
-            loc,
-            i18n::internal_confirm_clear_history(loc),
-            &mut self.browser_log,
-            internal_pages::ClearTarget::History,
-        );
-        internal_pages::show_clear_confirm_modal(
-            ctx,
-            &mut self.confirm_clear_downloads,
-            loc,
-            i18n::internal_confirm_clear_downloads(loc),
-            &mut self.browser_log,
-            internal_pages::ClearTarget::Downloads,
-        );
+        {
+            let confirm = &mut self.confirm_clear_history;
+            let log = &mut self.browser_log;
+            #[cfg(all(feature = "servo-engine", windows))]
+            let servo_viewport = &mut self.servo_viewport;
+            let mut on_cleared = |cleared: internal_pages::ClearTarget| {
+                if cleared != internal_pages::ClearTarget::History {
+                    return;
+                }
+                #[cfg(all(feature = "servo-engine", windows))]
+                {
+                    crate::servo_engine::permission_store::remove_file();
+                    servo_viewport.clear_servo_permission_memory();
+                }
+            };
+            internal_pages::show_clear_confirm_modal(
+                ctx,
+                confirm,
+                loc,
+                i18n::internal_confirm_clear_history(loc),
+                log,
+                internal_pages::ClearTarget::History,
+                &mut on_cleared,
+            );
+        }
+        {
+            #[cfg(all(feature = "servo-engine", windows))]
+            let servo_viewport = &self.servo_viewport;
+            #[cfg(all(feature = "servo-engine", windows))]
+            let tabs = &mut self.tabs;
+            let mut on_cleared = |cleared: internal_pages::ClearTarget| {
+                if cleared != internal_pages::ClearTarget::Downloads {
+                    return;
+                }
+                #[cfg(all(feature = "servo-engine", windows))]
+                {
+                    servo_viewport.clear_servo_ephemeral_queues();
+                    for tab in tabs.iter_mut() {
+                        tab.servo_console.clear();
+                    }
+                }
+            };
+            internal_pages::show_clear_confirm_modal(
+                ctx,
+                &mut self.confirm_clear_downloads,
+                loc,
+                i18n::internal_confirm_clear_downloads(loc),
+                &mut self.browser_log,
+                internal_pages::ClearTarget::Downloads,
+                &mut on_cleared,
+            );
+        }
         internal_pages::show_reset_settings_modal(
             ctx,
             &mut self.confirm_reset_settings,
             loc,
             &mut self.settings,
         );
+        let mut clear_servo_from_settings_modal = false;
         show_settings_window(
             ctx,
             &mut self.settings_open,
@@ -1229,7 +1650,13 @@ impl eframe::App for TonetApp {
                 let c = check_now.clone();
                 move || c.set(true)
             },
+            &mut clear_servo_from_settings_modal,
         );
+        #[cfg(all(feature = "servo-engine", windows))]
+        if clear_servo_from_settings_modal {
+            crate::servo_engine::permission_store::remove_file();
+            self.servo_viewport.clear_servo_permission_memory();
+        }
         if check_now.get() {
             self.update_banner_dismissed = false;
             self.spawn_update_check();
@@ -1243,6 +1670,62 @@ impl eframe::App for TonetApp {
 
         if ctx.input(|i| i.viewport().close_requested()) {
             self.persist_last_session();
+        }
+
+        let tab_url = self.active_tab().url_input.clone();
+        #[cfg(all(feature = "servo-engine", windows))]
+        self.servo_viewport.sync_tonet_scheme_snapshot(
+            self.loc(),
+            &self.settings,
+            &self.browser_log,
+        );
+        self.servo_viewport.tick(
+            ctx,
+            frame,
+            self.settings.system.experimental_servo_viewport,
+            tab_url.as_str(),
+            self.servo_content_rect,
+        );
+
+        #[cfg(all(feature = "servo-engine", windows))]
+        {
+            let setting = self.settings.system.experimental_servo_viewport;
+            let idx = self.active_tab;
+            self.servo_viewport.sync_active_tab_from_servo(
+                ctx,
+                setting,
+                &mut self.tabs[idx],
+                &mut self.browser_log,
+            );
+            for action in self.servo_viewport.take_tonet_scheme_actions() {
+                match action {
+                    crate::servo_engine::TonetSchemeAction::ClearHistory => {
+                        self.browser_log.clear_visits();
+                    }
+                    crate::servo_engine::TonetSchemeAction::ClearDownloads => {
+                        self.browser_log.clear_downloads();
+                        self.servo_viewport.clear_servo_ephemeral_queues();
+                        for tab in &mut self.tabs {
+                            tab.servo_console.clear();
+                        }
+                    }
+                    crate::servo_engine::TonetSchemeAction::ClearServoSitePermissions => {
+                        crate::servo_engine::permission_store::remove_file();
+                        self.servo_viewport.clear_servo_permission_memory();
+                    }
+                }
+            }
+            self.servo_viewport.show_embedder_modals(
+                ctx,
+                setting,
+                self.tabs[idx].url_input.trim(),
+                self.loc(),
+            );
+            if let Some(url) = self.servo_viewport.take_pending_open_link_new_tonet_tab() {
+                self.open_new_tab_with_url(ctx, url);
+            }
+            self.sync_window_title(ctx);
+            self.servo_prev_content_rect = self.servo_content_rect;
         }
 
         window_resize::update_resize_hover_cursor(ctx, self.integrated_title_chrome);
