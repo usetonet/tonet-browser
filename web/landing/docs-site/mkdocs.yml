@@ -1,0 +1,24 @@
+site_name: Tonet Docs
+site_url: https://usetonet.com
+repo_url: https://github.com/usetonet/tonet-browser
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+nav:
+  - Overview: index.md
+  - Getting Started: getting-started.md
+  - Operations:
+      - CDN and Releases: operations/cdn-and-releases.md
+      - Packaging and Signing: operations/packaging-and-signing.md
+  - Product:
+      - Use Cases: product/use-cases.md
+      - Browser Comparisons: product/comparisons.md
+      - Roadmap: product/roadmap.md
