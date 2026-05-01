@@ -9539,7 +9539,7 @@ dependencies = [
 
 [[package]]
 name = "tonet"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -9579,7 +9579,7 @@ dependencies = [
 
 [[package]]
 name = "tonet-setup"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "dirs",
  "eframe",
