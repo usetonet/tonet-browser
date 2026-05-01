@@ -7,14 +7,14 @@ use serde::Deserialize;
 fn update_manifest_url() -> &'static str {
     match option_env!("TONET_UPDATE_MANIFEST_URL") {
         Some(v) => v,
-        None => "https://downloads.usetonet.com/version.json",
+        None => "https://dl.usetonet.com/version.json",
     }
 }
 
 fn downloads_page_url() -> &'static str {
     match option_env!("TONET_DOWNLOADS_PAGE_URL") {
         Some(v) => v,
-        None => "https://downloads.usetonet.com/",
+        None => "https://dl.usetonet.com/",
     }
 }
 

@@ -89,7 +89,7 @@ async function main(): Promise<void> {
   const pill = document.getElementById("version-pill");
   if (pill) pill.textContent = `${versionPillPrefix(lang)} ${ver}`;
 
-  const releasesLatest = meta?.releasesUrl ?? "https://downloads.usetonet.com/";
+  const releasesLatest = meta?.releasesUrl ?? "https://dl.usetonet.com/";
   const winSetup = document.getElementById("win-setup") as HTMLAnchorElement | null;
   const linuxSetup = document.getElementById("linux-setup") as HTMLAnchorElement | null;
   const macSetup = document.getElementById("mac-setup") as HTMLAnchorElement | null;
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
     macSetup.href = d?.macSetup ?? releasesLatest;
   }
 
-  const base = meta?.cdnBaseUrl ?? "https://downloads.usetonet.com";
+  const base = meta?.cdnBaseUrl ?? "https://dl.usetonet.com";
   const winMsi = document.getElementById("win-msi") as HTMLAnchorElement | null;
   const winExe = document.getElementById("win-exe") as HTMLAnchorElement | null;
   const linuxDeb = document.getElementById("linux-deb") as HTMLAnchorElement | null;

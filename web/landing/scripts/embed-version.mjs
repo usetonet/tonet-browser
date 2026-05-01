@@ -10,7 +10,7 @@ const dist = path.join(__dirname, "..", "dist");
 const cargo = fs.readFileSync(cargoPath, "utf8");
 const m = cargo.match(/^version = "([^"]+)"/m);
 const version = m ? m[1] : "0.0.0";
-const cdnBase = (process.env.TONET_CDN_BASE_URL || "https://downloads.usetonet.com").replace(/\/+$/, "");
+const cdnBase = (process.env.TONET_CDN_BASE_URL || "https://dl.usetonet.com").replace(/\/+$/, "");
 const versionPath = process.env.TONET_CDN_VERSION_PATH || "/version.json";
 const downloadsPage = process.env.TONET_SITE_DOWNLOADS_PAGE || `${cdnBase}/`;
 
