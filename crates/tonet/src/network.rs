@@ -4,9 +4,9 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
-use tonet_engine::document_url;
-use tonet_engine::policy;
-use tonet_engine::EngineLimits;
+use crate::document_url;
+use crate::policy;
+use crate::limits::EngineLimits;
 use url::Url;
 
 const LIMITS: EngineLimits = EngineLimits::STANDARD;
@@ -103,7 +103,7 @@ pub fn fetch_stylesheets_from_urls(urls: &[String]) -> Vec<(String, String)> {
 /// Try to fetch a favicon by probing a list of candidate URLs in order.
 ///
 /// Candidates are typically extracted from `<link rel="icon">` tags in the page
-/// HTML (via [`tonet_engine::html::minimal::extract_favicon_candidates`]), followed by classic
+/// HTML (via [`crate::html::minimal::extract_favicon_candidates`]), followed by classic
 /// fallback paths like `/favicon.ico`.
 pub fn fetch_favicon_from_candidates(candidates: &[String]) -> Option<Vec<u8>> {
     if candidates.is_empty() {

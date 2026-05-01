@@ -11,6 +11,7 @@ This document turns the long-term browser ambition into **verifiable phases**. I
 - **Own stack:** networking, parsing, layout/rendering path owned by Tonet—not Chromium, Firefox, WebKit, or CEF.
 - **Compete seriously, but measure:** progress is judged against **frozen corpora**, **conformance subsets**, and **hard metrics**, not slogans.
 - **Security and updates are non-optional:** they run in parallel with features, not after “feature complete.”
+- **Servo (optional):** the upstream **Servo** crate can be linked as an **experimental second viewport** for real `http(s)` pages on **Windows**, behind a Cargo feature and a user setting (see §13). It does **not** replace the `tonet-engine` read path by default; it is a measurable way to compare behavior and to grow embedder integration without betting the whole product on it day one.
 
 ---
 
@@ -162,7 +163,61 @@ Suggested order (already agreed in planning):
 
 ---
 
-## 13. Revision
+## 13. Servo engine in Tonet (experimental embed)
+
+This section documents **how** Servo is wired today, **when** it is active, and how it relates to the rest of the vision (especially §1 “own stack”).
+
+### 13.1 Purpose and scope
+
+- **Goal:** run real **`http://` / `https://`** documents through the **`servo`** crates.io embed (`Servo` + `WebView` + `WindowRenderingContext`) while keeping **Tonet’s shell** (tabs, chrome, omnibox, i18n, settings) in **egui/eframe**.
+- **Windows + `servo-engine`:** **`http://` / `https://`** use **Servo** as the only page engine (native popup). The in-process **`tonet-engine` + `render_nodes`** path remains for **`tonet://`**, new tab, and for **`http(s)`** only when Servo is **opted out** via **`TONET_SERVO_VIEWPORT=0`** or when the binary was built **without** `servo-engine`.
+- **Platform:** **Windows only** today (ANGLE / surfman + owned Win32 popup). Building with `--features servo-engine` on other targets does not enable the native viewport; Linux/macOS embed work is **out of scope** until explicitly scheduled.
+- **Checklist:** living integration backlog and smoke steps live in [`docs/SERVO_INTEGRATION_CHECKLIST.md`](docs/SERVO_INTEGRATION_CHECKLIST.md).
+
+### 13.2 Build and activation
+
+| Mechanism | Detail |
+|-----------|--------|
+| **Cargo** | `cargo build -p tonet --features servo-engine` (or `cargo run …`). Without the feature, no Servo types are linked. |
+| **User setting** | **Non-Windows:** Settings → System toggle (or `TONET_SERVO_VIEWPORT=1`) where the native viewport is not yet wired. **Windows + `servo-engine`:** the setting does not gate `http(s)`; Servo runs by default. |
+| **Environment** | **`TONET_SERVO_VIEWPORT=0`** disables the Servo viewport on **Windows** (built with `servo-engine`) so `http(s)` falls back to Tonet’s in-process engine. **`TONET_SERVO_VIEWPORT=1`** still opts in on **non-Windows** `servo-engine` builds for future embeds. |
+| **URL gate** | Only tabs whose address resolves to **`http://` or `https://`** use Servo when the viewport runtime is active. Internal `tonet://` pages and the new-tab flow stay on the Tonet engine + egui stack. |
+
+**Prerequisites (Windows):** MSVC, Windows SDK, ANGLE/mozangle toolchain expectations as documented in the repo (e.g. `mozangle` DLLs next to the binary, `LIBCLANG_PATH` where bindgen needs it). Treat as **developer / CI** requirements until install UX exists.
+
+### 13.3 Architecture (high level)
+
+1. **Shell:** `CentralPanel` still lays out chrome hints; for Servo-superseded tabs it reserves the **central content rect** (minus a small right gutter for a decorative scrollbar strip) and skips **`render_nodes`** for that tab’s web content.
+2. **Native layer:** a **borderless owned popup** (`HWND`) is positioned each frame with **`SetWindowPos`** to match that rect (screen coordinates via **`ClientToScreen`** on the winit-owned parent). **`WS_EX_NOACTIVATE`** avoids stealing keyboard focus from the main window so the omnibox keeps working.
+3. **Rendering:** **`WindowRenderingContext`** (surfman) + **`WebView::paint`** + **`present`** on the popup; egui’s wgpu swapchain is unchanged.
+4. **Input:** mouse and wheel are delivered from a **`WNDPROC` subclass** on the popup into **`WebView::notify_input_event`** (not from egui), because the HWND sits above the composited UI. Keyboard: after a click on the page, captured keys are forwarded from **egui** into Servo; **Escape**, **omnibox focus**, or a **click outside** the content rect releases capture. Chrome shortcuts using **Ctrl/⌘** are not consumed by the forwarder. **IME:** while capture is active, egui **`Event::Ime`** is mapped to Servo **`InputEvent::Ime`** (composition start/update/end and dismiss); validate on real hardware for CJK. **Cursor:** each frame reads **`WebView::cursor`**; the popup’s **`WM_SETCURSOR`** maps Servo’s cursor to stock Win32 cursors (`LoadCursorW` / `SetCursor`).
+5. **Shell sync (Phase 5 embed):** each frame the embed reads **`WebView::url`**, **`page_title`**, **`load_status`**, **`can_go_back` / `can_go_forward`** and updates the active **tab** (omnibox URL when not editing, window/tab titles, loading spinner, back/forward/reload). Navigating from the omnibox does **not** spawn the Tonet HTML fetch thread for those tabs; **`WebView::load` / `reload`** drive the document.
+
+### 13.4 Quality and vision alignment
+
+- **Gates:** Servo does **not** satisfy **Gate A/B** for “Tonet static web ready” by itself; corpus scores for the **Tonet** pipeline remain authoritative until a deliberate policy change.
+- **Measurement:** when comparing Servo vs Tonet on the same URL, record **build flags**, **viewport size**, and **reference machine** (§9) so numbers stay comparable.
+- **Roadmap (non-blocking):** favicon from `WebView` and `browser_log` visits for Servo navigations are implemented (see checklist). **Script dialogs** (`alert` / `confirm` / `prompt`) are shown as egui windows and wired to Servo’s `SimpleDialog` responses. **HTTP Basic / proxy auth** (`AuthenticationRequest`) uses an egui username/password window (localized); it runs in the embedder modal chain after script dialogs and before site-permission prompts. **Web Notification API** (`WebViewDelegate::show_notification`) surfaces as an **egui toast** anchored under the top chrome (TTL + dismiss; not the OS notification center; cleared with other embedder teardown). **Console** (`WebViewDelegate::show_console_message`): messages queue on the embed host and merge into the active tab; a **bottom strip** in the Servo content area shows a scrolling, bounded log with **Clear** (not persisted; cleared when the tab leaves the Servo `http(s)` + viewport gate). **`load_web_resource` (downloads):** for **main-frame GET** URLs whose path ends in a small allowlisted extension set, Tonet **intercepts** with `204`, runs a **separate** `reqwest` download + native save-as (`rfd`) on a worker thread, then appends **`record_page_fetch`** with `saved_path` (no Servo session cookies on that fetch; `Content-Disposition`-only cases without a matching extension still follow the normal Servo load). **Context menu** (right-click) is shown as an egui window with Servo-provided labels, positioned from the popup’s client coordinates into the Tonet window (near the click when available); `hide_embedder_control` dismisses it when the engine requests. Tonet adds **“Open link in new Tonet tab”** for `http(s)` link hit-tests (new shell tab + navigation; single shared `WebView` stays on the active tab until switched). **`<select>`** uses Servo’s `SelectElement` with an egui chooser (options / optgroups) and `submit`. **`<input type=color>`** uses Servo’s `ColorPicker` with an egui sRGB editor and `submit`. **`<input type=file>`** opens the OS dialog via **`rfd`** on a background thread; **`poll_file_picker_completion`** applies `FilePicker::select` / `submit` or `dismiss` without blocking egui. Servo’s **`InputMethod`** embedder hint is ignored (no separate panel); **IME** still flows as egui composition events into Servo when the page holds keyboard capture (`InputEvent::Ime`), with full CJK validation and edge cases still to prove out on hardware. **Permissions** (`PermissionRequest`) use an egui **Allow / Deny** modal (localized feature names); closing the window denies and **records deny**. Decisions are keyed by **page origin + feature** and kept in a map **loaded at Servo host startup** from **`servo_permissions.json`** under the Tonet config directory (`dirs::config_dir()/tonet/`), and **rewritten after each Allow/Deny** from the modal. On **`ServoWinHost`** teardown, pending embedder UI is dismissed before a final **`spin_event_loop`** (teardown does not write the file). **Clear visit history** (internal History page) also deletes `servo_permissions.json` and clears the in-memory map on the active Servo host. **`BrowserLog::record_page_fetch`** runs for Servo-completed `http(s)` navigations (same timing as visits; **no** `page-snapshots` HTML until we can read committed document bytes from the embed API). **Save-as / attachment:** a **best-effort** `load_web_resource` path intercepts some **main-frame GET** URLs by file extension (`download_heuristic`); cookie-auth and `Content-Disposition`-only cases without a matching extension remain gaps. Still open: multi-tab **multi-WebView** or explicit recycle policy, non-Windows embed, and documented **stop-load** when upstream exposes it.
+
+### 13.5 Code map (for contributors)
+
+| Area | Location (under `crates/tonet/`) |
+|------|----------------------------------|
+| Feature + URL gating + runtime shell API | `src/servo_engine/mod.rs` |
+| Win32 popup, surfman, input subclass, shell snapshot, `WM_SETCURSOR`, script dialogs, HTTP auth modal, site permissions + JSON store, context menu, `<select>` / color / native file (`rfd`), web notification toasts (`show_notification`), page console (`show_console_message` → `Tab::servo_console`), heuristic `load_web_resource` downloads, Drop teardown | `src/servo_engine/runtime_win.rs` |
+| Servo permission persistence (`servo_permissions.json`) | `src/servo_engine/permission_store.rs` |
+| Central panel, omnibox, navigation, sync after tick | `src/app.rs` |
+| Tab fields for Servo title / chrome nav / page console lines | `src/tab.rs` |
+| Visit policy tests (no runtime) | `src/servo_engine/visit_policy.rs` |
+| Main-frame download URL heuristic (unit tests) | `src/servo_engine/download_heuristic.rs` |
+| Last non-empty URL path segment (shared by download heuristic + save-as fallback) | `src/servo_engine/url_path.rs` |
+| Blocking `reqwest` download + save-as (`rfd`), suggested filename from `Content-Disposition` / URL | `src/servo_engine/background_download.rs` |
+| `Content-Disposition` filename parsing (unit tests) | `src/servo_engine/content_disposition.rs` |
+| Favicon PNG encoding | `src/servo_engine/servo_favicon.rs` |
+
+---
+
+## 14. Revision
 
 | Date | Change |
 |------|--------|
@@ -206,5 +261,54 @@ Suggested order (already agreed in planning):
 | 2026-05-20 | `author_cascade`: compound `tag#id` prelude; specificity above `#id`. |
 | 2026-05-21 | `author_cascade`: compound `#id.class` prelude (one class); specificity above `tag#id`. |
 | 2026-05-22 | `author_cascade`: `tag#id.class` / `tag.class#id` prelude; specificity `(1,1,1)` above `#id.class`. |
+| 2026-05-23 | **§13 Servo engine:** documented optional `servo-engine` feature, Windows embed (popup, input, shell sync), activation, vision alignment, and code map; §1 bullet on optional Servo path; **§14** revision table (renumbered from §13). |
+| 2026-05-24 | Servo: `docs/SERVO_INTEGRATION_CHECKLIST.md`; `visit_policy` / `servo_favicon`; favicon + visit sync in embed; stable toolbar widget ids; stop does not call `cancel_in_flight` on Servo-superseded tabs; optional Windows `servo-engine` CI job; §13 checklist link and code map rows. |
+| 2026-05-25 | Servo: egui IME → `InputEvent::Ime`; checklist platform matrix + single-WebView section; `Cargo.toml` comment on `servo` 0.1.x pin; §13 input bullet (IME). |
+| 2026-05-26 | Servo: Win32 `WM_SETCURSOR` + `WebView::cursor` → stock IDC cursors on the popup; §13 input bullet (cursor). |
+| 2026-05-27 | Servo: `alert` / `confirm` / `prompt` via `WebViewDelegate::show_embedder_control` + egui modal (`show_embedder_modals`); `ServoWinHost` `Drop` pumps `spin_event_loop` once; §13 roadmap + code map. |
+| 2026-05-28 | Servo: context menu (`ContextMenu`) + `hide_embedder_control` in `TonetServoWebViewDelegate`; egui “Page menu” window; §13 roadmap + code map. |
+| 2026-05-29 | Servo: context menu anchored via Win32 `ClientToScreen` / `ScreenToClient` + last right-up pixel; §13 roadmap. |
+| 2026-05-30 | Servo: toast when color / file / IME embedder controls are dropped (defaults); §13 roadmap. |
+| 2026-05-31 | Servo: native `<select>` via `SelectElement` + egui chooser; §13 roadmap. |
+| 2026-06-01 | Servo: `<input type=color>` via `ColorPicker` + egui sRGB; toasts for file / IME only; §13 roadmap. |
+| 2026-04-14 | Servo: `<input type=file>` via `rfd` + `poll_file_picker_completion`; removed embedder IME toast / `ServoUnsupportedEmbedderKind` (`InputMethod` no-op; composition via egui); §13 roadmap + code map. |
+| 2026-04-14 | Servo: `PermissionRequest` egui Allow/Deny + i18n + disk-backed origin+feature map (`tonet/servo_permissions.json`); `ServoWinHost::Drop` still tears down pending UI before `spin_event_loop`; clear visit history also clears permission file + memory; §13 roadmap + code map. |
+| 2026-04-14 | Servo: `record_page_fetch` on completed `http(s)` loads (`sync_into_tab`) so the internal Downloads log matches the Tonet-engine path (snapshots TBD); §13 roadmap. |
+| 2026-04-14 | Servo: context menu entry **Open link in new Tonet tab** (`link_url`, `http`/`https`); §13 roadmap. |
+| 2026-04-14 | Servo: **HTTP / proxy authentication** modal (`AuthenticationRequest`); §13 roadmap + code map. |
+| 2026-04-14 | Servo: **Web Notification API** (`show_notification`) → egui top-chrome toast + i18n; cleared on `teardown_pending_embedder_controls`; §13 roadmap + code map. |
+| 2026-04-14 | Servo: **Page console** (`show_console_message`) → `Tab::servo_console` + bottom strip in the Servo viewport rect; §13 roadmap + code map. |
+| 2026-04-14 | Servo: **`load_web_resource`** heuristic main-frame binary GET → `reqwest` + save-as + `record_page_fetch` (`download_heuristic` / `background_download`); §13 roadmap + code map. |
+| 2026-04-14 | Servo: documented **default vs experimental** `http(s)` policy in checklist; **clear Downloads** clears Servo ephemeral embedder queues + all-tab page console; `Cargo.toml` servo upgrade steps; checklist perf budget template. |
+| 2026-04-14 | Servo: `content_disposition` tests + checklist corpus §; code map row. |
+| 2026-04-14 | Servo: more **`visit_policy`** / **`content_disposition`** unit tests (edge cases for history + filename parsing). |
+| 2026-04-14 | Servo: **`background_download`** `suggested_save_name_for_download` + tests (save-as default name from `Content-Disposition` vs URL). |
+| 2026-04-14 | Servo: save-as URL fallback uses **last non-empty** path segment (trailing-slash downloads). |
+| 2026-04-14 | Servo: **`download_heuristic`** uses the same last-segment rule for extension detection (`…/file.zip/`). |
+| 2026-04-14 | Servo: **`servo_engine::url_path`** — shared `last_non_empty_path_segment` for `download_heuristic` + `background_download`; §13.5 code map. |
+| 2026-04-14 | Servo: **`content_disposition`** more unit tests (`filename*` without `''`, `inline`). |
+| 2026-04-14 | Servo: **`content_disposition`** `parse_filename_value` token-boundary parse + empty-`filename*` fallback. |
+| 2026-04-14 | Servo: **`content_disposition`** quoted `filename` may contain `;` (split params outside `"` only). |
+| 2026-04-14 | Servo: **`content_disposition`** `\"` before `"` for param split + quoted `filename=` end. |
+| 2026-04-14 | Servo: **`content_disposition`** quoted `filename=` `\\` / `\"` unescape before percent-decode. |
+| 2026-04-14 | Servo: **`background_download`** `sanitize_filename` strips control chars; §13.5 code map. |
+| 2026-04-14 | Servo: **`sanitize_filename`** strips trailing `.` / ASCII space for Win32 save-as. |
+| 2026-04-14 | Servo: **`sanitize_filename`** avoids reserved DOS device stems (`COM1`, `NUL`, …) for save-as. |
+| 2026-04-14 | Servo: **`visit_policy`** tests for `javascript` / `data` / `blob` / `file` schemes (visit gate). |
+| 2026-04-14 | Servo: **`download_heuristic`** documents + tests `ws` / `wss` excluded from intercept. |
+| 2026-04-14 | Servo: **`content_disposition`** strips leading UTF-8 BOM before parsing `Content-Disposition`. |
+| 2026-04-14 | Servo: **`visit_policy`** / **`download_heuristic`** tests (`ws`/`wss`/`chrome`, `HEAD` vs intercept). |
+| 2026-04-14 | Servo: **`url_path`** / **`visit_policy`** tests (IPv6 `https` URLs). |
+| 2026-04-14 | Servo: **`download_heuristic`** / **`background_download`** IPv6 `https` coverage tests. |
+| 2026-04-14 | Servo: **`download_heuristic`** documents + tests **GET**-only (`OPTIONS`/`PUT`/`DELETE`). |
+| 2026-04-14 | Servo: **`sanitize_filename`** `COM0`/`PRN` edge tests; **`visit_policy`** IPv6 `should_record_visit`. |
+| 2026-04-14 | Servo: **`visit_policy`** + **`servo_supersedes_dom_paint`** unit tests (URL trim / scheme casing + `last_recorded` normalization note). |
+| 2026-04-14 | Servo: **`download_heuristic`** / **`url_path`** / **`content_disposition`** small unit-test additions (`PATCH`, `//` segments, case-insensitive param names). |
+| 2026-04-14 | Servo (Windows): idle embedder **`about:blank`** + throttled spins when experimental viewport on but active tab is not `http(s)`; shell **omnibox visit-history** suggestions from `BrowserLog`. |
+| 2026-04-14 | Shell: omnibox history suggestions **↑/↓ + Enter** (keyboard parity with click). |
+| 2026-04-17 | Servo downloads: optional **`HEAD`** probe for extensionless `…/download|export|attachment` URLs to honor `Content-Disposition` / MIME before intercept. |
+| 2026-04-17 | Shell: omnibox history **Escape** clears keyboard row highlight. |
+| 2026-04-17 | Checklist manual smoke: step **17b** for extensionless download + `HEAD` probe. |
+| 2026-04-17 | Shell: omnibox history keyboard **tooltip** (i18n); **`background_download`** MIME allowlist tests for `HEAD` probe. |
 
 Update this file when phases complete, budgets change, or the reference machine changes.

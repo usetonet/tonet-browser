@@ -365,6 +365,11 @@ impl eframe::App for TonetSetupApp {
 }
 
 fn main() -> eframe::Result<()> {
+    static RUSTLS_CRYPTO: std::sync::Once = std::sync::Once::new();
+    RUSTLS_CRYPTO.call_once(|| {
+        let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+    });
+
     let native = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("Tonet Setup")

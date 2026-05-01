@@ -285,6 +285,9 @@ pub fn render_settings_updates_section(
 }
 
 /// Full stacked settings form (modal window).
+///
+/// On **Windows + `servo-engine`**, a Servo section can set `*clear_servo_site_permissions = true`
+/// when the user clears saved site permissions (caller clears disk + runtime).
 #[allow(clippy::too_many_arguments)]
 pub fn render_settings_form_full(
     ui: &mut Ui,
@@ -296,6 +299,7 @@ pub fn render_settings_form_full(
     current_version: &str,
     mut on_save: impl FnMut(&AppSettings),
     mut on_check_now: impl FnMut(),
+    clear_servo_site_permissions: &mut bool,
 ) {
     ui.add_space(4.0);
     render_settings_language_section(ui, settings, loc, form_id);
@@ -320,6 +324,28 @@ pub fn render_settings_form_full(
         current_version,
         || on_check_now(),
     );
+
+    #[cfg(all(feature = "servo-engine", windows))]
+    {
+        ui.add_space(10.0);
+        ui.separator();
+        ui.add_space(10.0);
+        ui.label(
+            RichText::new(i18n::internal_settings_servo_heading(loc))
+                .strong()
+                .color(theme::settings_heading()),
+        );
+        ui.add_space(6.0);
+        if ui
+            .button(i18n::internal_settings_servo_clear_permissions(loc))
+            .on_hover_text(i18n::internal_settings_servo_clear_permissions_hint(loc))
+            .clicked()
+        {
+            *clear_servo_site_permissions = true;
+        }
+    }
+    #[cfg(not(all(feature = "servo-engine", windows)))]
+    let _ = clear_servo_site_permissions;
 
     ui.add_space(10.0);
     ui.horizontal(|ui| {
@@ -347,6 +373,7 @@ pub fn show_settings_window(
     current_version: &str,
     mut on_save: impl FnMut(&AppSettings),
     mut on_check_now: impl FnMut(),
+    clear_servo_site_permissions: &mut bool,
 ) {
     let win = egui::Window::new(i18n::settings_window_title(loc))
         .open(open)
@@ -371,6 +398,7 @@ pub fn show_settings_window(
             current_version,
             |s| on_save(s),
             || on_check_now(),
+            clear_servo_site_permissions,
         );
     });
 }

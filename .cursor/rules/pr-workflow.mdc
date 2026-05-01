@@ -1,0 +1,13 @@
+---
+description: After shipping a feature branch, push and open the PR without asking the user to do it.
+alwaysApply: true
+---
+
+# Pull requests
+
+When work on a feature branch is complete, tested, and committed:
+
+1. Push the branch to `origin` (`git push -u origin <branch>`).
+2. Open the pull request with `gh pr create` (sensible title and body summarizing changes and how it was tested). If `gh` is unavailable, give the direct GitHub “compare” URL.
+
+Do not stop at “you can push and open a PR”; perform these steps unless the user explicitly opts out or the repo has no remote.

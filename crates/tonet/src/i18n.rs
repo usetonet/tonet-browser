@@ -65,6 +65,26 @@ pub fn address_hint(loc: Locale) -> &'static str {
     }
 }
 
+/// Heading above omnibox visit-history autocomplete rows.
+pub fn omnibox_history_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Historial",
+        Locale::De => "Verlauf",
+        Locale::Fr => "Historique",
+        Locale::En => "History",
+    }
+}
+
+/// Keyboard shortcuts for visit-history rows under the omnibox (hover on “History” heading).
+pub fn omnibox_history_keyboard_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "↑/↓: fila · Entrar: abrir · Esc: quitar resaltado",
+        Locale::De => "↑/↓: Zeile · Eingabe: öffnen · Esc: Markierung aufheben",
+        Locale::Fr => "↑/↓ : ligne · Entrée : ouvrir · Échap : effacer la surbrillance",
+        Locale::En => "↑/↓: row · Enter: open · Esc: clear highlight",
+    }
+}
+
 pub fn settings_tooltip(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "Ajustes (Ctrl o ⌘ + coma)",
@@ -798,6 +818,285 @@ pub fn new_tab_add_cancel(loc: Locale) -> &'static str {
     }
 }
 
+/// Primary action for Servo-driven `alert` / `confirm` / `prompt` windows.
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_dialog_ok(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Aceptar",
+        Locale::De => "OK",
+        Locale::Fr => "OK",
+        Locale::En => "OK",
+    }
+}
+
+/// Title for Servo context menu (`EmbedderControl::ContextMenu`).
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_context_menu_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Menú de página",
+        Locale::De => "Seitenmenü",
+        Locale::Fr => "Menu contextuel",
+        Locale::En => "Page menu",
+    }
+}
+
+/// Servo context menu: open the hit-tested link URL in a new Tonet tab (shell), not a second Servo WebView.
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_context_menu_open_link_new_tonet_tab(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Abrir enlace en nueva pestaña Tonet",
+        Locale::De => "Link in neuem Tonet-Tab öffnen",
+        Locale::Fr => "Ouvrir le lien dans un nouvel onglet Tonet",
+        Locale::En => "Open link in new Tonet tab",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_select_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Elegir opción",
+        Locale::De => "Option wählen",
+        Locale::Fr => "Choisir une option",
+        Locale::En => "Choose option",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_color_picker_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Color",
+        Locale::De => "Farbe",
+        Locale::Fr => "Couleur",
+        Locale::En => "Color",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_color_picker_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Elegir:",
+        Locale::De => "Wählen:",
+        Locale::Fr => "Choisir :",
+        Locale::En => "Pick:",
+    }
+}
+
+/// Title for Servo `PermissionRequest` (geolocation, camera, etc.).
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_permission_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Permiso del sitio",
+        Locale::De => "Website-Berechtigung",
+        Locale::Fr => "Autorisation du site",
+        Locale::En => "Site permission",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_permission_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "La página quiere usar:",
+        Locale::De => "Die Seite möchte nutzen:",
+        Locale::Fr => "La page souhaite utiliser :",
+        Locale::En => "This page wants to use:",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_permission_allow(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Permitir",
+        Locale::De => "Erlauben",
+        Locale::Fr => "Autoriser",
+        Locale::En => "Allow",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_permission_deny(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Denegar",
+        Locale::De => "Ablehnen",
+        Locale::Fr => "Refuser",
+        Locale::En => "Deny",
+    }
+}
+
+/// Title for Servo `AuthenticationRequest` (HTTP 401 / proxy 407).
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_http_auth_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Credenciales del sitio",
+        Locale::De => "Website-Anmeldung",
+        Locale::Fr => "Identifiants du site",
+        Locale::En => "Website login",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_http_auth_intro(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "El sitio pide un usuario y una contraseña:",
+        Locale::De => "Die Website fordert Benutzername und Passwort:",
+        Locale::Fr => "Le site demande un identifiant et un mot de passe :",
+        Locale::En => "The site is asking for a username and password:",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_http_auth_proxy_note(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Autenticación del servidor proxy.",
+        Locale::De => "Authentifizierung für den Proxy-Server.",
+        Locale::Fr => "Authentification du serveur mandataire.",
+        Locale::En => "This is for your proxy server.",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_http_auth_user_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Usuario",
+        Locale::De => "Benutzername",
+        Locale::Fr => "Nom d’utilisateur",
+        Locale::En => "Username",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_http_auth_password_label(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Contraseña",
+        Locale::De => "Passwort",
+        Locale::Fr => "Mot de passe",
+        Locale::En => "Password",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_http_auth_sign_in(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Entrar",
+        Locale::De => "Anmelden",
+        Locale::Fr => "Se connecter",
+        Locale::En => "Sign in",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_notification_fallback_title(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Notificación",
+        Locale::De => "Benachrichtigung",
+        Locale::Fr => "Notification",
+        Locale::En => "Notification",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_notification_dismiss(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cerrar",
+        Locale::De => "Schließen",
+        Locale::Fr => "Fermer",
+        Locale::En => "Dismiss",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_page_console_header(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Consola de la página (Servo)",
+        Locale::De => "Seitenkonsole (Servo)",
+        Locale::Fr => "Console de la page (Servo)",
+        Locale::En => "Page console (Servo)",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_page_console_clear(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Vaciar",
+        Locale::De => "Leeren",
+        Locale::Fr => "Effacer",
+        Locale::En => "Clear",
+    }
+}
+
+/// Localized label for [`servo::PermissionFeature`] in the permission modal.
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_permission_feature_name(loc: Locale, f: servo::PermissionFeature) -> &'static str {
+    use servo::PermissionFeature as P;
+    match f {
+        P::Geolocation => match loc {
+            Locale::Es => "Geolocalización",
+            Locale::De => "Standort",
+            Locale::Fr => "Géolocalisation",
+            Locale::En => "Geolocation",
+        },
+        P::Notifications => match loc {
+            Locale::Es => "Notificaciones",
+            Locale::De => "Benachrichtigungen",
+            Locale::Fr => "Notifications",
+            Locale::En => "Notifications",
+        },
+        P::Push => match loc {
+            Locale::Es => "Push",
+            Locale::De => "Push",
+            Locale::Fr => "Push",
+            Locale::En => "Push",
+        },
+        P::Midi => match loc {
+            Locale::Es => "MIDI",
+            Locale::De => "MIDI",
+            Locale::Fr => "MIDI",
+            Locale::En => "MIDI",
+        },
+        P::Camera => match loc {
+            Locale::Es => "Cámara",
+            Locale::De => "Kamera",
+            Locale::Fr => "Caméra",
+            Locale::En => "Camera",
+        },
+        P::Microphone => match loc {
+            Locale::Es => "Micrófono",
+            Locale::De => "Mikrofon",
+            Locale::Fr => "Microphone",
+            Locale::En => "Microphone",
+        },
+        P::Speaker => match loc {
+            Locale::Es => "Altavoz",
+            Locale::De => "Lautsprecher",
+            Locale::Fr => "Haut-parleur",
+            Locale::En => "Speaker",
+        },
+        P::DeviceInfo => match loc {
+            Locale::Es => "Información del dispositivo",
+            Locale::De => "Geräteinformationen",
+            Locale::Fr => "Infos sur l’appareil",
+            Locale::En => "Device info",
+        },
+        P::BackgroundSync => match loc {
+            Locale::Es => "Sincronización en segundo plano",
+            Locale::De => "Hintergrundsynchronisation",
+            Locale::Fr => "Synchro en arrière-plan",
+            Locale::En => "Background sync",
+        },
+        P::Bluetooth => match loc {
+            Locale::Es => "Bluetooth",
+            Locale::De => "Bluetooth",
+            Locale::Fr => "Bluetooth",
+            Locale::En => "Bluetooth",
+        },
+        P::PersistentStorage => match loc {
+            Locale::Es => "Almacenamiento persistente",
+            Locale::De => "Dauerhafte Speicherung",
+            Locale::Fr => "Stockage persistant",
+            Locale::En => "Persistent storage",
+        },
+    }
+}
+
 pub fn new_tab_add_url_invalid(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "La URL debe empezar por http://, https:// o tonet://",
@@ -974,11 +1273,23 @@ pub fn internal_history_delete_data(loc: Locale) -> &'static str {
 }
 
 pub fn internal_confirm_clear_history(loc: Locale) -> &'static str {
-    match loc {
-        Locale::Es => "¿Borrar todo el historial de visitas guardado en este dispositivo?",
-        Locale::De => "Den gesamten gespeicherten Verlauf auf diesem Gerät löschen?",
-        Locale::Fr => "Supprimer tout l’historique de navigation enregistré sur cet appareil ?",
-        Locale::En => "Clear all saved visit history on this device?",
+    #[cfg(all(feature = "servo-engine", windows))]
+    {
+        match loc {
+            Locale::Es => "¿Borrar todo el historial de visitas guardado en este dispositivo? También se eliminan los permisos de sitio guardados del visor experimental Servo (archivo en la carpeta de configuración).",
+            Locale::De => "Den gesamten gespeicherten Verlauf auf diesem Gerät löschen? Gespeicherte Website-Berechtigungen des experimentellen Servo-Viewports werden ebenfalls entfernt (Datei im Konfigurationsordner).",
+            Locale::Fr => "Supprimer tout l’historique de navigation enregistré sur cet appareil ? Les autorisations de site enregistrées pour la vue Servo expérimentale seront aussi supprimées (fichier du dossier de configuration).",
+            Locale::En => "Clear all saved visit history on this device? This also removes stored Servo experimental viewport site permissions (config folder file).",
+        }
+    }
+    #[cfg(not(all(feature = "servo-engine", windows)))]
+    {
+        match loc {
+            Locale::Es => "¿Borrar todo el historial de visitas guardado en este dispositivo?",
+            Locale::De => "Den gesamten gespeicherten Verlauf auf diesem Gerät löschen?",
+            Locale::Fr => "Supprimer tout l’historique de navigation enregistré sur cet appareil ?",
+            Locale::En => "Clear all saved visit history on this device?",
+        }
     }
 }
 
@@ -1340,6 +1651,154 @@ pub fn internal_settings_hw_accel(loc: Locale) -> &'static str {
         Locale::De => "Hardwarebeschleunigung verwenden, falls verfügbar",
         Locale::Fr => "Utiliser l’accélération matérielle si disponible",
         Locale::En => "Use hardware acceleration when available",
+    }
+}
+
+#[cfg_attr(not(feature = "servo-engine"), allow(dead_code))]
+pub fn internal_settings_servo_heading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Motor Servo",
+        Locale::De => "Servo-Engine",
+        Locale::Fr => "Moteur Servo",
+        Locale::En => "Servo engine",
+    }
+}
+
+#[cfg_attr(not(feature = "servo-engine"), allow(dead_code))]
+pub fn internal_settings_servo_body(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "En Windows, las páginas http(s) se renderizan solo con Servo (ventana nativa GL/surfman \
+             sobre el lienzo de Tonet). Las rutas tonet:// y la página nueva siguen con el motor \
+             Tonet. La integración tipo Slint (mismo wgpu que la UI) está prevista como evolución."
+        }
+        Locale::De => {
+            "Unter Windows werden http(s)-Seiten nur mit Servo gerendert ( natives GL/surfman-Fenster \
+             über der Tonet-Oberfläche). tonet://-Routen und die neue Registerkarte nutzen weiter Tonet. \
+             Eine Slint-ähnliche Einbettung (gemeinsames wgpu mit der UI) ist als nächster Schritt geplant."
+        }
+        Locale::Fr => {
+            "Sous Windows, les pages http(s) sont rendues uniquement avec Servo (fenêtre native GL/surfman \
+             au-dessus de Tonet). Les routes tonet:// et la page nouvel onglet restent sur le moteur Tonet. \
+             Une intégration façon Slint (wgpu partagé avec l’UI) est l’évolution prévue."
+        }
+        Locale::En => {
+            "On Windows, http(s) pages render with Servo only (native GL/surfman window over Tonet). \
+             tonet:// routes and the new-tab page still use the Tonet stack. A Slint-style embed \
+             (shared wgpu with the UI) is the planned next step."
+        }
+    }
+}
+
+/// Windows + `servo-engine`: Servo is always on for http(s); this line explains opt-out.
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn internal_settings_servo_windows_note(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "En esta compilación, http(s) usa Servo por defecto. Para desactivarlo temporalmente: \
+             variable de entorno TONET_SERVO_VIEWPORT=0 (vuelve el motor Tonet limitado para la web)."
+        }
+        Locale::De => {
+            "In diesem Build nutzt http(s) standardmäßig Servo. Zum vorübergehenden Abschalten: \
+             Umgebungsvariable TONET_SERVO_VIEWPORT=0 (dann wieder der eingeschränkte Tonet-Webstack)."
+        }
+        Locale::Fr => {
+            "Dans cette version, http(s) utilise Servo par défaut. Pour le désactiver temporairement : \
+             variable d’environnement TONET_SERVO_VIEWPORT=0 (retour au moteur Tonet limité pour le web)."
+        }
+        Locale::En => {
+            "In this build, http(s) uses Servo by default. To turn it off temporarily, set environment \
+             variable TONET_SERVO_VIEWPORT=0 (Tonet’s limited in-process web stack is used instead)."
+        }
+    }
+}
+
+#[cfg_attr(not(feature = "servo-engine"), allow(dead_code))]
+#[cfg_attr(all(feature = "servo-engine", windows), allow(dead_code))]
+pub fn internal_settings_servo_viewport(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Activar la ruta de viewport Servo (solo fuera de Windows)",
+        Locale::De => "Servo-Viewport aktivieren (nur außerhalb von Windows)",
+        Locale::Fr => "Activer le viewport Servo (hors Windows seulement)",
+        Locale::En => "Enable Servo viewport path (non-Windows only)",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn internal_settings_servo_clear_permissions(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Borrar permisos de sitio Servo guardados",
+        Locale::De => "Gespeicherte Servo-Website-Berechtigungen löschen",
+        Locale::Fr => "Effacer les autorisations de site Servo enregistrées",
+        Locale::En => "Clear saved Servo site permissions",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn internal_settings_servo_clear_permissions_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "Elimina el archivo de permisos y la memoria en esta sesión. No borra el historial de visitas."
+        }
+        Locale::De => {
+            "Entfernt die Berechtigungsdatei und den Arbeitsspeicher in dieser Sitzung. Der Besuchsverlauf bleibt erhalten."
+        }
+        Locale::Fr => {
+            "Supprime le fichier d’autorisations et la mémoire de session. L’historique de navigation n’est pas effacé."
+        }
+        Locale::En => {
+            "Removes the permissions file and in-session memory. Visit history is not cleared."
+        }
+    }
+}
+
+#[cfg_attr(not(feature = "servo-engine"), allow(dead_code))]
+#[cfg_attr(all(feature = "servo-engine", windows), allow(dead_code))]
+pub fn servo_compiled_activate_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "Este binario incluye Servo, pero el viewport nativo no está activo en esta plataforma. \
+             Actívalo en Ajustes → Sistema o con TONET_SERVO_VIEWPORT=1. En Windows con Servo, http(s) \
+             ya usa el motor Servo por defecto."
+        }
+        Locale::De => {
+            "Dieses Binary enthält Servo, aber der native Viewport ist auf dieser Plattform nicht aktiv. \
+             Aktivieren unter Einstellungen → System oder TONET_SERVO_VIEWPORT=1. Unter Windows mit \
+             Servo nutzt http(s) standardmäßig bereits Servo."
+        }
+        Locale::Fr => {
+            "Ce binaire inclut Servo, mais le viewport natif n’est pas actif sur cette plateforme. \
+             Activez-le dans Réglages → Système ou avec TONET_SERVO_VIEWPORT=1. Sous Windows avec \
+             Servo, http(s) utilise déjà Servo par défaut."
+        }
+        Locale::En => {
+            "This build includes Servo, but the native viewport is not active on this platform. \
+             Enable it under Settings → System, or set TONET_SERVO_VIEWPORT=1. On Windows with \
+             Servo enabled, http(s) already uses Servo by default."
+        }
+    }
+}
+
+/// Shown in the content area when `TONET_SERVO_VIEWPORT=0` on Windows (Tonet stack fallback).
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_windows_engine_disabled_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "Servo está desactivado por TONET_SERVO_VIEWPORT=0. Esta URL se intenta mostrar con el \
+             motor Tonet (HTML/CSS limitado), no con Servo."
+        }
+        Locale::De => {
+            "Servo ist durch TONET_SERVO_VIEWPORT=0 deaktiviert. Diese URL wird mit dem eingeschränkten \
+             Tonet-Stack (begrenztes HTML/CSS) statt Servo dargestellt."
+        }
+        Locale::Fr => {
+            "Servo est désactivé par TONET_SERVO_VIEWPORT=0. Cette URL est affichée avec le moteur Tonet \
+             (HTML/CSS limité), pas avec Servo."
+        }
+        Locale::En => {
+            "Servo is turned off (TONET_SERVO_VIEWPORT=0). This URL is shown with Tonet’s in-process \
+             engine (limited HTML/CSS), not Servo."
+        }
     }
 }
 

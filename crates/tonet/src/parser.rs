@@ -1,3 +1,3 @@
-//! HTML parsing — implemented in [`tonet_engine::html::minimal`].
+//! HTML parsing — implemented in [`crate::html::minimal`].
 
-pub use tonet_engine::html::minimal::*;
+pub use crate::html::minimal::*;

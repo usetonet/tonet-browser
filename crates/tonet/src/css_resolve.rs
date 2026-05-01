@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use egui::Color32;
-use tonet_engine::css::{cascade_document_defaults, cascade_element_rules, ParsedQualifiedRule};
+use crate::css::{cascade_document_defaults, cascade_element_rules, ParsedQualifiedRule};
 
 use crate::parser::{DomNode, DomNodeType};
 
@@ -834,7 +834,7 @@ fn merged_author_value<'a>(
 
 /// Build one [`DomNodePaintHints`] per DOM node from `bundle` (same order as `nodes`).
 ///
-/// Declarations from `html` / `body` **type** rules (`tonet_engine::css::cascade_document_defaults`)
+/// Declarations from `html` / `body` **type** rules (`crate::css::cascade_document_defaults`)
 /// apply when a node does not set the same property.
 pub fn compute_dom_paint_hints(
     nodes: &[DomNode],
@@ -976,7 +976,7 @@ pub fn compute_dom_paint_hints(
 mod tests {
     use super::*;
     use crate::parser::{DomNode, DomNodeType};
-    use tonet_engine::css::{ParsedQualifiedRule, SimpleDeclaration};
+    use crate::css::{ParsedQualifiedRule, SimpleDeclaration};
 
     #[test]
     fn hex_six() {

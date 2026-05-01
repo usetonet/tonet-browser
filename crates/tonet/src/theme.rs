@@ -54,6 +54,21 @@ pub fn content_bg() -> Color32 {
     )
 }
 
+/// Right gutter beside the Servo viewport (decorative scrollbar track).
+pub fn servo_scroll_gutter_fill() -> Color32 {
+    pick(
+        Color32::from_rgb(40, 42, 48),
+        Color32::from_rgb(220, 222, 228),
+    )
+}
+
+pub fn servo_scroll_thumb() -> Color32 {
+    pick(
+        Color32::from_rgb(92, 98, 112),
+        Color32::from_rgb(140, 145, 158),
+    )
+}
+
 // ── Tab strip ───────────────────────────────────────────────────────
 pub fn tab_idle() -> Color32 {
     Color32::TRANSPARENT

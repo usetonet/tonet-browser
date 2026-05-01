@@ -7,13 +7,56 @@ authors = ["Tonet Contributors"]
 license = "PolyForm-Noncommercial-1.0.0"
 repository = "https://github.com/usetonet/tonet-browser"
 
+[features]
+default = ["servo-engine"]
+# Enlaza el motor **Servo** (crates.io) dentro del mismo binario `tonet`. En **Windows**, las
+# pestañas `http(s)` usan Servo como **único** motor de página (surfman en proceso + readback a egui;
+# popup Win32 legacy: `TONET_SERVO_WIN32_POPUP=1`). Opt-out: `TONET_SERVO_VIEWPORT=0`. En otras plataformas el viewport nativo
+# sigue opcional (`experimental_servo_viewport` o `TONET_SERVO_VIEWPORT=1`).
+# Windows: MSVC + Windows SDK (ANGLE/mozangle). Bindgen/mozjs exigen **libclang.dll**: define
+# `LIBCLANG_PATH` al directorio que la contiene (p. ej. `C:\Program Files\LLVM\bin` tras
+# `winget install LLVM.LLVM`). Comprueba con el script `scripts/tonet-servo-windows.ps1`.
+# Surfman (vía webxr en Windows) usa EGL/ANGLE y carga `libEGL.dll` en tiempo de ejecución;
+# `mozangle-for-egldll` (build-dependencies) fuerza a compilar mozangle con `build_dlls` antes
+# del `build.rs` de tonet, que copia las DLL junto a `tonet.exe`.
+servo-engine = [
+    "dep:servo",
+    "dep:euclid",
+    "dep:dpi",
+    "dep:http",
+    "dep:mozangle-for-egldll",
+    "dep:rfd",
+    "dep:surfman",
+    "dep:gleam",
+    "dep:glow",
+]
+
 [dependencies]
-tonet-engine = { path = "../tonet-engine" }
-eframe = { version = "0.29", features = ["persistence"] }
+# Pin stays on the **0.1.x** line of the crates.io `servo` meta-crate. Before bumping the patch/minor:
+# 1) Read upstream / release notes (mozjs, surfman, embedder API breaks).
+# 2) On Windows: `cargo check -p tonet --features servo-engine` with LLVM (`LIBCLANG_PATH`) and EGL DLLs in place.
+# 3) Run `cargo test -p tonet --features servo-engine` and the § “Manual smoke” checklist for regressions.
+# 4) If CI uses `servo-engine-windows.yml`, ensure the workflow’s LLVM version still matches bindgen needs.
+servo = { version = "0.1", optional = true }
+surfman = { version = "0.11", optional = true, features = ["chains", "sm-angle-default"] }
+gleam = { version = "0.15", optional = true }
+glow = { version = "0.16", optional = true }
+http = { version = "1", optional = true }
+rfd = { version = "0.15", optional = true }
+euclid = { version = "0.22", optional = true }
+dpi = { version = "0.1", optional = true }
+eframe = { version = "0.29", features = ["persistence", "wgpu"] }
 egui = "0.29"
 egui_extras = { version = "0.29", default-features = false, features = ["svg", "image"] }
 image = { version = "0.25", default-features = false, features = ["ico", "png", "jpeg", "gif", "bmp", "webp"] }
-reqwest = { version = "0.12", features = ["blocking", "rustls-tls", "json"] }
+# `rustls-tls` pulls `ring`; Servo uses `aws-lc-rs` on the same rustls → two providers → panic at
+# runtime. Use webpki roots without the ring feature bundle, and install aws-lc-rs in `main`.
+reqwest = { version = "0.12", features = [
+    "blocking",
+    "json",
+    "rustls-tls-webpki-roots-no-provider",
+] }
+rustls = { version = "0.23", default-features = false, features = ["std", "tls12", "aws_lc_rs"] }
 url = "2.5"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -25,3 +68,18 @@ webbrowser = "1.0"
 sys-locale = "0.3"
 raw-window-handle = "0.6"
 unicode-segmentation = "1.12"
+
+[target.'cfg(windows)'.build-dependencies]
+mozangle-for-egldll = { package = "mozangle", version = "0.5.5", optional = true, features = [
+    "egl",
+    "build_dlls",
+] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_Graphics_Gdi",
+    "Win32_System_LibraryLoader",
+] }

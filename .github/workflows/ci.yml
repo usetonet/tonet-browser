@@ -23,8 +23,17 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       # Omit `--all-targets`: it forces every binary to be tested as a harness (breaks TonetSetup on Windows).
-      - name: Cargo test (workspace)
+      - name: Cargo test (workspace, non-tonet on Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo test --workspace --exclude tonet
+
+      - name: Cargo test (workspace, full on Windows)
+        if: matrix.os == 'windows-latest'
         run: cargo test --workspace
+
+      - name: Cargo check (tonet, no default features on Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo check -p tonet --no-default-features
 
       - name: Cargo build (tonet-setup)
         run: cargo build -p tonet-setup

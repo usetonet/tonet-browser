@@ -71,6 +71,11 @@ pub struct SystemSettings {
     pub energy_saver_enabled: bool,
     #[serde(default)]
     pub energy_saver_mode: EnergySaverMode,
+    /// **Non-Windows:** with Cargo feature `servo-engine`, opts into the future native Servo
+    /// viewport when set or when env `TONET_SERVO_VIEWPORT=1`. **Windows + `servo-engine`:**
+    /// ignored for `http(s)` (Servo is always the page engine unless `TONET_SERVO_VIEWPORT=0`).
+    #[serde(default)]
+    pub experimental_servo_viewport: bool,
 }
 
 impl Default for SystemSettings {
@@ -86,6 +91,7 @@ impl Default for SystemSettings {
             memory_saver_enabled: false,
             energy_saver_enabled: true,
             energy_saver_mode: EnergySaverMode::default(),
+            experimental_servo_viewport: false,
         }
     }
 }

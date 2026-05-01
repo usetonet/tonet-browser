@@ -2,7 +2,7 @@
 
 use std::sync::mpsc;
 
-use tonet_engine::css::{CssToken, ParsedQualifiedRule, SimpleQualifiedRule};
+use crate::css::{CssToken, ParsedQualifiedRule, SimpleQualifiedRule};
 
 use crate::parser::{DomNode, DomNodeType};
 
@@ -59,7 +59,7 @@ pub struct Tab {
     /// Tokenized author stylesheets (parallel to [`Self::loaded_stylesheets`] text).
     #[allow(dead_code)]
     pub loaded_stylesheet_tokens: Vec<(String, Vec<CssToken>)>,
-    /// Top-level qualified rules per stylesheet URL (from [`tonet_engine::css::parse_stylesheet_bundle_to_rules`]).
+    /// Top-level qualified rules per stylesheet URL (from [`crate::css::parse_stylesheet_bundle_to_rules`]).
     #[allow(dead_code)]
     pub loaded_stylesheet_rules: Vec<(String, Vec<SimpleQualifiedRule>)>,
     /// Same rules as [`Self::loaded_stylesheet_rules`] with `property: value` lists per block.
@@ -68,6 +68,42 @@ pub struct Tab {
     /// True while this tab should display the New Tab page.
     /// Cleared only when an actual navigation starts (Enter pressed).
     pub show_new_tab: bool,
+
+    /// Document title reported by the Servo embedder (Windows experimental viewport).
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub servo_document_title: Option<String>,
+    /// `(can_go_back, can_go_forward)` from Servo when this tab uses the native Servo viewport.
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub servo_chrome_nav: Option<(bool, bool)>,
+    /// Recent `console.*` output from the Servo `WebView` (active tab only; drained from the host each frame).
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub servo_console: Vec<(ServoConsoleLevel, String)>,
+}
+
+/// [`servo::ConsoleLogLevel`] mirrored here so `Tab` does not depend on the optional `servo` crate.
+#[cfg(all(feature = "servo-engine", windows))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ServoConsoleLevel {
+    Log,
+    Debug,
+    Info,
+    Warn,
+    Error,
+    Trace,
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+impl ServoConsoleLevel {
+    pub fn as_label(self) -> &'static str {
+        match self {
+            Self::Log => "LOG",
+            Self::Debug => "DEBUG",
+            Self::Info => "INFO",
+            Self::Warn => "WARN",
+            Self::Error => "ERROR",
+            Self::Trace => "TRACE",
+        }
+    }
 }
 
 impl Tab {
@@ -93,6 +129,12 @@ impl Tab {
             loaded_stylesheet_rules: Vec::new(),
             loaded_stylesheet_parsed: Vec::new(),
             show_new_tab: is_empty,
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_document_title: None,
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_chrome_nav: None,
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_console: Vec::new(),
         }
     }
 
@@ -111,6 +153,16 @@ impl Tab {
         self.loaded_stylesheet_parsed.clear();
         self.loading = false;
         self.pending_nav = None;
+    }
+
+    /// Append a Servo console line; keeps a bounded tail for the in-page console strip.
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub fn push_servo_console_line(&mut self, level: ServoConsoleLevel, message: String) {
+        const MAX_LINES: usize = 400;
+        self.servo_console.push((level, message));
+        while self.servo_console.len() > MAX_LINES {
+            self.servo_console.remove(0);
+        }
     }
 
     pub fn doc_title_trimmed(&self) -> Option<&str> {
