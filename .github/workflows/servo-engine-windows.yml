@@ -1,0 +1,32 @@
+# Best-effort compile of Tonet with `--features servo-engine` on Windows (bindgen / mozjs).
+# Uses `continue-on-error` so the main CI is not blocked if LLVM or linker env drifts.
+name: Servo engine (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "crates/tonet/**"
+      - ".github/workflows/servo-engine-windows.yml"
+      - "docs/SERVO_INTEGRATION_CHECKLIST.md"
+
+jobs:
+  check-tonet-servo:
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install LLVM (libclang for bindgen)
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "18"
+
+      - name: cargo check (tonet + servo-engine)
+        shell: pwsh
+        env:
+          LIBCLANG_PATH: ${{ env.LLVM_PATH }}\bin
+        run: cargo check -p tonet
