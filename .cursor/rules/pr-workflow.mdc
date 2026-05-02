@@ -5,6 +5,8 @@ alwaysApply: true
 
 # Pull requests
 
+Ship browser/repo changes on a **feature branch** and merge via **pull request**. Do **not** push commits directly to `main` unless the user explicitly asks for that workflow.
+
 When work on a feature branch is complete, tested, and committed:
 
 1. Push the branch to `origin` (`git push -u origin <branch>`).
