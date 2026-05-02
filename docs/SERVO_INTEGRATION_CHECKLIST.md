@@ -293,3 +293,5 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **B2:** `chrome/ids.rs` centralizes stable `egui::Id` values for toolbar, tab cells, and **+** new-tab; unit test locks string names. |
 | 2026-05-02 | **A8:** `download_heuristic` tests — `HEAD` probe excluded on redirect / subresource / `POST`; `attachment` path segment (case-insensitive). |
 | 2026-05-02 | **A8:** `servo_engine::url_path` — deep trailing `/`, `..` normalization, percent-encoded last segment (raw `path_segments` string). |
+| 2026-05-02 | **A8:** `content_disposition::parse_filename_value` — empty quoted `filename`, param order, unquoted spaces, `filename*` UTF-8 `%` octets. |
+| 2026-05-02 | **A8:** `visit_policy` — `mailto:` / `magnet:` excluded from history URL gate + `should_record_visit`; `.cursor/rules/pr-workflow.mdc` — batch related PRs when reviewable. |

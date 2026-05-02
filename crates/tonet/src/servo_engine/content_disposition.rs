@@ -143,7 +143,9 @@ pub(crate) fn parse_filename_value(cd: &str) -> Option<String> {
             continue;
         }
         let b = p.as_bytes();
-        if b.len() < FILENAME_STAR.len() || !b[..FILENAME_STAR.len()].eq_ignore_ascii_case(FILENAME_STAR) {
+        if b.len() < FILENAME_STAR.len()
+            || !b[..FILENAME_STAR.len()].eq_ignore_ascii_case(FILENAME_STAR)
+        {
             continue;
         }
         let rest = &p[FILENAME_STAR.len()..];
@@ -162,7 +164,9 @@ pub(crate) fn parse_filename_value(cd: &str) -> Option<String> {
             continue;
         }
         let b = p.as_bytes();
-        if b.len() >= FILENAME_STAR.len() && b[..FILENAME_STAR.len()].eq_ignore_ascii_case(FILENAME_STAR) {
+        if b.len() >= FILENAME_STAR.len()
+            && b[..FILENAME_STAR.len()].eq_ignore_ascii_case(FILENAME_STAR)
+        {
             continue;
         }
         if b.len() < FILENAME.len() || !b[..FILENAME.len()].eq_ignore_ascii_case(FILENAME) {
@@ -303,7 +307,10 @@ mod tests {
     fn quoted_filename_backslash_escaped_quote_and_semicolon() {
         // `r###"..."###` so the closing `"###` does not eat the filename's final `"` (see `r##` note in Rust ref).
         let cd = r###"attachment; filename="part1\";part2.zip""###;
-        assert_eq!(parse_filename_value(cd).as_deref(), Some(r#"part1";part2.zip"#));
+        assert_eq!(
+            parse_filename_value(cd).as_deref(),
+            Some(r#"part1";part2.zip"#)
+        );
     }
 
     #[test]
@@ -331,6 +338,35 @@ mod tests {
         assert_eq!(
             parse_filename_value("attachment; FILENAME*=UTF-8''star.bin").as_deref(),
             Some("star.bin")
+        );
+    }
+
+    #[test]
+    fn empty_quoted_filename_returns_none() {
+        assert!(parse_filename_value(r#"attachment; filename="""#).is_none());
+    }
+
+    #[test]
+    fn filename_after_non_filename_params() {
+        assert_eq!(
+            parse_filename_value("attachment; size=999; filename=last.pdf").as_deref(),
+            Some("last.pdf")
+        );
+    }
+
+    #[test]
+    fn unquoted_filename_with_internal_spaces() {
+        assert_eq!(
+            parse_filename_value("attachment; filename=my report.pdf").as_deref(),
+            Some("my report.pdf")
+        );
+    }
+
+    #[test]
+    fn filename_star_percent_decodes_utf8_non_ascii() {
+        assert_eq!(
+            parse_filename_value("attachment; filename*=UTF-8''%c3%a4.bin").as_deref(),
+            Some("ä.bin")
         );
     }
 }

@@ -1,8 +1,5 @@
 //! Pure helpers for Servo-driven **visit history** (no `WebView` / Win32).
-#![cfg_attr(
-    not(all(feature = "servo-engine", windows)),
-    allow(dead_code)
-)] // `runtime_win` is the only non-test consumer; it is not built on other targets.
+#![cfg_attr(not(all(feature = "servo-engine", windows)), allow(dead_code))] // `runtime_win` is the only non-test consumer; it is not built on other targets.
 
 /// URLs counted in the same bucket as Tonet’s HTML fetch history: `http` / `https` only.
 #[inline]
@@ -39,12 +36,7 @@ mod tests {
 
     #[test]
     fn skips_non_http() {
-        assert!(!should_record_visit(
-            true,
-            Some("about:blank"),
-            false,
-            None,
-        ));
+        assert!(!should_record_visit(true, Some("about:blank"), false, None,));
         assert!(!should_record_visit(
             true,
             Some(" tonet://settings "),
@@ -204,6 +196,22 @@ mod tests {
             Some("https://a.example/"),
             true,
             Some(" https://a.example/ "),
+        ));
+    }
+
+    #[test]
+    fn history_url_rejects_mailto_and_magnet() {
+        assert!(!is_http_or_https_history_url("mailto:a@b.example"));
+        assert!(!is_http_or_https_history_url("magnet:?xt=urn:btih:abc"));
+    }
+
+    #[test]
+    fn should_record_visit_skips_mailto_even_when_complete() {
+        assert!(!should_record_visit(
+            true,
+            Some("mailto:user@example.org"),
+            false,
+            None,
         ));
     }
 }
