@@ -9,11 +9,9 @@ mod browser_log;
 mod chrome;
 mod css_resolve;
 #[allow(dead_code, unused_imports)]
-#[path = "../../tonet-engine/src/css/mod.rs"]
 mod css;
 mod document_url;
 #[allow(dead_code, unused_imports)]
-#[path = "../../tonet-engine/src/html/mod.rs"]
 mod html;
 mod i18n;
 mod internal_pages;

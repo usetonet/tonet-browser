@@ -27,7 +27,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 | [x] | CI: `.github/workflows/servo-engine-windows.yml` runs `cargo check -p tonet` on `windows-latest` with LLVM 18 (`continue-on-error: true` so default CI is not blocked). |
 | [x] | Pin / document supported `servo` crate versions and upgrade playbook (`Cargo.toml` comment + **§ Servo crate pin and upgrade playbook** above). |
 | [x] | Product decision: **Servo-by-default for `http(s)` on Windows** when built with `servo-engine` — documented above; opt-out via `TONET_SERVO_VIEWPORT=0`. |
-| [~] | `crates/tonet` no longer depends on the `tonet-engine` crate package directly; transitional source-level shim currently points to legacy modules via `#[path = "../../tonet-engine/src/..."]` while extraction into `tonet/src` proceeds. |
+| [x] | **`css/`**, **`html/`**, **`document_url.rs`**, **`limits.rs`**, and **`policy.rs`** live under `crates/tonet/src/` (canonical). `crates/tonet` does **not** depend on the `tonet-engine` package. **`tonet-engine`** keeps small-only modules (`js`, `navigation`) and re-exports shared sources from `tonet` via `#[path]` so corpus/unit tests can use `tonet_engine::` without duplicating files. |
 
 ### A2. Platforms
 
@@ -304,3 +304,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **A8:** `visit_policy` — `rtsp:` / `irc:` excluded from history URL gate. |
 | 2026-05-02 | **B2:** `ui::settings_modal_id` / `settings_internal_form_id`; **`visit_policy`** — `about:` excluded from history URL gate. |
 | 2026-05-02 | **A4 / UX:** toolbar **Stop** disabled while loading on Servo-superseded tabs + localized tooltip (`stop_loading_unavailable_servo_tooltip`); **`servo_supersedes_dom_paint`** tests (empty URL, `javascript:`, `ftp:`); manual smoke step 19 + A4 row updated. |
+| 2026-05-02 | **A1:** Engine HTML/CSS + `document_url` / `limits` / `policy` canonical in `crates/tonet/src/`; `tonet-engine` is a thin re-export for tests; removed `tonet-engine/src/css|html` and duplicate policy files. |
