@@ -47,7 +47,7 @@ mod content_disposition;
 #[cfg(all(feature = "servo-engine", windows))]
 mod download_heuristic;
 #[cfg(all(feature = "servo-engine", windows))]
-mod embedder_ids;
+pub mod embedder_ids;
 #[cfg(all(feature = "servo-engine", windows))]
 mod runtime_win;
 #[cfg(all(feature = "servo-engine", windows))]

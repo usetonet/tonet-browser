@@ -214,4 +214,16 @@ mod tests {
             None,
         ));
     }
+
+    #[test]
+    fn history_url_rejects_view_source_wrapper() {
+        assert!(!is_http_or_https_history_url(
+            "view-source:https://example.com/",
+        ));
+    }
+
+    #[test]
+    fn history_url_rejects_gopher() {
+        assert!(!is_http_or_https_history_url("gopher://foo.example/1"));
+    }
 }

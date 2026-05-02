@@ -1513,7 +1513,7 @@ impl eframe::App for TonetApp {
                         );
                         ui.allocate_new_ui(
                             egui::UiBuilder::new()
-                                .id_salt("tonet_servo_page_console")
+                                .id_salt(crate::servo_engine::embedder_ids::page_console_strip())
                                 .max_rect(console_rect)
                                 .layout(egui::Layout::top_down(egui::Align::Min)),
                             |ui| {

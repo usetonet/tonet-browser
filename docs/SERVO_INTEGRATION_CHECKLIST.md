@@ -295,4 +295,5 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **A8:** `servo_engine::url_path` — deep trailing `/`, `..` normalization, percent-encoded last segment (raw `path_segments` string). |
 | 2026-05-02 | **A8:** `content_disposition::parse_filename_value` — empty quoted `filename`, param order, unquoted spaces, `filename*` UTF-8 `%` octets. |
 | 2026-05-02 | **A8:** `visit_policy` — `mailto:` / `magnet:` excluded from history URL gate + `should_record_visit`; `.cursor/rules/pr-workflow.mdc` — batch related PRs when reviewable. |
-| 2026-05-02 | **B2:** `servo_engine/embedder_ids.rs` — stable `egui::Id` for Servo embedder UI (`runtime_win`); script dialogs use `tonet_servo_simple_dialog`; unit test locks names. |
+| 2026-05-02 | **B2:** `servo_engine/embedder_ids.rs` — stable `egui::Id` for Servo embedder UI (`runtime_win` + page console strip in `app.rs`); script dialogs use `tonet_servo_simple_dialog`; unit test locks names. |
+| 2026-05-02 | **A8:** `visit_policy` — `view-source:` and `gopher:` excluded from `http(s)` history URL gate. |
