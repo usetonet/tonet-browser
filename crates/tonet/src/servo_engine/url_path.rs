@@ -42,4 +42,23 @@ mod tests {
         let u = Url::parse("https://example.com/a//b//file.zip").unwrap();
         assert_eq!(last_non_empty_path_segment(&u), Some("file.zip"));
     }
+
+    #[test]
+    fn deep_path_trailing_slash_returns_last_directory_component() {
+        let u = Url::parse("https://cdn.example.org/a/b/c/").unwrap();
+        assert_eq!(last_non_empty_path_segment(&u), Some("c"));
+    }
+
+    #[test]
+    fn dot_dot_normalizes_to_final_segment() {
+        let u = Url::parse("https://example.com/dl/../releases/app.zip").unwrap();
+        assert_eq!(last_non_empty_path_segment(&u), Some("app.zip"));
+    }
+
+    #[test]
+    fn percent_encoding_in_path_segment_is_not_decoded() {
+        // `path_segments()` yields the raw segment string; callers that build filenames may decode.
+        let u = Url::parse("https://example.com/folder/my%20file.pdf").unwrap();
+        assert_eq!(last_non_empty_path_segment(&u), Some("my%20file.pdf"));
+    }
 }
