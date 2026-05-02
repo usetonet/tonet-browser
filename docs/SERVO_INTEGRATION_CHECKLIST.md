@@ -113,7 +113,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 
 | Status | Task |
 |--------|------|
-| [~] | Stable `egui::Id` sources: **`crates/tonet/src/chrome/ids.rs`** defines toolbar + tab strip + “new tab” ids (with regression tests); omnibox remains `ui::omnibox_id`. Screen-reader labels / full keyboard order still TBD. |
+| [~] | Stable `egui::Id` sources: **`chrome/ids.rs`** (toolbar + tabs + new tab); **`servo_engine/embedder_ids.rs`** (Servo embedder windows/toast on Windows + regression tests); omnibox remains `ui::omnibox_id`. Screen-reader labels / full keyboard order still TBD. |
 | [~] | Full keyboard order and screen-reader labels per control — **procedure** in **§ Accessibility audit templates**; egui limits still TBD per control. |
 | [~] | Contrast / scaling audit vs system settings — same **§ Accessibility audit templates** (spot-check matrix). |
 
@@ -295,3 +295,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **A8:** `servo_engine::url_path` — deep trailing `/`, `..` normalization, percent-encoded last segment (raw `path_segments` string). |
 | 2026-05-02 | **A8:** `content_disposition::parse_filename_value` — empty quoted `filename`, param order, unquoted spaces, `filename*` UTF-8 `%` octets. |
 | 2026-05-02 | **A8:** `visit_policy` — `mailto:` / `magnet:` excluded from history URL gate + `should_record_visit`; `.cursor/rules/pr-workflow.mdc` — batch related PRs when reviewable. |
+| 2026-05-02 | **B2:** `servo_engine/embedder_ids.rs` — stable `egui::Id` for Servo embedder UI (`runtime_win`); script dialogs use `tonet_servo_simple_dialog`; unit test locks names. |

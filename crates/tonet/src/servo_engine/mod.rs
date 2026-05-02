@@ -41,19 +41,21 @@ pub(crate) mod servo_favicon;
 pub(crate) mod permission_store;
 
 #[cfg(all(feature = "servo-engine", windows))]
-mod url_path;
-#[cfg(all(feature = "servo-engine", windows))]
 mod background_download;
 #[cfg(all(feature = "servo-engine", windows))]
 mod content_disposition;
 #[cfg(all(feature = "servo-engine", windows))]
 mod download_heuristic;
 #[cfg(all(feature = "servo-engine", windows))]
-mod slint_embed;
+mod embedder_ids;
 #[cfg(all(feature = "servo-engine", windows))]
 mod runtime_win;
 #[cfg(all(feature = "servo-engine", windows))]
+mod slint_embed;
+#[cfg(all(feature = "servo-engine", windows))]
 mod tonet_scheme_html;
+#[cfg(all(feature = "servo-engine", windows))]
+mod url_path;
 #[cfg(all(feature = "servo-engine", windows))]
 pub(crate) use tonet_scheme_html::TonetSchemeAction;
 
@@ -119,9 +121,7 @@ pub fn servo_supersedes_dom_paint(user_setting: bool, tab_url_trim: &str) -> boo
         viewport_runtime_requested(user_setting) && {
             let t = tab_url_trim.trim();
             let lc = t.to_ascii_lowercase();
-            lc.starts_with("http://")
-                || lc.starts_with("https://")
-                || lc.starts_with("tonet://")
+            lc.starts_with("http://") || lc.starts_with("https://") || lc.starts_with("tonet://")
         }
     }
     #[cfg(not(all(feature = "servo-engine", windows)))]
@@ -235,8 +235,7 @@ impl ServoViewportRuntime {
         }
         let clear = ctx.input(|i| {
             i.pointer.primary_clicked()
-                && i
-                    .pointer
+                && i.pointer
                     .interact_pos()
                     .is_some_and(|pos| !rect.contains(pos))
         });
