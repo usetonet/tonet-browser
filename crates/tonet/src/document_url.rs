@@ -47,3 +47,68 @@ pub fn normalize_document_url_for_http_get(raw: &str) -> Result<String, Document
     }
     Ok(t.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        normalize_document_url_for_http_get, DocumentUrlError, MAX_DOCUMENT_URL_BYTES,
+    };
+
+    #[test]
+    fn accepts_http_https_trimmed() {
+        assert_eq!(
+            normalize_document_url_for_http_get("  https://example.test/x  ").unwrap(),
+            "https://example.test/x"
+        );
+        assert_eq!(
+            normalize_document_url_for_http_get("http://127.0.0.1/").unwrap(),
+            "http://127.0.0.1/"
+        );
+    }
+
+    #[test]
+    fn rejects_empty_and_whitespace_only() {
+        assert_eq!(
+            normalize_document_url_for_http_get(""),
+            Err(DocumentUrlError::Empty)
+        );
+        assert_eq!(
+            normalize_document_url_for_http_get("  \t  "),
+            Err(DocumentUrlError::Empty)
+        );
+    }
+
+    #[test]
+    fn rejects_non_http_scheme() {
+        assert_eq!(
+            normalize_document_url_for_http_get("ftp://files.example/x"),
+            Err(DocumentUrlError::SchemeNotHttp)
+        );
+        assert_eq!(
+            normalize_document_url_for_http_get("tonet://settings"),
+            Err(DocumentUrlError::SchemeNotHttp)
+        );
+    }
+
+    #[test]
+    fn rejects_overlong_url() {
+        let prefix = "https://";
+        let mut raw = String::with_capacity(MAX_DOCUMENT_URL_BYTES + 8);
+        raw.push_str(prefix);
+        raw.push_str(&"a".repeat(MAX_DOCUMENT_URL_BYTES - prefix.len() + 1));
+        assert!(raw.len() > MAX_DOCUMENT_URL_BYTES);
+        assert_eq!(
+            normalize_document_url_for_http_get(&raw),
+            Err(DocumentUrlError::TooLong)
+        );
+    }
+
+    #[test]
+    fn upper_case_scheme_still_http_https_after_lower_check() {
+        // ASCII lower ensures HTTP:// and HTTPS:// are accepted (normalized output keeps caller trim).
+        assert_eq!(
+            normalize_document_url_for_http_get("HTTPS://UP.EXAMPLE/").unwrap(),
+            "HTTPS://UP.EXAMPLE/"
+        );
+    }
+}

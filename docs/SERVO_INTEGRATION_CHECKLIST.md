@@ -308,3 +308,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **A1:** Engine HTML/CSS + `document_url` / `limits` / `policy` canonical in `crates/tonet/src/`; `tonet-engine` is a thin re-export for tests; removed `tonet-engine/src/css|html` and duplicate policy files. |
 | 2026-05-02 | **A2:** `.github/workflows/servo-engine-linux.yml` — best-effort `cargo check -p tonet` on Ubuntu (default `servo-engine`); checklist § Linux / macOS + A2 Linux row reference CI; embed still no-op on non-Windows. |
 | 2026-05-02 | **A8 / A3:** `runtime_win::initial_nav_url` unit tests (idle `about:blank` vs `http(s)` / `tonet://`) — Windows + `servo-engine` only. |
+| 2026-05-02 | **A8:** `document_url::normalize_document_url_for_http_get` unit tests (empty, trim, scheme, length cap, uppercase scheme). |
