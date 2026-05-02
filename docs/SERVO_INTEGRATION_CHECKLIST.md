@@ -12,7 +12,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 
 ### Current policy: `http(s)` engine (Windows)
 
-- **Default Windows build:** `http://` / `https://` and internal `tonet://` pages use **Servo only** for page content (Win32 popup `WebView`; no `tonet-engine` DOM paint on those URLs). Opt-out for debugging: **`TONET_SERVO_VIEWPORT=0`**.
+- **Default Windows build:** `http://` / `https://` and internal `tonet://` pages use **Servo only** for page content when the viewport is active (default **in-process** surfman readback → egui; optional legacy **owned Win32 popup** with **`TONET_SERVO_WIN32_POPUP=1`**; no `tonet-engine` DOM paint on those URLs). Opt-out for debugging: **`TONET_SERVO_VIEWPORT=0`**.
 - **Non-Windows** (or without `servo-engine`): `http(s)` stays on the Tonet engine unless a future native embed exists; optional opt-in remains **Settings → System** (non-Windows) and/or **`TONET_SERVO_VIEWPORT=1`** where implemented.
 
 ---
@@ -130,7 +130,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 
 | OS | `servo-engine` build | Native Servo viewport | Pointer / wheel | Keyboard / IME forward | Cursor from engine |
 |----|----------------------|-------------------------|-----------------|-------------------------|----------------------|
-| **Windows** | Yes | Yes (Win32 popup) | Yes (`WNDPROC` subclass) | Yes (capture mode + IME mapping) | Yes (`WM_SETCURSOR`) |
+| **Windows** | Yes | Yes (default in-process embed; optional `TONET_SERVO_WIN32_POPUP=1` owned popup) | Yes (`WNDPROC` on popup **or** egui-fed embed per mode) | Yes (capture mode + IME mapping) | Yes (`WM_SETCURSOR` when popup) |
 | **Linux** | Yes (links) | No | N/A | N/A | N/A |
 | **macOS** | Yes (links) | No | N/A | N/A | N/A |
 
@@ -289,3 +289,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-04-17 | **B1:** omnibox history **Escape** clears keyboard-highlighted row (without leaving the address field). |
 | 2026-04-17 | **Manual smoke:** step **17b** (extensionless `…/download|export|attachment` + `HEAD` / `Content-Disposition` / MIME heuristic download). |
 | 2026-04-17 | **B1 / B3:** omnibox history **keyboard hint** (`i18n::omnibox_history_keyboard_hint`); **`background_download`** unit tests for `HEAD` **MIME** allowlist (`mime_*`). |
+| 2026-05-02 | **Policy + matrix:** Windows default = **in-process** Servo embed (readback → egui); optional **`TONET_SERVO_WIN32_POPUP=1`** legacy owned popup. Aligns with `TONET_VISION.md` §13 and `runtime_win.rs` module docs. |
