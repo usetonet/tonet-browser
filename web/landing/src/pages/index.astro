@@ -1,0 +1,190 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { HomeBoot } from "../components/HomeBoot";
+---
+
+<BaseLayout
+  title="Tonet — Browse light"
+  description="Tonet — a lightweight browser built on the Servo engine. Fast, intentional, minimal."
+  page="home"
+>
+  <main>
+    <section class="relative mx-auto max-w-[1120px] overflow-hidden px-6 pb-14 pt-[88px] text-center">
+      <span class="pointer-events-none absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 select-none whitespace-nowrap text-[min(22vw,200px)] font-extrabold lowercase tracking-[-0.06em] text-white/[0.04]" aria-hidden="true">tonet</span>
+      <div class="relative z-[1]">
+        <span class="mb-4 inline-block rounded-full bg-[rgba(90,153,255,0.12)] px-3 py-1.5 text-[0.85rem] font-semibold text-[#8eb8ff]" id="version-pill">Latest release: …</span>
+        <h1 class="hero-title-serif font-serif text-[clamp(2.2rem,5vw,3.4rem)] font-bold leading-[1.1] tracking-[-0.03em]" id="hero-title">
+          Browse without the weight.<br />Push back on web bloat.
+        </h1>
+        <p class="mx-auto mb-8 max-w-[640px] text-xl leading-relaxed text-balance text-[#9aa3b5]" id="hero-lead">
+          Tonet is built around the Servo rendering engine and a minimal shell—speed, clarity, and intentional limits. Not Blink, WebKit, or CEF — you control what comes in.
+        </p>
+        <div class="mb-5 flex flex-wrap justify-center gap-3">
+          <a
+            class="btn-tonet inline-flex items-center justify-center gap-2 rounded-full px-[22px] py-3 text-[0.95rem] font-semibold text-white shadow-[0_10px_36px_rgba(90,153,255,0.38)] transition hover:shadow-[0_12px_42px_rgba(138,92,255,0.42)] active:scale-[0.98]"
+            id="hero-download"
+            href="/download.html">Download Tonet</a>
+          <a
+            class="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4] transition hover:bg-white/[0.08] active:scale-[0.98]"
+            id="hero-docs"
+            href="/guide.html">Quick start</a>
+        </div>
+        <div class="mx-auto mt-6 grid max-w-[760px] grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2.5">
+          <article class="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-left">
+            <span class="mb-1 block text-[0.75rem] text-[#9aa3b5]" id="kpi-1-label">Philosophy</span>
+            <strong class="text-[0.95rem] text-[#e8ecf4]" id="kpi-1-strong">Servo + minimal shell</strong>
+          </article>
+          <article class="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-left">
+            <span class="mb-1 block text-[0.75rem] text-[#9aa3b5]" id="kpi-2-label">Primary channels</span>
+            <strong class="text-[0.95rem] text-[#e8ecf4]" id="kpi-2-strong">Windows + Linux</strong>
+          </article>
+          <article class="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-left">
+            <span class="mb-1 block text-[0.75rem] text-[#9aa3b5]" id="kpi-3-label">Updates</span>
+            <strong class="text-[0.95rem] text-[#e8ecf4]" id="kpi-3-strong">Manifest URL</strong>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto mt-2 max-w-[1120px] text-balance px-6 py-14" id="features">
+      <h2 class="mb-2.5 text-[1.75rem]" id="features-title">Built to get to the point</h2>
+      <p class="mb-9 max-w-[720px] leading-relaxed text-balance text-[#9aa3b5]" id="features-lead">
+        An honest MVP: network + parser + minimal renderer. Tonet does not try to render today’s industrial web; it tries to make reading and search feel human again.
+      </p>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[18px]">
+        <article class="rounded-[14px] border border-[rgba(79,140,255,0.28)] bg-gradient-to-br from-[rgba(79,140,255,0.14)] to-white/[0.02] p-[22px]">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
+              <path
+                d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"></path>
+            </svg>
+          </span>
+          <h3 class="mb-2 text-[1.1rem]" id="card-purity-t">Purity filter</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-purity-p">
+            Pages over 1 MB are rejected. Tonet only loads what fits a lightweight standard.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-[rgba(230,195,92,0.22)] bg-gradient-to-br from-[rgba(230,195,92,0.12)] to-white/[0.02] p-[22px]">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
+              <path d="M8 9h8M8 13h5M8 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+              <rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"></rect>
+            </svg>
+          </span>
+          <h3 class="mb-2 text-[1.1rem]" id="card-parser-t">Custom parser</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-parser-p">
+            Manual extraction of title and essential text — without dragging in a full HTML engine.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-[rgba(124,92,255,0.28)] bg-gradient-to-br from-[rgba(124,92,255,0.14)] to-white/[0.02] p-[22px]">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
+              <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"></circle>
+            </svg>
+          </span>
+          <h3 class="mb-2 text-[1.1rem]" id="card-updates-t">Updates on your terms</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-updates-p">
+            Check on launch, every 24 hours, or only when you want. One click opens official downloads.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-[rgba(61,214,140,0.22)] bg-gradient-to-br from-[rgba(61,214,140,0.12)] to-white/[0.02] p-[22px]">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
+              <path
+                d="M12 3c5 3 7 6 7 9a7 7 0 1 1-14 0c0-3 2-6 7-9Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"></path>
+            </svg>
+          </span>
+          <h3 class="mb-2 text-[1.1rem]" id="card-opensource-t">Open source</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-opensource-p">
+            Full transparency on GitHub. Signed installers and documented pipelines for operators.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-[rgba(79,140,255,0.28)] bg-gradient-to-br from-[rgba(79,140,255,0.14)] to-white/[0.02] p-[22px]">
+          <h3 class="mb-2 text-[1.1rem]" id="card-engine-t">Servo rendering</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-engine-p">
+            Web content uses the Servo engine—not Chromium, WebKit, or CEF. Fewer opaque layers between your policy and the network.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-[rgba(230,195,92,0.22)] bg-gradient-to-br from-[rgba(230,195,92,0.12)] to-white/[0.02] p-[22px]">
+          <h3 class="mb-2 text-[1.1rem]" id="card-strict-t">Strict resource bounds</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-strict-p">
+            The 1 MB page ceiling keeps accidental megabyte payloads out of your session; failures are explicit instead of grinding the UI.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-[rgba(124,92,255,0.28)] bg-gradient-to-br from-[rgba(124,92,255,0.14)] to-white/[0.02] p-[22px]">
+          <h3 class="mb-2 text-[1.1rem]" id="card-ops-t">Operational transparency</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-ops-p">
+            Own your CDN and <code class="rounded bg-white/[0.06] px-1">version.json</code>: updates don’t depend on calling GitHub’s release API from the client at runtime.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-[rgba(61,214,140,0.22)] bg-gradient-to-br from-[rgba(61,214,140,0.12)] to-white/[0.02] p-[22px]">
+          <h3 class="mb-2 text-[1.1rem]" id="card-privacy-t">Privacy-minded defaults</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="card-privacy-p">
+            Minimal surface area for trackers and third-party SDKs compared to mainstream browsers built for maximal compatibility.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-[1120px] text-balance px-6 py-14">
+      <h2 class="mb-2.5 text-[1.75rem]" id="diff-section-title">What makes Tonet different</h2>
+      <p class="mb-9 max-w-[720px] leading-relaxed text-[#9aa3b5]" id="diff-section-lead">
+        Built for users and teams that want explicit control over what runs in the browser, how updates are delivered, and how much complexity enters the runtime.
+      </p>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-[18px]">
+        <article class="rounded-[14px] border border-white/[0.08] bg-white/[0.04] p-[22px]">
+          <h3 class="mb-2 text-[1.1rem]" id="diff-1-t">Auditable Servo stack</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="diff-1-p">
+            Tonet keeps the engine surface understandable and auditable for your team, with the roadmap and quality gates published in the project docs.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-white/[0.08] bg-white/[0.04] p-[22px]">
+          <h3 class="mb-2 text-[1.1rem]" id="diff-2-t">Predictable update flow</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="diff-2-p">
+            Installer binaries and update manifests are served from your own Cloudflare-backed CDN, so operations do not depend on a third-party release API.
+          </p>
+        </article>
+        <article class="rounded-[14px] border border-white/[0.08] bg-white/[0.04] p-[22px]">
+          <h3 class="mb-2 text-[1.1rem]" id="diff-3-t">Docs-first project</h3>
+          <p class="m-0 text-[0.95rem] leading-relaxed text-[#9aa3b5]" id="diff-3-p">
+            Full public documentation includes setup guides, architecture, use cases, comparisons, release notes, and implementation plans.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="download-cta-banner mx-auto max-w-[1120px] rounded-[14px] border border-white/[0.08] bg-gradient-to-br from-[rgba(8,12,22,0.95)] to-[rgba(20,26,42,0.88)] px-7 py-9 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+      <h2 class="mb-2.5 text-[1.75rem]" id="home-banner-title">Ready to install?</h2>
+      <p class="mb-6 max-w-[720px] leading-relaxed text-balance text-[#9aa3b5]" id="home-banner-lead">
+        Pick your OS, release channel, and format on the dedicated download page—the installer downloads like any normal file.
+      </p>
+      <div class="flex flex-wrap justify-start gap-3">
+        <a
+          class="btn-tonet inline-flex items-center justify-center gap-2 rounded-full px-[22px] py-3 text-[0.95rem] font-semibold text-white shadow-[0_10px_36px_rgba(90,153,255,0.38)]"
+          id="home-go-download"
+          href="/download.html">Go to downloads</a>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-[1120px] px-6 py-14">
+      <h2 class="mb-2.5 text-[1.75rem]" id="home-explore-title">Need more detail before installing?</h2>
+      <p class="mb-6 max-w-[720px] leading-relaxed text-[#9aa3b5]" id="home-explore-lead">
+        Explore architecture notes, operational guides, and feature planning before you roll Tonet out.
+      </p>
+      <div class="flex flex-wrap justify-start gap-3">
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-guide" href="/guide.html">Using Tonet (plain language)</a>
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-docs" href="/docs.html">Technical documentation</a>
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-compare" href="/compare.html">Compare browsers</a>
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-roadmap" href="/roadmap.html">Roadmap</a>
+      </div>
+    </section>
+  </main>
+  <HomeBoot client:load />
+</BaseLayout>

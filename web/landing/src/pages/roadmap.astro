@@ -1,0 +1,65 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { RoadmapBoot } from "../components/RoadmapBoot";
+---
+
+<BaseLayout title="Roadmap — Tonet" description="Tonet roadmap: phases, milestones, and tracking." page="roadmap">
+  <div class="roadmap-intro">
+    <h1 class="mb-2 text-4xl" id="roadmap-h1">Roadmap</h1>
+    <p class="lead" id="roadmap-lead">
+      Phases below mirror how engineering tracks work in public: quality gates in <code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code>, CI on main, and CDN-backed
+      releases. Dates are intentionally not faux-precision — milestones ship when gates pass.
+    </p>
+  </div>
+
+  <div class="roadmap-track">
+    <section class="roadmap-phase">
+      <div class="roadmap-phase-badge" id="roadmap-pnow-badge">Phase — Now</div>
+      <div>
+        <h2 id="roadmap-ship-h">Ship &amp; operate</h2>
+        <ul>
+          <li id="roadmap-ship-l1">Stable installers (Windows MSI/Inno + Linux .deb) published via CI and CDN manifest v2.</li>
+          <li id="roadmap-ship-l2">Servo integration smoke paths repeatable on Windows (LLVM/bindgen, ANGLE DLLs next to exe).</li>
+          <li id="roadmap-ship-l3">Landing + docs portal aligned with operator-runbooks (this site).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="roadmap-phase">
+      <div class="roadmap-phase-badge" id="roadmap-pnext-badge">Phase — Next</div>
+      <div>
+        <h2 id="roadmap-compat-h">Compatibility &amp; shell</h2>
+        <ul>
+          <li id="roadmap-compat-l1">Grow HTML/CSS coverage toward documented conformance milestones (see engine checklist).</li>
+          <li id="roadmap-compat-l2">Browser chrome ergonomics: tabs, navigation, and settings parity with Tonet’s minimalist contract.</li>
+          <li id="roadmap-compat-l3">Packaging parity (macOS signing track, optional AppImage evaluation).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="roadmap-phase">
+      <div class="roadmap-phase-badge" id="roadmap-plater-badge">Phase — Later</div>
+      <div>
+        <h2 id="roadmap-depth-h">Depth &amp; scale</h2>
+        <ul>
+          <li id="roadmap-depth-l1">Performance budgets and measurable regressions in CI (beyond smoke).</li>
+          <li id="roadmap-depth-l2">Broader platform coverage where Servo + packaging support aligns.</li>
+          <li id="roadmap-depth-l3">Security assurance processes spelled alongside feature growth.</li>
+        </ul>
+      </div>
+    </section>
+
+    <article class="card mt-2">
+      <h2 class="mt-0" id="roadmap-auth-h">Authoritative detail</h2>
+      <p class="m-0 text-[#9aa3b5]" id="roadmap-auth-p">
+        Full milestones: <code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code>. Integration discipline: <code
+          class="rounded bg-white/[0.06] px-1">docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
+      </p>
+    </article>
+  </div>
+
+  <p class="mx-auto max-w-[1120px] px-6 pb-10 text-center text-[#9aa3b5]">
+    <a class="text-tonet-link hover:underline" id="roadmap-footer-link" href="/docs.html">Open full docs portal</a>
+  </p>
+  <RoadmapBoot client:load />
+</BaseLayout>

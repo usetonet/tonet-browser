@@ -1,0 +1,77 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { HandbookBoot } from "../components/HandbookBoot";
+---
+
+<BaseLayout
+  title="Tonet Handbook"
+  description="Tonet handbook: complete public documentation for users, operators, and contributors."
+  page="handbook"
+>
+  <main class="section pt-10">
+    <h1 class="mb-2 text-4xl" id="handbook-h1">Public handbook</h1>
+    <p class="lead" id="handbook-lead">
+      This page centralizes expanded project documentation: use cases, utility references, product evolution, and future implementation tracks.
+    </p>
+
+    <article class="mb-4 card">
+      <h2 class="mt-0" id="handbook-use-h">Use cases</h2>
+      <ul class="leading-relaxed text-[#9aa3b5]">
+        <li id="handbook-use-l1">Low-overhead browsing in controlled environments.</li>
+        <li id="handbook-use-l2">Educational and R&amp;D contexts where browser internals must stay transparent.</li>
+        <li id="handbook-use-l3">Operational deployment where CDN-based release distribution is required.</li>
+        <li id="handbook-use-l4">Security-conscious setups that prefer explicit policy-driven behavior.</li>
+      </ul>
+    </article>
+
+    <article class="mb-4 card">
+      <h2 class="mt-0" id="handbook-util-h">Utilities and internal pages</h2>
+      <ul class="leading-relaxed text-[#9aa3b5]">
+        <li id="handbook-util-l1">
+          <code class="rounded bg-white/[0.06] px-1">tonet://settings</code>: language, theme, update policy, system toggles.
+        </li>
+        <li id="handbook-util-l2">
+          <code class="rounded bg-white/[0.06] px-1">tonet://downloads</code>: page fetch and local save activity.
+        </li>
+        <li id="handbook-util-l3">
+          <code class="rounded bg-white/[0.06] px-1">tonet://history</code>: visit timeline and data management hooks.
+        </li>
+        <li id="handbook-util-l4">
+          <code class="rounded bg-white/[0.06] px-1">tonet://new-tab</code>: shortcuts and search integration.
+        </li>
+      </ul>
+    </article>
+
+    <article class="mb-4 card">
+      <h2 class="mt-0" id="handbook-recent-h">Recent changes</h2>
+      <p class="text-[#9aa3b5]" id="handbook-recent-p">
+        Recent work focuses on Servo integration foundations, improved policy surfaces, update flow hardening, and stronger CI/document
+        reproducibility. Full version notes are tracked in the changelog section after each release.
+      </p>
+    </article>
+
+    <article class="mb-4 card">
+      <h2 class="mt-0" id="handbook-future-h">Future implementation tracks</h2>
+      <ul class="leading-relaxed text-[#9aa3b5]">
+        <li id="handbook-fut-l1">Broader selector/layout support for improved compatibility.</li>
+        <li id="handbook-fut-l2">Expanded cross-platform packaging and installer parity.</li>
+        <li id="handbook-fut-l3">More complete test matrices for conformance and regressions.</li>
+        <li id="handbook-fut-l4">Incremental performance and memory budget enforcement.</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2 class="mt-0" id="handbook-compare-h">Comparison notes</h2>
+      <p class="text-[#9aa3b5]" id="handbook-compare-p">
+        Tonet is intentionally narrower than mature browsers like Chrome and Brave. It targets clarity, policy control, and operational determinism first. See <a
+          class="text-tonet-link hover:underline"
+          href="/compare.html">Compare</a> for a concise positioning summary.
+      </p>
+    </article>
+  </main>
+
+  <p class="mx-auto max-w-[1120px] px-6 pb-10 text-center text-[#9aa3b5]">
+    <a class="text-tonet-link hover:underline" id="handbook-footer" href="/docs.html">Back to docs portal</a>
+  </p>
+  <HandbookBoot client:load />
+</BaseLayout>

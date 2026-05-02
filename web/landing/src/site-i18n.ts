@@ -1,5 +1,8 @@
 /** Landing + docs: English-first HTML; runtime locale from `navigator.language` or user override. */
 
+import DOMPurify from "isomorphic-dompurify";
+import type { DetectedOS } from "./detect-os";
+
 export type SiteLang = "en" | "es" | "de" | "fr";
 
 const STORAGE_KEY = "tonet-site-lang";
@@ -51,8 +54,6 @@ export const copyUi: Record<SiteLang, CopyUi> = {
   fr: { copy: "Copier", copied: "Copié !", error: "Erreur" },
 };
 
-import type { DetectedOS } from "./detect-os";
-
 export function detectedOsLine(lang: SiteLang, os: DetectedOS): string {
   const m = {
     en: {
@@ -96,10 +97,24 @@ export function versionPillPrefix(lang: SiteLang): string {
 interface LandingStrings {
   metaDescription: string;
   title: string;
+  /** Dedicated `/download.html` page */
+  pageTitleDownload: string;
+  metaDescriptionDownload: string;
+  /** `/guide.html` — non-technical help */
+  pageTitleGuide: string;
+  metaDescriptionGuide: string;
   navAria: string;
   navDownload: string;
   navFeatures: string;
+  navGuide: string;
+  navHandbook: string;
   navDocs: string;
+  /** Top-level + “More” dropdown (Brave-style) */
+  navMore: string;
+  navRoadmap: string;
+  navCompare: string;
+  /** Small caps label above links inside the dropdown */
+  navDropdownExplore: string;
   heroTitle: string;
   heroLead: string;
   heroDownload: string;
@@ -134,22 +149,96 @@ interface LandingStrings {
   footer1: string;
   footer2: string;
   langSwitcher: string;
+  /** Home-only sections (beyond hero + first feature grid) */
+  homeBannerTitle: string;
+  homeBannerLead: string;
+  homeExploreTitle: string;
+  homeExploreLead: string;
+  diffSectionTitle: string;
+  diffSectionLead: string;
+  kpi1Label: string;
+  kpi1Strong: string;
+  kpi2Label: string;
+  kpi2Strong: string;
+  kpi3Label: string;
+  kpi3Strong: string;
+  c5t: string;
+  c5p: string;
+  c6t: string;
+  c6p: string;
+  c7t: string;
+  c7p: string;
+  c8t: string;
+  c8p: string;
+  d1t: string;
+  d1p: string;
+  d2t: string;
+  d2p: string;
+  d3t: string;
+  d3p: string;
+  /** Home CTA strip */
+  homeGoToDownloads: string;
+  homeLinkGuide: string;
+  homeLinkDocs: string;
+  homeLinkCompare: string;
+  homeLinkRoadmap: string;
+  langOptAuto: string;
+  langOptEn: string;
+  langOptEs: string;
+  langOptDe: string;
+  langOptFr: string;
+  /** Download page extras */
+  downloadSectionTitle: string;
+  downloadSectionLead: string;
+  downloadHeroCta: string;
+  downloadModalTitle: string;
+  downloadModalLead: string;
+  downloadModalStep1: string;
+  downloadModalStep2: string;
+  downloadModalStep3: string;
+  downloadModalRetryPrefix: string;
+  downloadModalRetryLink: string;
+  downloadModalHelp: string;
+  modalCloseLabel: string;
+  channelLabel: string;
+  channelStable: string;
+  channelDev: string;
+  channelSpecific: string;
+  versionLabel: string;
+  versionStableSuffix: string;
+  versionPreviewSuffix: string;
+  channelHintStable: string;
+  channelHintDev: string;
+  channelHintDevNone: string;
+  channelHintSpecific: string;
 }
 
 const landing: Record<SiteLang, LandingStrings> = {
   en: {
     metaDescription:
-      "Tonet — a minimal from-scratch browser. Light, fast, and intentional. Downloads for Windows, Linux, and docs.",
+      "Tonet — a lightweight browser built on the Servo engine. Fast, intentional, minimal. Downloads for Windows, Linux, and docs.",
     title: "Tonet — Browse light",
+    pageTitleDownload: "Download Tonet — installers & formats",
+    metaDescriptionDownload:
+      "Download Tonet for Windows, Linux, or macOS. Official CDN builds: EXE, MSI, DEB, and release channels.",
+    pageTitleGuide: "Using Tonet — quick start for everyone",
+    metaDescriptionGuide:
+      "Plain-language help: install Tonet, check for updates, and use settings—without developer jargon.",
     navAria: "Main",
     navDownload: "Download",
     navFeatures: "Features",
-    navDocs: "Documentation",
+    navGuide: "Using Tonet",
+    navHandbook: "Handbook",
+    navDocs: "Technical docs",
+    navMore: "More",
+    navRoadmap: "Roadmap",
+    navCompare: "Compare",
+    navDropdownExplore: "Explore",
     heroTitle: "Browse without the weight.<br />Push back on web bloat.",
     heroLead:
-      "Tonet is a browser built with a clear goal: extreme speed, minimal weight, and an in-house engine for essential content. No Blink, WebKit, or CEF — you control what comes in.",
+      "Tonet is built around the Servo rendering engine and a minimal shell—speed, clarity, and intentional limits. Not Blink, WebKit, or CEF — you control what comes in.",
     heroDownload: "Download Tonet",
-    heroDocs: "Read the docs",
+    heroDocs: "Quick start",
     featuresTitle: "Built to get to the point",
     featuresLead:
       "An honest MVP: network + parser + minimal renderer. Tonet does not try to render today’s industrial web; it tries to make reading and search feel human again.",
@@ -163,7 +252,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     c4p: "Full transparency on GitHub. Signed installers and documented pipelines for operators.",
     downloadTitle: "Download Tonet",
     downloadLead:
-      "We highlight the option that matches your system. You can always switch tabs manually.",
+      "We highlight the option that matches your system. You can always switch OS tabs manually.",
     panelWinTitle: "Windows",
     panelWinP1:
       "Primary download is the CI-built Inno Setup installer (EXE) for the version embedded on this site. MSI and other formats are linked below.",
@@ -183,23 +272,108 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelMacP1:
       "macOS binaries (tarball or TonetSetup) appear on GitHub Releases when published for a tag. Until then, build from source below. A signed <code>.app</code> bundle is on the roadmap.",
     macSetup: "GitHub releases (macOS)",
+    homeBannerTitle: "Ready to install?",
+    homeBannerLead:
+      "Choose your OS and format on the download page—the installer downloads like any normal file.",
+    homeExploreTitle: "Need more detail before installing?",
+    homeExploreLead:
+      "Plain-language help, technical references, positioning, and what ships next.",
+    diffSectionTitle: "What makes Tonet different",
+    diffSectionLead:
+      "Built for teams that want explicit control over what runs in the browser, how updates arrive, and how much complexity enters the runtime.",
+    kpi1Label: "Philosophy",
+    kpi1Strong: "Servo + minimal shell",
+    kpi2Label: "Primary channels",
+    kpi2Strong: "Windows + Linux",
+    kpi3Label: "Updates",
+    kpi3Strong: "Manifest URL",
+    c5t: "Servo rendering",
+    c5p:
+      "Web content uses the Servo engine—not Chromium, WebKit, or CEF. Fewer opaque layers between your policy and the network.",
+    c6t: "Strict resource bounds",
+    c6p:
+      "A 1 MB page ceiling keeps accidental megabyte payloads out of your session; failures are explicit instead of freezing the UI.",
+    c7t: "Operational transparency",
+    c7p:
+      "You choose where installers and update manifests live. Update checks don’t need to call GitHub’s release API from the client.",
+    c8t: "Privacy-minded defaults",
+    c8p:
+      "Minimal surface for trackers and third-party SDKs compared to browsers built for maximal compatibility.",
+    d1t: "No black box engine",
+    d1p:
+      "The engine surface stays understandable and auditable, with the roadmap and quality gates published in the project docs.",
+    d2t: "Predictable update flow",
+    d2p:
+      "Installers and manifests are served from the infrastructure you configure, so update checks aren’t tied to a vendor’s release API.",
+    d3t: "Docs-first project",
+    d3p:
+      "Public documentation covers setup, architecture, use cases, comparisons, release notes, and implementation plans.",
     footer1: "usetonet.com — project",
-    footer2: "Landing on Cloudflare Workers · Tonet engine under active development",
+    footer2: "Landing on Cloudflare Workers · Servo-based Tonet browser under active development",
     langSwitcher: "Site language",
+    homeGoToDownloads: "Go to downloads",
+    homeLinkGuide: "Using Tonet (plain language)",
+    homeLinkDocs: "Technical documentation",
+    homeLinkCompare: "Compare browsers",
+    homeLinkRoadmap: "Roadmap",
+    langOptAuto: "Auto (browser)",
+    langOptEn: "English",
+    langOptEs: "Español",
+    langOptDe: "Deutsch",
+    langOptFr: "Français",
+    downloadSectionTitle: "All channels & formats",
+    downloadSectionLead:
+      "Advanced options: pick a release channel, switch OS tabs, or grab MSI / DEB / alternate builds.",
+    downloadHeroCta: "Get Tonet",
+    downloadModalTitle: "Almost there…",
+    downloadModalLead: "You’re seconds away from running Tonet. Follow the steps while the installer downloads.",
+    downloadModalStep1: "Download Tonet",
+    downloadModalStep2: "Run the installer",
+    downloadModalStep3: "Open Tonet from the shortcut",
+    downloadModalRetryPrefix: "If the download didn’t start,",
+    downloadModalRetryLink: "click here to try again",
+    downloadModalHelp: "Need help getting started?",
+    modalCloseLabel: "Close dialog",
+    channelLabel: "Release channel",
+    channelStable: "Latest stable (recommended)",
+    channelDev: "Latest preview / development",
+    channelSpecific: "Specific version…",
+    versionLabel: "Version",
+    versionStableSuffix: "stable",
+    versionPreviewSuffix: "preview",
+    channelHintStable:
+      "Recommended production builds. Short filenames (Tonet-Setup.exe, tonet_amd64.deb, …) always point at the latest stable release.",
+    channelHintDev:
+      "Preview channel: may include unstable changes. Short filenames (e.g. Tonet-Setup-Preview.exe) track the latest preview.",
+    channelHintDevNone: "No preview release is published on the CDN yet.",
+    channelHintSpecific:
+      "Versioned filenames on the CDN (e.g. Tonet-Setup-x.y.z-x64.exe). Pick the build you need.",
   },
   es: {
     metaDescription:
-      "Tonet — navegador minimalista desde cero. Ligero, rápido y con intención. Descargas para Windows, Linux y documentación.",
+      "Tonet — navegador ligero basado en el motor Servo. Rápido, intencional y minimalista. Descargas para Windows, Linux y documentación.",
     title: "Tonet — Navega ligero",
+    pageTitleDownload: "Descargar Tonet — instaladores y formatos",
+    metaDescriptionDownload:
+      "Descarga Tonet para Windows, Linux o macOS. Builds oficiales en el CDN: EXE, MSI, DEB y canales de release.",
+    pageTitleGuide: "Uso de Tonet — guía sencilla",
+    metaDescriptionGuide:
+      "Ayuda en lenguaje claro: instalar Tonet, actualizar y usar ajustes, sin tecnicismos de desarrollo.",
     navAria: "Principal",
     navDownload: "Descargar",
     navFeatures: "Características",
-    navDocs: "Documentación",
+    navGuide: "Uso de Tonet",
+    navHandbook: "Manual",
+    navDocs: "Documentación técnica",
+    navMore: "Más",
+    navRoadmap: "Hoja de ruta",
+    navCompare: "Comparar",
+    navDropdownExplore: "Explorar",
     heroTitle: "Navega sin peso.<br />Rechaza la basura web.",
     heroLead:
-      "Tonet es un navegador en construcción con una filosofía clara: velocidad extrema, ligereza absoluta y un motor propio para contenido esencial. Sin Blink, WebKit ni CEF — tú controlas qué entra.",
+      "Tonet está centrado en el motor de renderizado Servo y un shell mínimo: velocidad, claridad y límites deliberados. Sin Blink, WebKit ni CEF — tú controlas qué entra.",
     heroDownload: "Descargar Tonet",
-    heroDocs: "Ver documentación",
+    heroDocs: "Inicio rápido",
     featuresTitle: "Diseñado para ir al grano",
     featuresLead:
       "Un MVP honesto: red + parser + render mínimos. Tonet no pretende renderizar la web industrial de hoy; pretende devolver la lectura y la búsqueda a algo humano.",
@@ -213,7 +387,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     c4p: "Transparencia total en GitHub. Instaladores firmados y pipelines documentados para quien despliega.",
     downloadTitle: "Descargar Tonet",
     downloadLead:
-      "Detectamos tu sistema para resaltar la opción adecuada. Siempre puedes cambiar de pestaña manualmente.",
+      "Detectamos tu sistema para resaltar la opción adecuada. Siempre puedes cambiar de pestaña de SO manualmente.",
     panelWinTitle: "Windows",
     panelWinP1:
       "La descarga principal es el instalador Inno Setup (EXE) generado en CI para la versión incrustada en esta web. El MSI y otros formatos están enlazados abajo.",
@@ -233,23 +407,109 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelMacP1:
       "Los binarios de macOS (tarball o TonetSetup) aparecen en GitHub Releases cuando el tag los incluye. Hasta entonces, compila desde fuente abajo. Un <code>.app</code> firmado está en la hoja de ruta.",
     macSetup: "Releases en GitHub (macOS)",
+    homeBannerTitle: "¿Listo para instalar?",
+    homeBannerLead:
+      "Elige tu sistema y formato en la página de descargas: la descarga se comporta como cualquier archivo.",
+    homeExploreTitle: "¿Más detalle antes de instalar?",
+    homeExploreLead:
+      "Ayuda sencilla, referencias técnicas, comparativa y próximos pasos.",
+    diffSectionTitle: "Qué distingue a Tonet",
+    diffSectionLead:
+      "Pensado para equipos que quieren control explícito sobre qué se ejecuta en el navegador, cómo llegan las actualizaciones y cuánta complejidad entra en tiempo de ejecución.",
+    kpi1Label: "Filosofía",
+    kpi1Strong: "Servo + shell mínima",
+    kpi2Label: "Canales",
+    kpi2Strong: "Windows + Linux",
+    kpi3Label: "Actualizaciones",
+    kpi3Strong: "URL del manifiesto",
+    c5t: "Renderizado Servo",
+    c5p:
+      "El contenido web usa el motor Servo: sin Chromium, WebKit ni CEF. Menos capas opacas entre tu política y la red.",
+    c6t: "Límites de recursos",
+    c6p:
+      "Un techo de ~1 MB evita megabytes accidentales; los fallos son claros en lugar de congelar la interfaz.",
+    c7t: "Transparencia operativa",
+    c7p:
+      "Tú decides dónde viven los instaladores y el manifiesto. Las comprobaciones de actualización no tienen que llamar a la API de releases de GitHub en el cliente.",
+    c8t: "Privacidad por defecto",
+    c8p:
+      "Menos superficie para rastreadores y SDKs frente a navegadores centrados en compatibilidad máxima.",
+    d1t: "Pila Servo auditable",
+    d1p:
+      "Servo y la hoja de ruta de Tonet están visibles en el repositorio, con barreras de calidad públicas.",
+    d2t: "Flujo de actualización predecible",
+    d2p:
+      "Los instaladores y manifiestos se sirven desde la infraestructura que configures; las actualizaciones no quedan atadas a la API de un proveedor.",
+    d3t: "Proyecto con documentación",
+    d3p:
+      "Documentación pública: instalación, arquitectura, casos de uso, comparativas y notas de versión.",
     footer1: "usetonet.com — proyecto",
-    footer2: "Landing servida con Cloudflare Workers · Motor Tonet en desarrollo activo",
+    footer2:
+      "Landing servida con Cloudflare Workers · Navegador Tonet basado en Servo en desarrollo activo",
     langSwitcher: "Idioma del sitio",
+    homeGoToDownloads: "Ir a descargas",
+    homeLinkGuide: "Uso de Tonet (lenguaje claro)",
+    homeLinkDocs: "Documentación técnica",
+    homeLinkCompare: "Comparar navegadores",
+    homeLinkRoadmap: "Hoja de ruta",
+    langOptAuto: "Automático (navegador)",
+    langOptEn: "English",
+    langOptEs: "Español",
+    langOptDe: "Deutsch",
+    langOptFr: "Français",
+    downloadSectionTitle: "Todos los canales y formatos",
+    downloadSectionLead:
+      "Opciones avanzadas: canal de release, pestañas de SO o MSI / DEB / builds alternativos.",
+    downloadHeroCta: "Obtener Tonet",
+    downloadModalTitle: "Casi listo…",
+    downloadModalLead: "Faltan segundos para usar Tonet. Sigue los pasos mientras se descarga el instalador.",
+    downloadModalStep1: "Descargar Tonet",
+    downloadModalStep2: "Ejecutar el instalador",
+    downloadModalStep3: "Abrir Tonet desde el acceso directo",
+    downloadModalRetryPrefix: "Si la descarga no empezó,",
+    downloadModalRetryLink: "pulsa aquí para reintentar",
+    downloadModalHelp: "¿Necesitas ayuda para empezar?",
+    modalCloseLabel: "Cerrar",
+    channelLabel: "Canal de release",
+    channelStable: "Última estable (recomendado)",
+    channelDev: "Última preview / desarrollo",
+    channelSpecific: "Versión concreta…",
+    versionLabel: "Versión",
+    versionStableSuffix: "estable",
+    versionPreviewSuffix: "preview",
+    channelHintStable:
+      "Builds de producción recomendados. Los nombres cortos siempre apuntan a la última versión estable.",
+    channelHintDev:
+      "Canal preview: puede incluir cambios inestables. Los nombres cortos siguen la última preview.",
+    channelHintDevNone: "Aún no hay preview publicada en el CDN.",
+    channelHintSpecific:
+      "Nombres de archivo versionados en el CDN. Elige el build que necesites.",
   },
   de: {
     metaDescription:
-      "Tonet — ein minimales Browser-Projekt von Grund auf. Leicht, schnell, bewusst. Downloads für Windows, Linux und Dokumentation.",
+      "Tonet — ein leichter Browser auf Basis der Servo-Engine. Schnell, bewusst, minimal. Downloads für Windows, Linux und Dokumentation.",
     title: "Tonet — Leicht surfen",
+    pageTitleDownload: "Tonet herunterladen — Installer und Formate",
+    metaDescriptionDownload:
+      "Tonet für Windows, Linux oder macOS herunterladen. Offizielle CDN-Builds: EXE, MSI, DEB und Release-Kanäle.",
+    pageTitleGuide: "Tonet nutzen — einfache Kurzanleitung",
+    metaDescriptionGuide:
+      "Klartext-Hilfe: Installation, Updates und Einstellungen — ohne Entwicklerjargon.",
     navAria: "Hauptnavigation",
     navDownload: "Download",
     navFeatures: "Funktionen",
-    navDocs: "Dokumentation",
+    navGuide: "Tonet nutzen",
+    navHandbook: "Handbuch",
+    navDocs: "Technische Docs",
+    navMore: "Mehr",
+    navRoadmap: "Roadmap",
+    navCompare: "Vergleich",
+    navDropdownExplore: "Entdecken",
     heroTitle: "Surfen ohne Ballast.<br />Web-Bloat zurückweisen.",
     heroLead:
-      "Tonet wird mit klarem Ziel entwickelt: hohe Geschwindigkeit, geringes Gewicht und eine eigene Engine für Wesentliches. Kein Blink, WebKit oder CEF — Sie entscheiden, was reinkommt.",
+      "Tonet nutzt die Servo-Rendering-Engine und eine schlanke Shell: Geschwindigkeit, Klarheit und bewusste Grenzen. Kein Blink, WebKit oder CEF — Sie entscheiden, was reinkommt.",
     heroDownload: "Tonet herunterladen",
-    heroDocs: "Dokumentation",
+    heroDocs: "Schnellstart",
     featuresTitle: "Auf den Punkt gebaut",
     featuresLead:
       "Ein ehrliches MVP: Netzwerk + Parser + minimaler Renderer. Tonet soll nicht das heutige Industrie-Web rendern, sondern Lesen und Suchen wieder menschlich machen.",
@@ -283,23 +543,108 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelMacP1:
       "macOS-Binärdateien (Tarball oder TonetSetup) erscheinen auf GitHub Releases, wenn der Tag sie enthält. Bis dahin aus dem Quellcode bauen (unten). Ein signiertes <code>.app</code>-Bundle ist geplant.",
     macSetup: "GitHub-Releases (macOS)",
+    homeBannerTitle: "Bereit zur Installation?",
+    homeBannerLead:
+      "OS und Format auf der Download-Seite wählen — der Download verhält sich wie jede normale Datei.",
+    homeExploreTitle: "Mehr Details vor der Installation?",
+    homeExploreLead:
+      "Einfache Hilfe, technische Docs, Vergleich und Roadmap.",
+    diffSectionTitle: "Was Tonet unterscheidet",
+    diffSectionLead:
+      "Für Teams, die steuern wollen, was im Browser läuft, wie Updates ankommen und wie viel Komplexität ins Laufzeitverhalten fließt.",
+    kpi1Label: "Ansatz",
+    kpi1Strong: "Servo + minimale Shell",
+    kpi2Label: "Plattformen",
+    kpi2Strong: "Windows + Linux",
+    kpi3Label: "Updates",
+    kpi3Strong: "Manifest-URL",
+    c5t: "Servo-Rendering",
+    c5p:
+      "Webinhalte laufen über Servo — nicht Chromium, WebKit oder CEF. Weniger undurchsichtige Schichten zwischen Policy und Netz.",
+    c6t: "Strenge Ressourcengrenzen",
+    c6p:
+      "1-MB-Seitenlimit hält große Lasten raus; Fehler sind sichtbar statt UI-Freeze.",
+    c7t: "Operative Transparenz",
+    c7p:
+      "Sie entscheiden, wo Installer und Manifeste liegen. Update-Prüfungen müssen nicht die GitHub-Releases-API im Client aufrufen.",
+    c8t: "Datenschutzbewusste Defaults",
+    c8p:
+      "Geringere Fläche für Tracker/Third-Party-SDKs als bei maximaler Web-Kompatibilität.",
+    d1t: "Prüfbare Servo-Basis",
+    d1p:
+      "Servo und die Tonet-Roadmap sind im Repository nachvollziehbar, mit veröffentlichten Quality Gates.",
+    d2t: "Vorhersehbarer Update-Flow",
+    d2p:
+      "Installer und Manifeste laufen über Infrastruktur, die Sie konfigurieren — nicht gebunden an eine Hersteller-Release-API.",
+    d3t: "Dokumentationsfokus",
+    d3p:
+      "Öffentliche Docs: Setup, Architektur, Use Cases, Vergleich, Release Notes, Pläne.",
     footer1: "usetonet.com — Projekt",
     footer2: "Landing auf Cloudflare Workers · Tonet-Engine in aktiver Entwicklung",
     langSwitcher: "Sprache der Website",
+    homeGoToDownloads: "Zur Download-Seite",
+    homeLinkGuide: "Tonet nutzen (einfach erklärt)",
+    homeLinkDocs: "Technische Dokumentation",
+    homeLinkCompare: "Browser vergleichen",
+    homeLinkRoadmap: "Roadmap",
+    langOptAuto: "Automatisch (Browser)",
+    langOptEn: "English",
+    langOptEs: "Español",
+    langOptDe: "Deutsch",
+    langOptFr: "Français",
+    downloadSectionTitle: "Alle Kanäle & Formate",
+    downloadSectionLead:
+      "Erweitert: Release-Kanal, OS-Tabs oder MSI/DEB/Alternative Builds.",
+    downloadHeroCta: "Tonet laden",
+    downloadModalTitle: "Fast geschafft…",
+    downloadModalLead: "Nur noch wenige Schritte. Folgen Sie der Anleitung, während der Installer lädt.",
+    downloadModalStep1: "Tonet herunterladen",
+    downloadModalStep2: "Installer ausführen",
+    downloadModalStep3: "Tonet über die Verknüpfung starten",
+    downloadModalRetryPrefix: "Wenn der Download nicht startet,",
+    downloadModalRetryLink: "hier erneut versuchen",
+    downloadModalHelp: "Hilfe beim Einstieg?",
+    modalCloseLabel: "Schließen",
+    channelLabel: "Release-Kanal",
+    channelStable: "Letzte stabile Version (empfohlen)",
+    channelDev: "Letzte Preview / Entwicklung",
+    channelSpecific: "Bestimmte Version…",
+    versionLabel: "Version",
+    versionStableSuffix: "stabil",
+    versionPreviewSuffix: "Preview",
+    channelHintStable:
+      "Empfohlene Produktions-Builds. Kurze Dateinamen zeigen stets die aktuelle stabile Version.",
+    channelHintDev:
+      "Preview-Kanal: kann instabile Änderungen enthalten. Kurze Namen folgen der aktuellen Preview.",
+    channelHintDevNone: "Noch keine Preview auf dem CDN veröffentlicht.",
+    channelHintSpecific:
+      "Versionsbezogene Dateinamen auf dem CDN — wählen Sie den passenden Build.",
   },
   fr: {
     metaDescription:
-      "Tonet — navigateur minimal créé from scratch. Léger, rapide et volontaire. Téléchargements Windows, Linux et documentation.",
+      "Tonet — navigateur léger fondé sur le moteur Servo. Rapide, volontaire et minimal. Téléchargements Windows, Linux et documentation.",
     title: "Tonet — Naviguer léger",
+    pageTitleDownload: "Télécharger Tonet — installateurs et formats",
+    metaDescriptionDownload:
+      "Téléchargez Tonet pour Windows, Linux ou macOS. Builds CDN officiels : EXE, MSI, DEB et canaux de publication.",
+    pageTitleGuide: "Utiliser Tonet — guide simple",
+    metaDescriptionGuide:
+      "Aide en langage clair : installer Tonet, mises à jour et réglages, sans jargon technique.",
     navAria: "Principal",
     navDownload: "Télécharger",
     navFeatures: "Fonctionnalités",
-    navDocs: "Documentation",
+    navGuide: "Utiliser Tonet",
+    navHandbook: "Manuel",
+    navDocs: "Documentation technique",
+    navMore: "Plus",
+    navRoadmap: "Feuille de route",
+    navCompare: "Comparer",
+    navDropdownExplore: "Explorer",
     heroTitle: "Naviguez sans le poids.<br />Rejetez le superflu du web.",
     heroLead:
-      "Tonet est un navigateur construit autour d’un objectif clair : vitesse, légèreté et moteur maison pour l’essentiel. Pas de Blink, WebKit ni CEF — vous contrôlez ce qui entre.",
+      "Tonet s’appuie sur le moteur de rendu Servo et une enveloppe minimale : vitesse, clarté et limites assumées. Pas de Blink, WebKit ni CEF — vous contrôlez ce qui entre.",
     heroDownload: "Télécharger Tonet",
-    heroDocs: "Lire la documentation",
+    heroDocs: "Démarrage rapide",
     featuresTitle: "Conçu pour aller à l’essentiel",
     featuresLead:
       "Un MVP honnête : réseau + parseur + rendu minimal. Tonet ne vise pas le web industriel d’aujourd’hui ; il veut rendre lecture et recherche plus humaines.",
@@ -333,15 +678,121 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelMacP1:
       "Les binaires macOS (archive ou TonetSetup) figurent sur GitHub Releases lorsque le tag les publie. Sinon, compiler depuis les sources ci-dessous. Un <code>.app</code> signé est prévu.",
     macSetup: "Releases GitHub (macOS)",
+    homeBannerTitle: "Prêt à installer ?",
+    homeBannerLead:
+      "Choisissez l’OS et le format sur la page Téléchargements — le téléchargement se comporte comme n’importe quel fichier.",
+    homeExploreTitle: "Plus de détails avant d’installer ?",
+    homeExploreLead:
+      "Aide claire, docs techniques, comparaison et feuille de route.",
+    diffSectionTitle: "Ce qui distingue Tonet",
+    diffSectionLead:
+      "Pour les équipes qui veulent maîtriser ce qui s’exécute dans le navigateur, comment arrivent les mises à jour et la complexité du runtime.",
+    kpi1Label: "Approche",
+    kpi1Strong: "Servo + enveloppe minimale",
+    kpi2Label: "Canaux",
+    kpi2Strong: "Windows + Linux",
+    kpi3Label: "Mises à jour",
+    kpi3Strong: "URL du manifeste",
+    c5t: "Rendu Servo",
+    c5p:
+      "Le contenu web passe par Servo — pas Chromium, WebKit ni CEF. Moins de couches opaques entre la politique et le réseau.",
+    c6t: "Limites de ressources",
+    c6p:
+      "Plafond ~1 Mo pour éviter les charges énormes ; les échecs sont explicites.",
+    c7t: "Transparence opérationnelle",
+    c7p:
+      "Vous choisissez où vivent les installateurs et le manifeste. Les vérifications de mise à jour n’ont pas besoin d’appeler l’API Releases GitHub côté client.",
+    c8t: "Vie privée par défaut",
+    c8p:
+      "Surface réduite pour traqueurs et SDKs par rapport au navigateur « tout compatible ».",
+    d1t: "Base Servo auditable",
+    d1p:
+      "Servo et la feuille de route Tonet restent visibles dans le dépôt, avec critères de qualité publiés.",
+    d2t: "Flux de mise à jour maîtrisé",
+    d2p:
+      "Les installateurs et manifestes transitent par l’infrastructure que vous configurez — sans être liés à l’API d’un éditeur.",
+    d3t: "Projet orienté documentation",
+    d3p:
+      "Docs publiques : installation, architecture, cas d’usage, comparaisons, notes de version, plans.",
     footer1: "usetonet.com — projet",
-    footer2: "Landing sur Cloudflare Workers · Moteur Tonet en développement actif",
+    footer2:
+      "Landing sur Cloudflare Workers · Navigateur Tonet fondé sur Servo en développement actif",
     langSwitcher: "Langue du site",
+    homeGoToDownloads: "Aller aux téléchargements",
+    homeLinkGuide: "Utiliser Tonet (langage simple)",
+    homeLinkDocs: "Documentation technique",
+    homeLinkCompare: "Comparer les navigateurs",
+    homeLinkRoadmap: "Feuille de route",
+    langOptAuto: "Auto (navigateur)",
+    langOptEn: "English",
+    langOptEs: "Español",
+    langOptDe: "Deutsch",
+    langOptFr: "Français",
+    downloadSectionTitle: "Tous les canaux et formats",
+    downloadSectionLead:
+      "Options avancées : canal de publication, onglets OS ou MSI / DEB / builds alternatifs.",
+    downloadHeroCta: "Obtenir Tonet",
+    downloadModalTitle: "Presque terminé…",
+    downloadModalLead:
+      "Encore quelques secondes pour lancer Tonet. Suivez les étapes pendant le téléchargement de l’installeur.",
+    downloadModalStep1: "Télécharger Tonet",
+    downloadModalStep2: "Lancer l’installeur",
+    downloadModalStep3: "Ouvrir Tonet depuis le raccourci",
+    downloadModalRetryPrefix: "Si le téléchargement n’a pas démarré,",
+    downloadModalRetryLink: "cliquez ici pour réessayer",
+    downloadModalHelp: "Besoin d’aide pour commencer ?",
+    modalCloseLabel: "Fermer",
+    channelLabel: "Canal de publication",
+    channelStable: "Dernière stable (recommandé)",
+    channelDev: "Dernière preview / développement",
+    channelSpecific: "Version spécifique…",
+    versionLabel: "Version",
+    versionStableSuffix: "stable",
+    versionPreviewSuffix: "preview",
+    channelHintStable:
+      "Builds de production recommandés. Les noms courts pointent toujours vers la dernière version stable.",
+    channelHintDev:
+      "Canal preview : peut contenir des changements instables. Les noms courts suivent la dernière preview.",
+    channelHintDevNone: "Aucune preview publiée sur le CDN pour l’instant.",
+    channelHintSpecific:
+      "Noms de fichiers versionnés sur le CDN. Choisissez le build dont vous avez besoin.",
   },
 };
 
+export function getNavLabels(lang: SiteLang): {
+  ariaMain: string;
+  download: string;
+  roadmap: string;
+  more: string;
+  dropdownExplore: string;
+  features: string;
+  guide: string;
+  handbook: string;
+  technicalDocs: string;
+  compare: string;
+} {
+  const L = landing[lang];
+  return {
+    ariaMain: L.navAria,
+    download: L.navDownload,
+    roadmap: L.navRoadmap,
+    more: L.navMore,
+    dropdownExplore: L.navDropdownExplore,
+    features: L.navFeatures,
+    guide: L.navGuide,
+    handbook: L.navHandbook,
+    technicalDocs: L.navDocs,
+    compare: L.navCompare,
+  };
+}
+
 function setHtml(id: string, html: string): void {
   const el = document.getElementById(id);
-  if (el) el.innerHTML = html;
+  if (!el) return;
+  el.innerHTML = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["a", "strong", "code", "br", "em", "b", "i", "span"],
+    ALLOWED_ATTR: ["href", "target", "rel", "class"],
+  });
 }
 
 function setText(id: string, text: string): void {
@@ -349,19 +800,25 @@ function setText(id: string, text: string): void {
   if (el) el.textContent = text;
 }
 
-export function applyLandingLocale(lang: SiteLang): void {
+export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "download" | "guide" }): void {
   const L = landing[lang];
+  const page = opts?.page ?? "home";
   document.documentElement.lang = lang;
-  document.title = L.title;
+  document.title =
+    page === "download" ? L.pageTitleDownload : page === "guide" ? L.pageTitleGuide : L.title;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-  if (meta) meta.content = L.metaDescription;
+  if (meta) {
+    meta.content =
+      page === "download"
+        ? L.metaDescriptionDownload
+        : page === "guide"
+          ? L.metaDescriptionGuide
+          : L.metaDescription;
+  }
 
   const nav = document.getElementById("site-nav-links");
   if (nav) nav.setAttribute("aria-label", L.navAria);
 
-  setText("nav-download", L.navDownload);
-  setText("nav-features", L.navFeatures);
-  setText("nav-docs", L.navDocs);
   setHtml("hero-title", L.heroTitle);
   setText("hero-lead", L.heroLead);
   setText("hero-download", L.heroDownload);
@@ -376,6 +833,32 @@ export function applyLandingLocale(lang: SiteLang): void {
   setText("card-updates-p", L.c3p);
   setText("card-opensource-t", L.c4t);
   setText("card-opensource-p", L.c4p);
+  setText("card-engine-t", L.c5t);
+  setText("card-engine-p", L.c5p);
+  setText("card-strict-t", L.c6t);
+  setText("card-strict-p", L.c6p);
+  setText("card-ops-t", L.c7t);
+  setText("card-ops-p", L.c7p);
+  setText("card-privacy-t", L.c8t);
+  setText("card-privacy-p", L.c8p);
+  setText("home-banner-title", L.homeBannerTitle);
+  setText("home-banner-lead", L.homeBannerLead);
+  setText("home-explore-title", L.homeExploreTitle);
+  setText("home-explore-lead", L.homeExploreLead);
+  setText("diff-section-title", L.diffSectionTitle);
+  setText("diff-section-lead", L.diffSectionLead);
+  setText("kpi-1-label", L.kpi1Label);
+  setText("kpi-1-strong", L.kpi1Strong);
+  setText("kpi-2-label", L.kpi2Label);
+  setText("kpi-2-strong", L.kpi2Strong);
+  setText("kpi-3-label", L.kpi3Label);
+  setText("kpi-3-strong", L.kpi3Strong);
+  setText("diff-1-t", L.d1t);
+  setText("diff-1-p", L.d1p);
+  setText("diff-2-t", L.d2t);
+  setText("diff-2-p", L.d2p);
+  setText("diff-3-t", L.d3t);
+  setText("diff-3-p", L.d3p);
   setText("download-title", L.downloadTitle);
   setText("download-lead", L.downloadLead);
   setText("panel-win-h3", L.panelWinTitle);
@@ -397,6 +880,88 @@ export function applyLandingLocale(lang: SiteLang): void {
   setText("footer-line2", L.footer2);
   const swLabel = document.getElementById("lang-switcher-label");
   if (swLabel) swLabel.textContent = L.langSwitcher;
+
+  applyLanguageSelectLabels(lang);
+
+  const goDl = document.getElementById("home-go-download");
+  if (goDl) goDl.textContent = L.homeGoToDownloads;
+  const lkGuide = document.getElementById("home-link-guide");
+  if (lkGuide) lkGuide.textContent = L.homeLinkGuide;
+  const lkDocs = document.getElementById("home-link-docs");
+  if (lkDocs) lkDocs.textContent = L.homeLinkDocs;
+  const lkCmp = document.getElementById("home-link-compare");
+  if (lkCmp) lkCmp.textContent = L.homeLinkCompare;
+  const lkRm = document.getElementById("home-link-roadmap");
+  if (lkRm) lkRm.textContent = L.homeLinkRoadmap;
+
+  const dlSecT = document.getElementById("download-section-title");
+  if (dlSecT) dlSecT.textContent = L.downloadSectionTitle;
+  const dlSecL = document.getElementById("download-section-lead");
+  if (dlSecL) dlSecL.textContent = L.downloadSectionLead;
+  const dlHero = document.getElementById("download-primary");
+  if (dlHero) dlHero.textContent = L.downloadHeroCta;
+
+  const chLab = document.querySelector<HTMLLabelElement>('label[for="channel-select"]');
+  if (chLab) chLab.textContent = L.channelLabel;
+  const verLab = document.querySelector<HTMLLabelElement>('label[for="version-select"]');
+  if (verLab) verLab.textContent = L.versionLabel;
+
+  const chSel = document.getElementById("channel-select") as HTMLSelectElement | null;
+  if (chSel) {
+    const o0 = chSel.querySelector('option[value="stable"]');
+    const o1 = chSel.querySelector('option[value="development"]');
+    const o2 = chSel.querySelector('option[value="specific"]');
+    if (o0) o0.textContent = L.channelStable;
+    if (o1) o1.textContent = L.channelDev;
+    if (o2) o2.textContent = L.channelSpecific;
+  }
+
+  setText("modal-title", L.downloadModalTitle);
+  const modalLead = document.getElementById("modal-lead");
+  if (modalLead) modalLead.textContent = L.downloadModalLead;
+  setText("modal-step-1", L.downloadModalStep1);
+  setText("modal-step-2", L.downloadModalStep2);
+  setText("modal-step-3", L.downloadModalStep3);
+  const retryPre = document.getElementById("modal-retry-prefix");
+  if (retryPre) retryPre.textContent = L.downloadModalRetryPrefix;
+  const retryL = document.getElementById("modal-retry-link");
+  if (retryL) retryL.textContent = L.downloadModalRetryLink;
+  const modalHelp = document.getElementById("modal-help-link");
+  if (modalHelp) modalHelp.textContent = L.downloadModalHelp;
+  const closeBtn = document.getElementById("modal-close-btn");
+  if (closeBtn) closeBtn.setAttribute("aria-label", L.modalCloseLabel);
+}
+
+export function applyLanguageSelectLabels(lang: SiteLang): void {
+  const L = landing[lang];
+  const sel = document.getElementById("site-lang") as HTMLSelectElement | null;
+  if (!sel) return;
+  for (const opt of sel.options) {
+    if (opt.value === "auto") opt.textContent = L.langOptAuto;
+    else if (opt.value === "en") opt.textContent = L.langOptEn;
+    else if (opt.value === "es") opt.textContent = L.langOptEs;
+    else if (opt.value === "de") opt.textContent = L.langOptDe;
+    else if (opt.value === "fr") opt.textContent = L.langOptFr;
+  }
+}
+
+export function getDownloadChannelHints(lang: SiteLang): {
+  stable: string;
+  development: string;
+  developmentNone: string;
+  specific: string;
+  versionStable: string;
+  versionPreview: string;
+} {
+  const L = landing[lang];
+  return {
+    stable: L.channelHintStable,
+    development: L.channelHintDev,
+    developmentNone: L.channelHintDevNone,
+    specific: L.channelHintSpecific,
+    versionStable: L.versionStableSuffix,
+    versionPreview: L.versionPreviewSuffix,
+  };
 }
 
 interface DocsStrings {
@@ -430,14 +995,14 @@ interface DocsStrings {
 const docs: Record<SiteLang, DocsStrings> = {
   en: {
     metaDescription: "Tonet documentation: install, updates, code signing, and packaging.",
-    title: "Documentation — Tonet",
+    title: "Technical documentation — Tonet",
     navHome: "Home",
     navDownload: "Download",
-    h1: "Documentation",
-    lead: "Short guides for users and maintainers.",
+    h1: "Technical documentation",
+    lead: "For packaging, signing, and maintainers. Everyday (non-technical) help: <a href=\"/guide.html\">Using Tonet</a>.",
     installH: "Installation",
     installP:
-      "See the <a href=\"/#download\">downloads section</a>. The landing reads <code>version.json</code> (built from <code>crates/tonet</code>) and points all download buttons to your configured CDN base URL. MSI/EXE/DEB/tarball links are generated from that CDN path.",
+      "See the <a href=\"/download.html\">download page</a>. The site reads <code>version.json</code> (built from <code>crates/tonet</code>) and points download buttons to your configured CDN base URL. MSI/EXE/DEB/tarball links are generated from that path.",
     updatesH: "In-browser updates",
     updatesP:
       "Tonet checks your update manifest URL (it does not install binaries for you). By default it checks on startup. In <strong>Settings (⚙)</strong> you can choose:",
@@ -466,14 +1031,14 @@ const docs: Record<SiteLang, DocsStrings> = {
   es: {
     metaDescription:
       "Documentación de Tonet: instalación, actualizaciones, firma de código y empaquetado.",
-    title: "Documentación — Tonet",
+    title: "Documentación técnica — Tonet",
     navHome: "Inicio",
     navDownload: "Descargar",
-    h1: "Documentación",
-    lead: "Guías breves para usuarios y mantenedores del proyecto.",
+    h1: "Documentación técnica",
+    lead: "Para empaquetado, firma y mantenedores. Ayuda cotidiana (sencilla): <a href=\"/guide.html\">Uso de Tonet</a>.",
     installH: "Instalación",
     installP:
-      "Consulta la <a href=\"/#download\">sección de descargas</a>. La landing lee <code>version.json</code> (generado desde <code>crates/tonet</code>) y apunta todos los botones a la URL base de tu CDN configurada. Los enlaces MSI/EXE/DEB/tarball se generan desde esa base.",
+      "Consulta la <a href=\"/download.html\">página de descargas</a>. El sitio lee <code>version.json</code> (generado desde <code>crates/tonet</code>) y apunta los botones a la URL base de tu CDN. Los enlaces MSI/EXE/DEB/tarball se generan desde esa base.",
     updatesH: "Actualizaciones en el navegador",
     updatesP:
       "Tonet consulta tu URL de manifiesto de actualizaciones (sin instalar binarios por ti). Por defecto comprueba al iniciar. En <strong>Ajustes (⚙)</strong> puedes elegir:",
@@ -501,14 +1066,14 @@ const docs: Record<SiteLang, DocsStrings> = {
   },
   de: {
     metaDescription: "Tonet-Dokumentation: Installation, Updates, Codesignatur und Packaging.",
-    title: "Dokumentation — Tonet",
+    title: "Technische Dokumentation — Tonet",
     navHome: "Start",
     navDownload: "Download",
-    h1: "Dokumentation",
-    lead: "Kurze Anleitungen für Nutzer und Maintainer.",
+    h1: "Technische Dokumentation",
+    lead: "Für Packaging, Signatur und Betrieb. Einfache Hilfe für den Alltag: <a href=\"/guide.html\">Tonet nutzen</a>.",
     installH: "Installation",
     installP:
-      "Siehe den <a href=\"/#download\">Download-Bereich</a>. Die Landing liest <code>version.json</code> (aus <code>crates/tonet</code>) und generiert alle Download-Links über die konfigurierte CDN-Basis-URL.",
+      "Siehe die <a href=\"/download.html\">Download-Seite</a>. Die Site liest <code>version.json</code> (aus <code>crates/tonet</code>) und erzeugt Download-Links über die konfigurierte CDN-Basis-URL.",
     updatesH: "Updates in der App",
     updatesP:
       "Tonet nutzt Ihre Update-Manifest-URL (installiert keine Binärdateien für Sie). Standard: Prüfung beim Start. Unter <strong>Einstellungen (⚙)</strong> wählen Sie:",
@@ -537,14 +1102,14 @@ const docs: Record<SiteLang, DocsStrings> = {
   fr: {
     metaDescription:
       "Documentation Tonet : installation, mises à jour, signature de code et packaging.",
-    title: "Documentation — Tonet",
+    title: "Documentation technique — Tonet",
     navHome: "Accueil",
     navDownload: "Télécharger",
-    h1: "Documentation",
-    lead: "Guides courts pour les utilisateurs et les mainteneurs.",
+    h1: "Documentation technique",
+    lead: "Pour le packaging, la signature et l’exploitation. Aide du quotidien (simple) : <a href=\"/guide.html\">Utiliser Tonet</a>.",
     installH: "Installation",
     installP:
-      "Voir la <a href=\"/#download\">section téléchargements</a>. La page lit <code>version.json</code> (généré depuis <code>crates/tonet</code>) et génère les liens MSI/EXE/DEB/tarball depuis votre base CDN configurée.",
+      "Voir la <a href=\"/download.html\">page Téléchargements</a>. Le site lit <code>version.json</code> (généré depuis <code>crates/tonet</code>) et génère les liens MSI/EXE/DEB/tarball depuis votre base CDN.",
     updatesH: "Mises à jour dans le navigateur",
     updatesP:
       "Tonet interroge votre URL de manifeste de mises à jour (sans installer les binaires à votre place). Par défaut : vérification au lancement. Dans <strong>Réglages (⚙)</strong> vous pouvez choisir :",
@@ -574,16 +1139,12 @@ const docs: Record<SiteLang, DocsStrings> = {
 
 export function applyDocsLocale(lang: SiteLang): void {
   const D = docs[lang];
-  const L = landing[lang];
   document.documentElement.lang = lang;
   document.title = D.title;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
   if (meta) meta.content = D.metaDescription;
-  setText("nav-download", D.navDownload);
-  setText("nav-features", L.navFeatures);
-  setText("nav-docs", L.navDocs);
   setText("docs-h1", D.h1);
-  setText("docs-lead", D.lead);
+  setHtml("docs-lead", D.lead);
   setText("docs-install-h", D.installH);
   setHtml("docs-install-p", D.installP);
   setText("docs-updates-h", D.updatesH);
@@ -632,7 +1193,8 @@ export function wireCopyButtons(lang: SiteLang): void {
   });
 }
 
-export function wireLanguageSwitcher(_resolvedLang: SiteLang): void {
+export function wireLanguageSwitcher(resolvedLang: SiteLang): void {
+  applyLanguageSelectLabels(resolvedLang);
   const sel = document.getElementById("site-lang") as HTMLSelectElement | null;
   if (!sel) return;
   sel.value = getStoredSiteLang() ?? "auto";
