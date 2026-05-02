@@ -1,0 +1,65 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { LanguageBoot } from "../components/LanguageBoot";
+---
+
+<BaseLayout title="Roadmap — Tonet" description="Tonet roadmap: phases, milestones, and tracking." page="roadmap">
+  <div class="roadmap-intro">
+    <h1 class="mb-2 text-4xl">Roadmap</h1>
+    <p class="lead">
+      Phases below mirror how engineering tracks work in public: quality gates in <code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code>, CI on main, and CDN-backed
+      releases. Dates are intentionally not faux-precision — milestones ship when gates pass.
+    </p>
+  </div>
+
+  <div class="roadmap-track">
+    <section class="roadmap-phase">
+      <div class="roadmap-phase-badge">Phase — Now</div>
+      <div>
+        <h2>Ship &amp; operate</h2>
+        <ul>
+          <li>Stable installers (Windows MSI/Inno + Linux .deb) published via CI and CDN manifest v2.</li>
+          <li>Servo integration smoke paths repeatable on Windows (LLVM/bindgen, ANGLE DLLs next to exe).</li>
+          <li>Landing + docs portal aligned with operator-runbooks (this site).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="roadmap-phase">
+      <div class="roadmap-phase-badge">Phase — Next</div>
+      <div>
+        <h2>Compatibility &amp; shell</h2>
+        <ul>
+          <li>Grow HTML/CSS coverage toward documented conformance milestones (see engine checklist).</li>
+          <li>Browser chrome ergonomics: tabs, navigation, and settings parity with Tonet’s minimalist contract.</li>
+          <li>Packaging parity (macOS signing track, optional AppImage evaluation).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="roadmap-phase">
+      <div class="roadmap-phase-badge">Phase — Later</div>
+      <div>
+        <h2>Depth &amp; scale</h2>
+        <ul>
+          <li>Performance budgets and measurable regressions in CI (beyond smoke).</li>
+          <li>Broader platform coverage where Servo + packaging support aligns.</li>
+          <li>Security assurance processes spelled alongside feature growth.</li>
+        </ul>
+      </div>
+    </section>
+
+    <article class="card mt-2">
+      <h2 class="mt-0">Authoritative detail</h2>
+      <p class="m-0 text-[#9aa3b5]">
+        Full milestones: <code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code>. Integration discipline: <code
+          class="rounded bg-white/[0.06] px-1">docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
+      </p>
+    </article>
+  </div>
+
+  <p class="mx-auto max-w-[1120px] px-6 pb-10 text-center text-[#9aa3b5]">
+    <a class="text-[#4f8cff] hover:underline" href="/docs.html">Open full docs portal</a>
+  </p>
+  <LanguageBoot client:load />
+</BaseLayout>

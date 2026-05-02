@@ -58,10 +58,10 @@ pub fn app_name(_: Locale) -> &'static str {
 
 pub fn address_hint(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "https://ejemplo.com",
-        Locale::De => "https://beispiel.de",
-        Locale::Fr => "https://exemple.fr",
-        Locale::En => "https://example.com",
+        Locale::Es => "Busca en Tonet o escribe una URL",
+        Locale::De => "Tonet durchsuchen oder URL eingeben",
+        Locale::Fr => "Rechercher dans Tonet ou saisir une URL",
+        Locale::En => "Search Tonet or type a URL",
     }
 }
 

@@ -1,0 +1,193 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { DocsBoot } from "../components/DocsBoot";
+---
+
+<BaseLayout
+  title="Documentation — Tonet"
+  description="Tonet documentation: install, updates, code signing, and packaging."
+  page="docs"
+>
+  <div class="docs-shell">
+    <aside class="docs-sidebar" aria-label="On this page">
+      <p class="docs-sidebar-title">On this page</p>
+      <nav>
+        <a href="#docs-overview">Overview</a>
+        <a href="#docs-install-h">Installation</a>
+        <a href="#docs-updates-h">In-browser updates</a>
+        <a href="#docs-sign-h">Authenticode (Windows)</a>
+        <a href="#docs-deb-h">Debian (.deb)</a>
+        <a href="#docs-app-h">AppImage</a>
+        <a href="#docs-cf-h">Deploy landing</a>
+        <a href="#ops-docs">CDN variables</a>
+        <a href="#product-docs">Use cases</a>
+        <a href="#engineering-docs">Engineering</a>
+      </nav>
+    </aside>
+
+    <main class="docs-main section py-10 pb-14">
+      <h1 id="docs-h1" class="text-4xl">Documentation</h1>
+      <p class="lead" id="docs-lead">Guides for users, operators, and contributors — structured like a product docs portal.</p>
+
+      <article class="card mb-5" id="docs-overview">
+        <h2 class="mt-0">How this portal is organized</h2>
+        <p class="leading-relaxed text-[#9aa3b5]">
+          Use the <strong>left outline</strong> (desktop) or jump links below on mobile. Sections follow the usual docs mental model: install → updates → packaging
+          → deploy → audience → engineering tracks — similar to Docusaurus / GitBook navigation patterns, without pulling in a second SPA framework.
+        </p>
+      </article>
+
+      <article class="card mb-5">
+        <h2 class="mt-0">Documentation map</h2>
+        <p class="text-[#9aa3b5]">Deep guides live beside the repo; this page is the entry hub with anchors into each topic.</p>
+        <div class="grid">
+          <a class="card no-underline hover:opacity-90" href="#product-docs">
+            <h3 class="mt-0">Product and use cases</h3>
+            <p>Target users, deployment scenarios, and comparison framing.</p>
+          </a>
+          <a class="card no-underline hover:opacity-90" href="#ops-docs">
+            <h3 class="mt-0">Operations and delivery</h3>
+            <p>CDN, release assets, update manifest, and signing flow.</p>
+          </a>
+          <a class="card no-underline hover:opacity-90" href="#engineering-docs">
+            <h3 class="mt-0">Engineering</h3>
+            <p>Architecture, implementation phases, and future work tracking.</p>
+          </a>
+        </div>
+      </article>
+
+      <article class="card mb-5">
+        <h2 class="mt-0" id="docs-install-h">Installation</h2>
+        <p id="docs-install-p">
+          See the <a class="text-[#4f8cff] hover:underline" href="/download.html">download page</a>. The landing reads <code class="rounded bg-white/[0.06] px-1"
+            >version.json</code> (built from <code class="rounded bg-white/[0.06] px-1">crates/tonet</code> at build time) and points buttons at CDN filenames. MSI and
+          tag-scoped links use versioned paths on the same CDN when published.
+        </p>
+      </article>
+
+      <article class="card mb-5">
+        <h2 class="mt-0" id="docs-updates-h">In-browser updates</h2>
+        <p id="docs-updates-p">
+          Tonet checks your update manifest endpoint (it does not install binaries for you). By default it checks on startup. In
+          <strong>Settings (⚙)</strong> you can choose:
+        </p>
+        <ul class="leading-relaxed text-[#9aa3b5]">
+          <li id="docs-updates-li1"><strong>On startup only</strong> — one check when the app opens.</li>
+          <li id="docs-updates-li2"><strong>Automatic (24 h)</strong> — repeats while Tonet is running.</li>
+          <li id="docs-updates-li3"><strong>Manual only</strong> — only with “Check now”.</li>
+        </ul>
+        <p id="docs-updates-p2">
+          Settings are stored in the system config directory (for example <code class="rounded bg-white/[0.06] px-1">%APPDATA%\tonet</code> on Windows).
+        </p>
+      </article>
+
+      <article class="card mb-5">
+        <h2 class="mt-0" id="docs-sign-h">Authenticode signing (Windows)</h2>
+        <p id="docs-sign-p">
+          For SmartScreen trust, sign MSI and EXE with a code-signing certificate (SHA-256) on Windows using <code class="rounded bg-white/[0.06] px-1"
+            >signtool</code> from the Windows SDK.
+        </p>
+        <div class="code-block pt-11">
+          <button type="button" class="copy-btn" data-copy="sign-msi">Copy</button>
+          <pre id="sign-msi">signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-x.x.x-x64.msi
+signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-Setup-x.x.x-x64.exe</pre>
+        </div>
+        <p class="text-[0.9rem] text-[#9aa3b5]" id="docs-sign-foot">
+          In CI, store the PFX in an encrypted secret and use a self-hosted runner or an action that invokes <code class="rounded bg-white/[0.06] px-1"
+            >signtool</code>. Never commit certificates to the repository.
+        </p>
+      </article>
+
+      <article class="card mb-5">
+        <h2 class="mt-0" id="docs-deb-h">Debian package (.deb)</h2>
+        <p id="docs-deb-p">
+          The script <code class="rounded bg-white/[0.06] px-1">packaging/debian/build-deb.sh</code> builds a <code class="rounded bg-white/[0.06] px-1">.deb</code> from <code
+            class="rounded bg-white/[0.06] px-1">cargo build --release -p tonet</code>. Requires <code class="rounded bg-white/[0.06] px-1">dpkg-deb</code> (Linux).
+        </p>
+        <div class="code-block pt-11">
+          <button type="button" class="copy-btn" data-copy="deb-build">Copy</button>
+          <pre id="deb-build">cargo build --release -p tonet
+./packaging/debian/build-deb.sh</pre>
+        </div>
+      </article>
+
+      <article class="card mb-5">
+        <h2 class="mt-0" id="docs-app-h">AppImage (Linux)</h2>
+        <p id="docs-app-p">
+          Shipping a universal AppImage requires bundling GTK/GL dependencies — consider
+          <a class="text-[#4f8cff] hover:underline" href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + the GTK plugin
+          once the binary stabilizes. A dedicated workflow may land in a future release.
+        </p>
+      </article>
+
+      <article class="card mb-5">
+        <h2 class="mt-0" id="docs-cf-h">Deploy this landing (Cloudflare Workers)</h2>
+        <p id="docs-cf-p1">From the <code class="rounded bg-white/[0.06] px-1">web/landing</code> directory:</p>
+        <div class="code-block pt-11">
+          <button type="button" class="copy-btn" data-copy="cf-deploy">Copy</button>
+          <pre id="cf-deploy">npm ci
+npm run deploy</pre>
+        </div>
+        <p class="text-[#9aa3b5]" id="docs-cf-p2">
+          Set <code class="rounded bg-white/[0.06] px-1">CLOUDFLARE_API_TOKEN</code> and <code class="rounded bg-white/[0.06] px-1">CLOUDFLARE_ACCOUNT_ID</code> in
+          GitHub Actions, or run <code class="rounded bg-white/[0.06] px-1">wrangler login</code> locally.
+        </p>
+      </article>
+
+      <article class="card mb-5" id="ops-docs">
+        <h2 class="mt-0">CDN configuration (required variables)</h2>
+        <p class="text-[#9aa3b5]">To stop depending on GitHub releases endpoints, define CDN URLs in the landing build and in Tonet runtime.</p>
+        <div class="code-block pt-11">
+          <button type="button" class="copy-btn" data-copy="cdn-env">Copy</button>
+          <pre id="cdn-env"># web/landing/.env(.production)
+TONET_CDN_BASE_URL=https://downloads.example.com
+TONET_CDN_VERSION_PATH=/version.json
+TONET_SITE_DOWNLOADS_PAGE=https://downloads.example.com/
+
+# rust build environment for Tonet app updates
+TONET_UPDATE_MANIFEST_URL=https://downloads.example.com/version.json
+TONET_DOWNLOADS_PAGE_URL=https://downloads.example.com/</pre>
+        </div>
+      </article>
+
+      <article class="card mb-5" id="product-docs">
+        <h2 class="mt-0">Use cases and audience</h2>
+        <ul class="leading-relaxed text-[#9aa3b5]">
+          <li>Minimal browsing environments where deterministic behavior matters.</li>
+          <li>Teams that need transparent browser internals and release control.</li>
+          <li>Operators that prefer CDN-governed artifacts and update manifests.</li>
+          <li>Power users who want a focused browser without broad platform noise.</li>
+        </ul>
+      </article>
+
+      <article class="card mb-5" id="engineering-docs">
+        <h2 class="mt-0">Implementation and future work</h2>
+        <ul class="leading-relaxed text-[#9aa3b5]">
+          <li><strong>Current:</strong> Servo integration foundation, policy modules, and CI coverage.</li>
+          <li><strong>Next:</strong> broader web compatibility layers and stronger packaging parity.</li>
+          <li><strong>Planned:</strong> deeper conformance targets, perf budgets, and expanded platform support.</li>
+        </ul>
+        <p class="text-[#9aa3b5]">
+          For detailed milestones, consult <code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code> and <code
+            class="rounded bg-white/[0.06] px-1">docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
+        </p>
+        <p class="text-[#9aa3b5]">Structured docs source (MkDocs-style): <code class="rounded bg-white/[0.06] px-1">web/landing/docs-site</code>.</p>
+      </article>
+
+      <article class="card">
+        <h2 class="mt-0">Additional pages</h2>
+        <p class="text-[#9aa3b5]">
+          Explore:
+          <a class="text-[#4f8cff] hover:underline" href="/guide.html">Using Tonet</a>, <a class="text-[#4f8cff] hover:underline" href="/handbook.html">Handbook</a>, <a
+            class="text-[#4f8cff] hover:underline"
+            href="/compare.html">Compare</a>, and <a class="text-[#4f8cff] hover:underline" href="/roadmap.html">Roadmap</a>.
+        </p>
+      </article>
+
+      <p class="mt-10 text-center text-[#9aa3b5]">
+        <a class="text-[#4f8cff] hover:underline" id="docs-footer-back" href="/">← Back to home</a>
+      </p>
+    </main>
+  </div>
+  <DocsBoot client:load />
+</BaseLayout>

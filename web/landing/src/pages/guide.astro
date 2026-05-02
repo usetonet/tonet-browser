@@ -1,0 +1,47 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { GuideBoot } from "../components/GuideBoot";
+---
+
+<BaseLayout
+  title="Using Tonet"
+  description="Using Tonet in plain language: install, updates, and everyday tips."
+  page="guide"
+>
+  <main class="section pt-10">
+    <h1 class="mb-2 text-4xl">Using Tonet</h1>
+    <p class="lead">
+      This page is for everyday users—no packaging jargon, no CI pipelines. Developers looking for signing scripts and manifests should
+      open <a class="text-[#4f8cff] hover:underline" href="/docs.html">Technical documentation</a> instead.
+    </p>
+
+    <article class="mb-4 card">
+      <h2 class="mt-0">Install Tonet</h2>
+      <p class="leading-[1.7] text-[#9aa3b5]">
+        Go to <a class="text-[#4f8cff] hover:underline" href="/download.html">Downloads</a>. Your OS tab is highlighted automatically: use the orange button to fetch the installer from our CDN while you stay on the page. When the file finishes, run it like any other desktop app.
+      </p>
+    </article>
+
+    <article class="mb-4 card">
+      <h2 class="mt-0">Stay up to date</h2>
+      <p class="leading-[1.7] text-[#9aa3b5]">
+        Tonet can check for updates from the official manifest. Open <strong>Settings</strong> (gear icon) and choose how often you want it to check—on launch,
+        every day, or only when you tap “Check now”. Tonet tells you when a build is ready; you choose when to download it.
+      </p>
+    </article>
+
+    <article class="mb-4 card">
+      <h2 class="mt-0">Need more depth?</h2>
+      <ul class="leading-[1.8] text-[#9aa3b5]">
+        <li><a class="text-[#4f8cff] hover:underline" href="/handbook.html">Handbook</a> — product framing and extended topics.</li>
+        <li><a class="text-[#4f8cff] hover:underline" href="/docs.html">Technical docs</a> — signing, Debian packages, deployment.</li>
+        <li><a class="text-[#4f8cff] hover:underline" href="/compare.html">Compare</a> — how Tonet differs from mainstream browsers.</li>
+      </ul>
+    </article>
+
+    <p class="mt-8 text-center text-[#9aa3b5]">
+      <a class="text-[#4f8cff] hover:underline" href="/">← Back to home</a>
+    </p>
+  </main>
+  <GuideBoot client:load />
+</BaseLayout>
