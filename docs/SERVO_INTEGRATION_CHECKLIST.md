@@ -292,3 +292,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **Policy + matrix:** Windows default = **in-process** Servo embed (readback → egui); optional **`TONET_SERVO_WIN32_POPUP=1`** legacy owned popup. Aligns with `TONET_VISION.md` §13 and `runtime_win.rs` module docs. |
 | 2026-05-02 | **B2:** `chrome/ids.rs` centralizes stable `egui::Id` values for toolbar, tab cells, and **+** new-tab; unit test locks string names. |
 | 2026-05-02 | **A8:** `download_heuristic` tests — `HEAD` probe excluded on redirect / subresource / `POST`; `attachment` path segment (case-insensitive). |
+| 2026-05-02 | **A8:** `servo_engine::url_path` — deep trailing `/`, `..` normalization, percent-encoded last segment (raw `path_segments` string). |
