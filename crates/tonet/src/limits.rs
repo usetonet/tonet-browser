@@ -35,3 +35,24 @@ impl Default for EngineLimits {
         Self::STANDARD
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::EngineLimits;
+
+    #[test]
+    fn standard_matches_documented_mvp_defaults() {
+        let s = EngineLimits::STANDARD;
+        assert_eq!(s.max_document_bytes, 1_000_000);
+        assert_eq!(s.max_favicon_bytes, 512_000);
+        assert_eq!(s.http_request_timeout_secs, 45);
+        assert_eq!(s.favicon_request_timeout_secs, 8);
+        assert_eq!(s.max_http_redirects, 10);
+        assert_eq!(s.max_stylesheets_per_document, 16);
+    }
+
+    #[test]
+    fn default_matches_standard() {
+        assert_eq!(EngineLimits::default(), EngineLimits::STANDARD);
+    }
+}
