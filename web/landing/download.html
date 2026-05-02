@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Download Tonet for Windows, Linux, or macOS. Official CDN installers."
+    />
+    <title>Download Tonet</title>
+    <link rel="icon" href="/tonet.svg" type="image/svg+xml" />
+    <script type="module" src="/src/download.ts"></script>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="nav-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Tonet</span>
+        </a>
+        <nav class="nav-links" id="site-nav-links" aria-label="Main">
+          <a id="nav-download" href="/download.html">Download</a>
+          <a id="nav-features" href="/#features">Features</a>
+          <a id="nav-guide" href="/guide.html">Using Tonet</a>
+          <a href="/compare.html">Compare</a>
+          <a href="/roadmap.html">Roadmap</a>
+          <a id="nav-handbook" href="/handbook.html">Handbook</a>
+          <a id="nav-docs" href="/docs.html">Technical docs</a>
+          <a href="https://github.com/usetonet/tonet-browser" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="section download-page-hero">
+        <span class="hero-watermark" aria-hidden="true">tonet</span>
+        <span class="pill" id="version-pill">Current project version: …</span>
+        <h1 id="download-title">Download Tonet</h1>
+        <p class="lead" id="download-lead">
+          We highlight the option that matches your system. Use the big button to fetch the installer from our CDN—you stay on this
+          page while it downloads.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary download-cta-orange" id="download-primary" href="#">Get Tonet</a>
+        </div>
+        <p class="detected-badge" id="os-detected" hidden></p>
+      </section>
+
+      <div id="download-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-card">
+          <button type="button" class="modal-close" aria-label="Close dialog">×</button>
+          <h2 id="modal-title">Almost there…</h2>
+          <p class="modal-lead">You’re seconds away from running Tonet. Follow the steps while the installer downloads.</p>
+          <ol class="modal-steps">
+            <li><span class="step-num">1</span> Download Tonet</li>
+            <li><span class="step-num">2</span> Run the installer</li>
+            <li><span class="step-num">3</span> Open Tonet from the shortcut</li>
+          </ol>
+          <p class="modal-retry">
+            If the download didn’t start,
+            <a href="#" id="modal-retry-link">click here to try again</a>.
+          </p>
+          <p class="modal-help"><a id="modal-help-link" href="/guide.html">Need help getting started?</a></p>
+        </div>
+      </div>
+
+      <section class="section" id="download-options">
+        <h2 class="download-section-h2">All channels &amp; formats</h2>
+        <p class="lead">
+          Advanced options: pick a release channel, switch OS tabs, or grab MSI / DEB / alternate builds.
+        </p>
+        <div class="download-channel card" id="download-channel-wrap">
+          <div class="download-channel-row">
+            <label class="download-channel-label" for="channel-select">Release channel</label>
+            <select id="channel-select" class="channel-select" aria-describedby="channel-hint">
+              <option value="stable">Latest stable (recommended)</option>
+              <option value="development">Latest preview / development</option>
+              <option value="specific">Specific version…</option>
+            </select>
+          </div>
+          <div class="download-channel-row" id="version-row" hidden>
+            <label class="download-channel-label" for="version-select">Version</label>
+            <select id="version-select" class="channel-select"></select>
+          </div>
+          <p class="channel-hint" id="channel-hint"></p>
+        </div>
+        <div class="os-tabs" role="tablist" aria-label="Operating system">
+          <button type="button" class="os-tab" data-os="windows" role="tab" aria-selected="false">Windows</button>
+          <button type="button" class="os-tab" data-os="linux" role="tab" aria-selected="false">Linux</button>
+          <button type="button" class="os-tab" data-os="macos" role="tab" aria-selected="false">macOS</button>
+        </div>
+
+        <div id="panel-windows" class="os-panel" role="tabpanel">
+          <h3 id="panel-win-h3">Windows</h3>
+          <p id="panel-win-p1">
+            Primary download is the CI-built Inno Setup installer (EXE) for the version embedded on this site. MSI and other formats are linked below.
+          </p>
+          <p>
+            <a class="btn btn-primary" id="win-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >Download Tonet (Windows)</a
+            >
+          </p>
+          <p style="margin-top: 12px">
+            <a class="btn btn-ghost" id="win-msi" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >MSI (x64)</a
+            >
+            &nbsp;
+            <a class="btn btn-ghost" id="win-exe" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >Inno Setup EXE (x64)</a
+            >
+          </p>
+          <p style="color: var(--muted); font-size: 0.9rem" id="panel-win-foot">
+            Stable downloads use short names on the CDN (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) that always track the latest stable release. Choose “Specific version” for an exact build.
+          </p>
+        </div>
+
+        <div id="panel-linux" class="os-panel" role="tabpanel">
+          <h3 id="panel-linux-h3">Linux</h3>
+          <p id="panel-linux-p1">
+            Primary download is the CI-built <code>.deb</code> for amd64 (Debian/Ubuntu) matching the version embedded on this site. Other layouts and source builds are below.
+          </p>
+          <p>
+            <a class="btn btn-primary" id="linux-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >Download Tonet (Linux)</a
+            >
+          </p>
+          <p style="margin-top: 12px">
+            <a class="btn btn-ghost" id="linux-deb" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >Debian package (.deb)</a
+            >
+          </p>
+          <h4 style="margin: 24px 0 8px; font-size: 1rem" id="linux-h4-src">Build from the repository</h4>
+          <div class="code-block" style="padding-top: 44px">
+            <button type="button" class="copy-btn" data-copy="linux-src">Copy</button>
+            <pre id="linux-src">git clone https://github.com/usetonet/tonet-browser.git
+cd tonet-browser
+cargo build --release -p tonet
+./target/release/tonet</pre>
+          </div>
+          <h4 style="margin: 24px 0 8px; font-size: 1rem" id="linux-h4-user">Per-user install (desktop + binary)</h4>
+          <div class="code-block" style="padding-top: 44px">
+            <button type="button" class="copy-btn" data-copy="linux-user">Copy</button>
+            <pre id="linux-user">cargo build --release -p tonet
+chmod +x scripts/install-linux-user.sh
+./scripts/install-linux-user.sh</pre>
+          </div>
+        </div>
+
+        <div id="panel-macos" class="os-panel" role="tabpanel">
+          <h3 id="panel-mac-h3">macOS</h3>
+          <p id="panel-mac-p1">
+            macOS binaries (tarball or TonetSetup) appear on GitHub Releases when published for a tag. Until then, build from source below. A signed <code>.app</code> bundle is on the roadmap.
+          </p>
+          <p>
+            <a class="btn btn-primary" id="mac-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
+              >GitHub releases (macOS)</a
+            >
+          </p>
+          <div class="code-block" style="padding-top: 44px">
+            <button type="button" class="copy-btn" data-copy="mac-src">Copy</button>
+            <pre id="mac-src">git clone https://github.com/usetonet/tonet-browser.git
+cd tonet-browser
+cargo build --release -p tonet
+open target/release/tonet</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p class="footer-lang-row">
+        <label id="lang-switcher-label" class="lang-label" for="site-lang">Site language</label>
+        <select id="site-lang" name="site-lang" class="lang-select" aria-describedby="lang-switcher-label">
+          <option value="auto">Auto (browser)</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+        </select>
+      </p>
+      <p>
+        <strong>usetonet.com</strong> — <span id="footer-line1-prefix">project</span>
+        <a href="https://github.com/usetonet/tonet-browser">usetonet/tonet-browser</a>
+      </p>
+      <p id="footer-line2">Landing on Cloudflare Workers · Tonet engine under active development</p>
+    </footer>
+  </body>
+</html>

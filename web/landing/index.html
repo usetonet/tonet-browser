@@ -19,11 +19,13 @@
           <span>Tonet</span>
         </a>
         <nav class="nav-links" id="site-nav-links" aria-label="Main">
-          <a id="nav-download" href="#download">Download</a>
+          <a id="nav-download" href="/download.html">Download</a>
           <a id="nav-features" href="#features">Features</a>
+          <a id="nav-guide" href="/guide.html">Using Tonet</a>
           <a href="/compare.html">Compare</a>
           <a href="/roadmap.html">Roadmap</a>
-          <a id="nav-docs" href="/docs.html">Documentation</a>
+          <a id="nav-handbook" href="/handbook.html">Handbook</a>
+          <a id="nav-docs" href="/docs.html">Technical docs</a>
           <a href="https://github.com/usetonet/tonet-browser" target="_blank" rel="noopener">GitHub</a>
         </nav>
       </div>
@@ -38,8 +40,8 @@
           No Blink, WebKit, or CEF — you control what comes in.
         </p>
         <div class="hero-actions">
-          <a class="btn btn-primary" id="hero-download" href="#download">Download Tonet</a>
-          <a class="btn btn-ghost" id="hero-docs" href="/docs.html">Read the docs</a>
+          <a class="btn btn-primary" id="hero-download" href="/download.html">Download Tonet</a>
+          <a class="btn btn-ghost" id="hero-docs" href="/guide.html">Quick start</a>
         </div>
         <div class="hero-kpis">
           <article class="kpi">
@@ -64,19 +66,55 @@
           reading and search feel human again.
         </p>
         <div class="grid">
-          <article class="card">
+          <article class="card card-with-icon">
+            <span class="card-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24" width="36" height="36" fill="none"
+                ><path
+                  d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+              /></svg>
+            </span>
             <h3 id="card-purity-t">Purity filter</h3>
             <p id="card-purity-p">Pages over 1 MB are rejected. Tonet only loads what fits a lightweight standard.</p>
           </article>
-          <article class="card">
+          <article class="card card-with-icon">
+            <span class="card-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24" width="36" height="36" fill="none"
+                ><path d="M8 9h8M8 13h5M8 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                <rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"
+              /></svg>
+            </span>
             <h3 id="card-parser-t">Custom parser</h3>
             <p id="card-parser-p">Manual extraction of title and essential text — without dragging in a full HTML engine.</p>
           </article>
-          <article class="card">
+          <article class="card card-with-icon">
+            <span class="card-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24" width="36" height="36" fill="none"
+                ><path
+                  d="M12 6v6l4 2"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"
+              /></svg>
+            </span>
             <h3 id="card-updates-t">Updates on your terms</h3>
             <p id="card-updates-p">Check on launch, every 24 hours, or only when you want. One click opens official downloads.</p>
           </article>
-          <article class="card">
+          <article class="card card-with-icon">
+            <span class="card-icon" aria-hidden="true"
+              ><svg viewBox="0 0 24 24" width="36" height="36" fill="none"
+                ><path
+                  d="M12 3c5 3 7 6 7 9a7 7 0 1 1-14 0c0-3 2-6 7-9Z"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+              /></svg>
+            </span>
             <h3 id="card-opensource-t">Open source</h3>
             <p id="card-opensource-p">Full transparency on GitHub. Signed installers and documented pipelines for operators.</p>
           </article>
@@ -114,106 +152,11 @@
         </div>
       </section>
 
-      <section class="section" id="download">
-        <h2 id="download-title">Download Tonet</h2>
-        <p class="lead" id="download-lead">
-          We highlight the option that matches your system. You can always switch tabs manually.
-        </p>
-        <div class="download-channel card" id="download-channel-wrap">
-          <div class="download-channel-row">
-            <label class="download-channel-label" for="channel-select">Release channel</label>
-            <select id="channel-select" class="channel-select" aria-describedby="channel-hint">
-              <option value="stable">Latest stable (recommended)</option>
-              <option value="development">Latest preview / development</option>
-              <option value="specific">Specific version…</option>
-            </select>
-          </div>
-          <div class="download-channel-row" id="version-row" hidden>
-            <label class="download-channel-label" for="version-select">Version</label>
-            <select id="version-select" class="channel-select"></select>
-          </div>
-          <p class="channel-hint" id="channel-hint"></p>
-        </div>
-        <p class="detected-badge" id="os-detected" hidden></p>
-        <div class="os-tabs" role="tablist" aria-label="Operating system">
-          <button type="button" class="os-tab" data-os="windows" role="tab" aria-selected="false">Windows</button>
-          <button type="button" class="os-tab" data-os="linux" role="tab" aria-selected="false">Linux</button>
-          <button type="button" class="os-tab" data-os="macos" role="tab" aria-selected="false">macOS</button>
-        </div>
-
-        <div id="panel-windows" class="os-panel" role="tabpanel">
-          <h3 id="panel-win-h3">Windows</h3>
-          <p id="panel-win-p1">
-            Primary download is the CI-built Inno Setup installer (EXE) for the version embedded on this site. MSI and other formats are linked below.
-          </p>
-          <p>
-            <a class="btn btn-primary" id="win-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >Download Tonet (Windows)</a
-            >
-          </p>
-          <p style="margin-top: 12px">
-            <a class="btn btn-ghost" id="win-msi" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >MSI (x64)</a
-            >
-            &nbsp;
-            <a class="btn btn-ghost" id="win-exe" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >Inno Setup EXE (x64)</a
-            >
-          </p>
-          <p style="color: var(--muted); font-size: 0.9rem" id="panel-win-foot">
-            Stable downloads use short names on the CDN (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) that always track the latest stable release. Choose “Specific version” for an exact build.
-          </p>
-        </div>
-
-        <div id="panel-linux" class="os-panel" role="tabpanel">
-          <h3 id="panel-linux-h3">Linux</h3>
-          <p id="panel-linux-p1">
-            Primary download is the CI-built <code>.deb</code> for amd64 (Debian/Ubuntu) matching the version embedded on this site. Other layouts and source builds are below.
-          </p>
-          <p>
-            <a class="btn btn-primary" id="linux-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >Download Tonet (Linux)</a
-            >
-          </p>
-          <p style="margin-top: 12px">
-            <a class="btn btn-ghost" id="linux-deb" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >Debian package (.deb)</a
-            >
-          </p>
-          <h4 style="margin: 24px 0 8px; font-size: 1rem" id="linux-h4-src">Build from the repository</h4>
-          <div class="code-block" style="padding-top: 44px">
-            <button type="button" class="copy-btn" data-copy="linux-src">Copy</button>
-            <pre id="linux-src">git clone https://github.com/usetonet/tonet-browser.git
-cd tonet-browser
-cargo build --release -p tonet
-./target/release/tonet</pre>
-          </div>
-          <h4 style="margin: 24px 0 8px; font-size: 1rem" id="linux-h4-user">Per-user install (desktop + binary)</h4>
-          <div class="code-block" style="padding-top: 44px">
-            <button type="button" class="copy-btn" data-copy="linux-user">Copy</button>
-            <pre id="linux-user">cargo build --release -p tonet
-chmod +x scripts/install-linux-user.sh
-./scripts/install-linux-user.sh</pre>
-          </div>
-        </div>
-
-        <div id="panel-macos" class="os-panel" role="tabpanel">
-          <h3 id="panel-mac-h3">macOS</h3>
-          <p id="panel-mac-p1">
-            macOS binaries (tarball or TonetSetup) appear on GitHub Releases when published for a tag. Until then, build from source below. A signed <code>.app</code> bundle is on the roadmap.
-          </p>
-          <p>
-            <a class="btn btn-primary" id="mac-setup" href="https://github.com/usetonet/tonet-browser/releases/latest" target="_blank" rel="noopener"
-              >GitHub releases (macOS)</a
-            >
-          </p>
-          <div class="code-block" style="padding-top: 44px">
-            <button type="button" class="copy-btn" data-copy="mac-src">Copy</button>
-            <pre id="mac-src">git clone https://github.com/usetonet/tonet-browser.git
-cd tonet-browser
-cargo build --release -p tonet
-open target/release/tonet</pre>
-          </div>
+      <section class="section download-cta-banner">
+        <h2>Ready to install?</h2>
+        <p class="lead">Pick your OS, release channel, and format on the dedicated download page—your browser stays on this site while the file downloads.</p>
+        <div class="hero-actions" style="justify-content: flex-start">
+          <a class="btn btn-primary" href="/download.html">Go to downloads</a>
         </div>
       </section>
 
@@ -221,9 +164,10 @@ open target/release/tonet</pre>
         <h2>Need more detail before installing?</h2>
         <p class="lead">Explore architecture notes, operational guides, and feature planning before you roll Tonet out.</p>
         <div class="hero-actions" style="justify-content: flex-start">
-          <a class="btn btn-ghost" href="/docs.html">Open documentation portal</a>
-          <a class="btn btn-ghost" href="/compare.html">Compare with Chrome and Brave</a>
-          <a class="btn btn-ghost" href="/roadmap.html">See roadmap and upcoming work</a>
+          <a class="btn btn-ghost" href="/guide.html">Using Tonet (plain language)</a>
+          <a class="btn btn-ghost" href="/docs.html">Technical documentation</a>
+          <a class="btn btn-ghost" href="/compare.html">Compare browsers</a>
+          <a class="btn btn-ghost" href="/roadmap.html">Roadmap</a>
         </div>
       </section>
     </main>

@@ -17,8 +17,10 @@
         </a>
         <nav class="nav-links">
           <a href="/">Home</a>
-          <a href="/#download">Download</a>
-          <a href="/docs.html">Documentation</a>
+          <a href="/download.html">Download</a>
+          <a href="/guide.html">Using Tonet</a>
+          <a href="/handbook.html">Handbook</a>
+          <a href="/docs.html">Technical docs</a>
           <a href="/roadmap.html">Roadmap</a>
         </nav>
       </div>
@@ -26,16 +28,85 @@
     <main class="section" style="padding-top: 40px">
       <h1>Tonet compared to mainstream browsers</h1>
       <p class="lead">
-        Tonet is not trying to clone every browser feature on day one. The project chooses a narrow focus: lightweight browsing,
-        explicit behavior, and operational control.
+        Legend: <span class="ck ck-yes" aria-label="yes">✓</span> strong / typical,
+        <span class="ck ck-part" aria-label="partial">◐</span> partial or roadmap,
+        <span class="ck ck-no" aria-label="no">○</span> not a focus (not necessarily “bad”).
       </p>
 
       <article class="card" style="margin-bottom: 16px">
         <h2 style="margin-top: 0">Positioning</h2>
         <p>
-          Chrome and Brave optimize for broad compatibility and massive ecosystem depth. Tonet optimizes for product teams and advanced
-          users who need a controlled browser surface with clear internals and deterministic packaging.
+          Chrome and Brave optimize for broad compatibility and massive ecosystem depth. Tonet optimizes for product teams and advanced users who need a
+          controlled browser surface with clear internals and deterministic packaging.
         </p>
+      </article>
+
+      <article class="card" style="margin-bottom: 16px">
+        <h2 style="margin-top: 0">Feature matrix</h2>
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col">Capability</th>
+                <th scope="col">Tonet</th>
+                <th scope="col">Chrome</th>
+                <th scope="col">Brave</th>
+                <th scope="col">Firefox</th>
+                <th scope="col">Safari</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="feat">Broad web compatibility (full “Chrome-tier” surface)</td>
+                <td><span class="ck ck-part" title="Growing via milestones">◐</span></td>
+                <td><span class="ck ck-yes" title="Primary strength">✓</span></td>
+                <td><span class="ck ck-yes" title="Chromium-class">✓</span></td>
+                <td><span class="ck ck-yes" title="Strong overall">✓</span></td>
+                <td><span class="ck ck-yes" title="Apple WebKit focus">✓</span></td>
+              </tr>
+              <tr>
+                <td class="feat">Explicit lightweight / purity budgets</td>
+                <td><span class="ck ck-yes" title="Core goal">✓</span></td>
+                <td><span class="ck ck-no" title="Not the design center">○</span></td>
+                <td><span class="ck ck-part" title="Shields + optional extras">◐</span></td>
+                <td><span class="ck ck-part" title="Some controls">◐</span></td>
+                <td><span class="ck ck-no" title="Not emphasized">○</span></td>
+              </tr>
+              <tr>
+                <td class="feat">Built-in aggressive ad / tracker blocking (default-on)</td>
+                <td><span class="ck ck-part" title="Policy + roadmap">◐</span></td>
+                <td><span class="ck ck-no" title="Extensions ecosystem">○</span></td>
+                <td><span class="ck ck-yes" title="Shields">✓</span></td>
+                <td><span class="ck ck-part" title="ETP etc.">◐</span></td>
+                <td><span class="ck ck-part" title="ITP etc.">◐</span></td>
+              </tr>
+              <tr>
+                <td class="feat">Fully open-source engine stack (auditable end-to-end)</td>
+                <td><span class="ck ck-yes" title="GPL project + visible pipeline">✓</span></td>
+                <td><span class="ck ck-no" title="Chromium open; Chrome adds proprietary pieces">○</span></td>
+                <td><span class="ck ck-part" title="Chromium base">◐</span></td>
+                <td><span class="ck ck-yes" title="Gecko open">✓</span></td>
+                <td><span class="ck ck-no" title="WebKit partly; Safari proprietary">○</span></td>
+              </tr>
+              <tr>
+                <td class="feat">Operator-controlled CDN artifacts &amp; update manifest</td>
+                <td><span class="ck ck-yes" title="First-class story">✓</span></td>
+                <td><span class="ck ck-no" title="Google update infra">○</span></td>
+                <td><span class="ck ck-no" title="Vendor-controlled">○</span></td>
+                <td><span class="ck ck-no" title="Mozilla infra">○</span></td>
+                <td><span class="ck ck-no" title="Apple infra">○</span></td>
+              </tr>
+              <tr>
+                <td class="feat">Public roadmap &amp; engineering transparency</td>
+                <td><span class="ck ck-yes" title="Published milestones">✓</span></td>
+                <td><span class="ck ck-part" title="Some public signals">◐</span></td>
+                <td><span class="ck ck-part" title="Open Chromium lineage">◐</span></td>
+                <td><span class="ck ck-yes" title="Strong open culture">✓</span></td>
+                <td><span class="ck ck-no" title="Mostly closed planning">○</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </article>
 
       <article class="card" style="margin-bottom: 16px">
@@ -58,7 +129,7 @@
       </article>
     </main>
     <footer class="footer">
-      <p><a href="/docs.html">Explore full documentation</a></p>
+      <p><a href="/docs.html">Technical documentation</a> · <a href="/guide.html">Using Tonet</a></p>
     </footer>
   </body>
 </html>

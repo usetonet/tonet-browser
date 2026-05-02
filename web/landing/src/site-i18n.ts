@@ -96,9 +96,17 @@ export function versionPillPrefix(lang: SiteLang): string {
 interface LandingStrings {
   metaDescription: string;
   title: string;
+  /** Dedicated `/download.html` page */
+  pageTitleDownload: string;
+  metaDescriptionDownload: string;
+  /** `/guide.html` — non-technical help */
+  pageTitleGuide: string;
+  metaDescriptionGuide: string;
   navAria: string;
   navDownload: string;
   navFeatures: string;
+  navGuide: string;
+  navHandbook: string;
   navDocs: string;
   heroTitle: string;
   heroLead: string;
@@ -141,15 +149,23 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescription:
       "Tonet — a minimal from-scratch browser. Light, fast, and intentional. Downloads for Windows, Linux, and docs.",
     title: "Tonet — Browse light",
+    pageTitleDownload: "Download Tonet — installers & formats",
+    metaDescriptionDownload:
+      "Download Tonet for Windows, Linux, or macOS. Official CDN builds: EXE, MSI, DEB, and release channels.",
+    pageTitleGuide: "Using Tonet — quick start for everyone",
+    metaDescriptionGuide:
+      "Plain-language help: install Tonet, check for updates, and use settings—without developer jargon.",
     navAria: "Main",
     navDownload: "Download",
     navFeatures: "Features",
-    navDocs: "Documentation",
+    navGuide: "Using Tonet",
+    navHandbook: "Handbook",
+    navDocs: "Technical docs",
     heroTitle: "Browse without the weight.<br />Push back on web bloat.",
     heroLead:
       "Tonet is a browser built with a clear goal: extreme speed, minimal weight, and an in-house engine for essential content. No Blink, WebKit, or CEF — you control what comes in.",
     heroDownload: "Download Tonet",
-    heroDocs: "Read the docs",
+    heroDocs: "Quick start",
     featuresTitle: "Built to get to the point",
     featuresLead:
       "An honest MVP: network + parser + minimal renderer. Tonet does not try to render today’s industrial web; it tries to make reading and search feel human again.",
@@ -191,15 +207,23 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescription:
       "Tonet — navegador minimalista desde cero. Ligero, rápido y con intención. Descargas para Windows, Linux y documentación.",
     title: "Tonet — Navega ligero",
+    pageTitleDownload: "Descargar Tonet — instaladores y formatos",
+    metaDescriptionDownload:
+      "Descarga Tonet para Windows, Linux o macOS. Builds oficiales en el CDN: EXE, MSI, DEB y canales de release.",
+    pageTitleGuide: "Uso de Tonet — guía sencilla",
+    metaDescriptionGuide:
+      "Ayuda en lenguaje claro: instalar Tonet, actualizar y usar ajustes, sin tecnicismos de desarrollo.",
     navAria: "Principal",
     navDownload: "Descargar",
     navFeatures: "Características",
-    navDocs: "Documentación",
+    navGuide: "Uso de Tonet",
+    navHandbook: "Manual",
+    navDocs: "Documentación técnica",
     heroTitle: "Navega sin peso.<br />Rechaza la basura web.",
     heroLead:
       "Tonet es un navegador en construcción con una filosofía clara: velocidad extrema, ligereza absoluta y un motor propio para contenido esencial. Sin Blink, WebKit ni CEF — tú controlas qué entra.",
     heroDownload: "Descargar Tonet",
-    heroDocs: "Ver documentación",
+    heroDocs: "Inicio rápido",
     featuresTitle: "Diseñado para ir al grano",
     featuresLead:
       "Un MVP honesto: red + parser + render mínimos. Tonet no pretende renderizar la web industrial de hoy; pretende devolver la lectura y la búsqueda a algo humano.",
@@ -241,15 +265,23 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescription:
       "Tonet — ein minimales Browser-Projekt von Grund auf. Leicht, schnell, bewusst. Downloads für Windows, Linux und Dokumentation.",
     title: "Tonet — Leicht surfen",
+    pageTitleDownload: "Tonet herunterladen — Installer und Formate",
+    metaDescriptionDownload:
+      "Tonet für Windows, Linux oder macOS herunterladen. Offizielle CDN-Builds: EXE, MSI, DEB und Release-Kanäle.",
+    pageTitleGuide: "Tonet nutzen — einfache Kurzanleitung",
+    metaDescriptionGuide:
+      "Klartext-Hilfe: Installation, Updates und Einstellungen — ohne Entwicklerjargon.",
     navAria: "Hauptnavigation",
     navDownload: "Download",
     navFeatures: "Funktionen",
-    navDocs: "Dokumentation",
+    navGuide: "Tonet nutzen",
+    navHandbook: "Handbuch",
+    navDocs: "Technische Docs",
     heroTitle: "Surfen ohne Ballast.<br />Web-Bloat zurückweisen.",
     heroLead:
       "Tonet wird mit klarem Ziel entwickelt: hohe Geschwindigkeit, geringes Gewicht und eine eigene Engine für Wesentliches. Kein Blink, WebKit oder CEF — Sie entscheiden, was reinkommt.",
     heroDownload: "Tonet herunterladen",
-    heroDocs: "Dokumentation",
+    heroDocs: "Schnellstart",
     featuresTitle: "Auf den Punkt gebaut",
     featuresLead:
       "Ein ehrliches MVP: Netzwerk + Parser + minimaler Renderer. Tonet soll nicht das heutige Industrie-Web rendern, sondern Lesen und Suchen wieder menschlich machen.",
@@ -291,15 +323,23 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescription:
       "Tonet — navigateur minimal créé from scratch. Léger, rapide et volontaire. Téléchargements Windows, Linux et documentation.",
     title: "Tonet — Naviguer léger",
+    pageTitleDownload: "Télécharger Tonet — installateurs et formats",
+    metaDescriptionDownload:
+      "Téléchargez Tonet pour Windows, Linux ou macOS. Builds CDN officiels : EXE, MSI, DEB et canaux de publication.",
+    pageTitleGuide: "Utiliser Tonet — guide simple",
+    metaDescriptionGuide:
+      "Aide en langage clair : installer Tonet, mises à jour et réglages, sans jargon technique.",
     navAria: "Principal",
     navDownload: "Télécharger",
     navFeatures: "Fonctionnalités",
-    navDocs: "Documentation",
+    navGuide: "Utiliser Tonet",
+    navHandbook: "Manuel",
+    navDocs: "Documentation technique",
     heroTitle: "Naviguez sans le poids.<br />Rejetez le superflu du web.",
     heroLead:
       "Tonet est un navigateur construit autour d’un objectif clair : vitesse, légèreté et moteur maison pour l’essentiel. Pas de Blink, WebKit ni CEF — vous contrôlez ce qui entre.",
     heroDownload: "Télécharger Tonet",
-    heroDocs: "Lire la documentation",
+    heroDocs: "Démarrage rapide",
     featuresTitle: "Conçu pour aller à l’essentiel",
     featuresLead:
       "Un MVP honnête : réseau + parseur + rendu minimal. Tonet ne vise pas le web industriel d’aujourd’hui ; il veut rendre lecture et recherche plus humaines.",
@@ -349,18 +389,29 @@ function setText(id: string, text: string): void {
   if (el) el.textContent = text;
 }
 
-export function applyLandingLocale(lang: SiteLang): void {
+export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "download" | "guide" }): void {
   const L = landing[lang];
+  const page = opts?.page ?? "home";
   document.documentElement.lang = lang;
-  document.title = L.title;
+  document.title =
+    page === "download" ? L.pageTitleDownload : page === "guide" ? L.pageTitleGuide : L.title;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-  if (meta) meta.content = L.metaDescription;
+  if (meta) {
+    meta.content =
+      page === "download"
+        ? L.metaDescriptionDownload
+        : page === "guide"
+          ? L.metaDescriptionGuide
+          : L.metaDescription;
+  }
 
   const nav = document.getElementById("site-nav-links");
   if (nav) nav.setAttribute("aria-label", L.navAria);
 
   setText("nav-download", L.navDownload);
   setText("nav-features", L.navFeatures);
+  setText("nav-guide", L.navGuide);
+  setText("nav-handbook", L.navHandbook);
   setText("nav-docs", L.navDocs);
   setHtml("hero-title", L.heroTitle);
   setText("hero-lead", L.heroLead);
@@ -430,14 +481,14 @@ interface DocsStrings {
 const docs: Record<SiteLang, DocsStrings> = {
   en: {
     metaDescription: "Tonet documentation: install, updates, code signing, and packaging.",
-    title: "Documentation — Tonet",
+    title: "Technical documentation — Tonet",
     navHome: "Home",
     navDownload: "Download",
-    h1: "Documentation",
-    lead: "Short guides for users and maintainers.",
+    h1: "Technical documentation",
+    lead: "For packaging, signing, and maintainers. Everyday (non-technical) help: <a href=\"/guide.html\">Using Tonet</a>.",
     installH: "Installation",
     installP:
-      "See the <a href=\"/#download\">downloads section</a>. The landing reads <code>version.json</code> (built from <code>crates/tonet</code>) and points all download buttons to your configured CDN base URL. MSI/EXE/DEB/tarball links are generated from that CDN path.",
+      "See the <a href=\"/download.html\">download page</a>. The site reads <code>version.json</code> (built from <code>crates/tonet</code>) and points download buttons to your configured CDN base URL. MSI/EXE/DEB/tarball links are generated from that path.",
     updatesH: "In-browser updates",
     updatesP:
       "Tonet checks your update manifest URL (it does not install binaries for you). By default it checks on startup. In <strong>Settings (⚙)</strong> you can choose:",
@@ -466,14 +517,14 @@ const docs: Record<SiteLang, DocsStrings> = {
   es: {
     metaDescription:
       "Documentación de Tonet: instalación, actualizaciones, firma de código y empaquetado.",
-    title: "Documentación — Tonet",
+    title: "Documentación técnica — Tonet",
     navHome: "Inicio",
     navDownload: "Descargar",
-    h1: "Documentación",
-    lead: "Guías breves para usuarios y mantenedores del proyecto.",
+    h1: "Documentación técnica",
+    lead: "Para empaquetado, firma y mantenedores. Ayuda cotidiana (sencilla): <a href=\"/guide.html\">Uso de Tonet</a>.",
     installH: "Instalación",
     installP:
-      "Consulta la <a href=\"/#download\">sección de descargas</a>. La landing lee <code>version.json</code> (generado desde <code>crates/tonet</code>) y apunta todos los botones a la URL base de tu CDN configurada. Los enlaces MSI/EXE/DEB/tarball se generan desde esa base.",
+      "Consulta la <a href=\"/download.html\">página de descargas</a>. El sitio lee <code>version.json</code> (generado desde <code>crates/tonet</code>) y apunta los botones a la URL base de tu CDN. Los enlaces MSI/EXE/DEB/tarball se generan desde esa base.",
     updatesH: "Actualizaciones en el navegador",
     updatesP:
       "Tonet consulta tu URL de manifiesto de actualizaciones (sin instalar binarios por ti). Por defecto comprueba al iniciar. En <strong>Ajustes (⚙)</strong> puedes elegir:",
@@ -501,14 +552,14 @@ const docs: Record<SiteLang, DocsStrings> = {
   },
   de: {
     metaDescription: "Tonet-Dokumentation: Installation, Updates, Codesignatur und Packaging.",
-    title: "Dokumentation — Tonet",
+    title: "Technische Dokumentation — Tonet",
     navHome: "Start",
     navDownload: "Download",
-    h1: "Dokumentation",
-    lead: "Kurze Anleitungen für Nutzer und Maintainer.",
+    h1: "Technische Dokumentation",
+    lead: "Für Packaging, Signatur und Betrieb. Einfache Hilfe für den Alltag: <a href=\"/guide.html\">Tonet nutzen</a>.",
     installH: "Installation",
     installP:
-      "Siehe den <a href=\"/#download\">Download-Bereich</a>. Die Landing liest <code>version.json</code> (aus <code>crates/tonet</code>) und generiert alle Download-Links über die konfigurierte CDN-Basis-URL.",
+      "Siehe die <a href=\"/download.html\">Download-Seite</a>. Die Site liest <code>version.json</code> (aus <code>crates/tonet</code>) und erzeugt Download-Links über die konfigurierte CDN-Basis-URL.",
     updatesH: "Updates in der App",
     updatesP:
       "Tonet nutzt Ihre Update-Manifest-URL (installiert keine Binärdateien für Sie). Standard: Prüfung beim Start. Unter <strong>Einstellungen (⚙)</strong> wählen Sie:",
@@ -537,14 +588,14 @@ const docs: Record<SiteLang, DocsStrings> = {
   fr: {
     metaDescription:
       "Documentation Tonet : installation, mises à jour, signature de code et packaging.",
-    title: "Documentation — Tonet",
+    title: "Documentation technique — Tonet",
     navHome: "Accueil",
     navDownload: "Télécharger",
-    h1: "Documentation",
-    lead: "Guides courts pour les utilisateurs et les mainteneurs.",
+    h1: "Documentation technique",
+    lead: "Pour le packaging, la signature et l’exploitation. Aide du quotidien (simple) : <a href=\"/guide.html\">Utiliser Tonet</a>.",
     installH: "Installation",
     installP:
-      "Voir la <a href=\"/#download\">section téléchargements</a>. La page lit <code>version.json</code> (généré depuis <code>crates/tonet</code>) et génère les liens MSI/EXE/DEB/tarball depuis votre base CDN configurée.",
+      "Voir la <a href=\"/download.html\">page Téléchargements</a>. Le site lit <code>version.json</code> (généré depuis <code>crates/tonet</code>) et génère les liens MSI/EXE/DEB/tarball depuis votre base CDN.",
     updatesH: "Mises à jour dans le navigateur",
     updatesP:
       "Tonet interroge votre URL de manifeste de mises à jour (sans installer les binaires à votre place). Par défaut : vérification au lancement. Dans <strong>Réglages (⚙)</strong> vous pouvez choisir :",
@@ -581,7 +632,7 @@ export function applyDocsLocale(lang: SiteLang): void {
   setText("docs-nav-home", D.navHome);
   setText("docs-nav-download", D.navDownload);
   setText("docs-h1", D.h1);
-  setText("docs-lead", D.lead);
+  setHtml("docs-lead", D.lead);
   setText("docs-install-h", D.installH);
   setHtml("docs-install-p", D.installP);
   setText("docs-updates-h", D.updatesH);

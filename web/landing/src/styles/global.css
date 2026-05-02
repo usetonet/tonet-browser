@@ -384,6 +384,202 @@ a:hover {
   margin-bottom: 12px;
 }
 
+.card-with-icon .card-icon {
+  display: flex;
+  margin-bottom: 12px;
+  color: var(--accent);
+  opacity: 0.95;
+}
+
+.download-page-hero {
+  position: relative;
+  text-align: center;
+  padding-top: 56px;
+  padding-bottom: 32px;
+  overflow: hidden;
+}
+.download-page-hero h1 {
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  letter-spacing: -0.03em;
+  margin: 0 0 12px;
+}
+.hero-watermark {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  font-size: min(22vw, 200px);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  color: rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  z-index: 0;
+}
+.download-page-hero .pill,
+.download-page-hero h1,
+.download-page-hero .lead,
+.download-page-hero .hero-actions,
+.download-page-hero .detected-badge {
+  position: relative;
+  z-index: 1;
+}
+.download-cta-orange {
+  background: linear-gradient(135deg, #f45d2a, #ff8a3c) !important;
+  box-shadow: 0 10px 36px rgba(244, 93, 42, 0.4) !important;
+}
+.download-cta-orange:hover {
+  box-shadow: 0 12px 42px rgba(255, 138, 60, 0.5) !important;
+}
+
+.download-cta-banner {
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 6, 10, 0.72);
+  backdrop-filter: blur(8px);
+}
+.modal-overlay[hidden] {
+  display: none;
+}
+.modal-card {
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+  background: var(--bg1);
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  padding: 28px 28px 24px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+.modal-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+}
+.modal-lead {
+  color: var(--muted);
+  margin: 0 0 20px;
+  line-height: 1.55;
+}
+.modal-steps {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.modal-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(79, 140, 255, 0.2);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.modal-retry,
+.modal-help {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.modal-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.compare-table-wrap {
+  overflow-x: auto;
+  margin: 20px 0 0;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+  font-size: 0.9rem;
+}
+.compare-table th,
+.compare-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--stroke);
+  vertical-align: top;
+}
+.compare-table th {
+  color: var(--text);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.03);
+}
+.compare-table tr:last-child td {
+  border-bottom: none;
+}
+.compare-table .feat {
+  color: var(--text);
+  font-weight: 500;
+}
+.ck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.4em;
+  font-size: 1rem;
+  line-height: 1;
+}
+.ck-yes {
+  color: var(--ok);
+  font-weight: 700;
+}
+.ck-part {
+  color: #e6c35c;
+  font-weight: 700;
+}
+.ck-no {
+  color: var(--muted);
+  font-weight: 600;
+  opacity: 0.55;
+}
+
 @media (max-width: 640px) {
   .nav-inner {
     flex-direction: column;
