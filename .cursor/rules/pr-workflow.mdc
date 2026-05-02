@@ -13,3 +13,7 @@ When work on a feature branch is complete, tested, and committed:
 2. Open the pull request with `gh pr create` (sensible title and body summarizing changes and how it was tested). If `gh` is unavailable, give the direct GitHub “compare” URL.
 
 Do not stop at “you can push and open a PR”; perform these steps unless the user explicitly opts out or the repo has no remote.
+
+## Batching related work
+
+Prefer **one PR per cohesive theme** (e.g. “A8 pure-logic tests for `servo_engine`”, “shell omnibox tweaks”) when the diff stays easy to review (~15–30 min). Avoid splitting into many tiny PRs that only differ by file unless reviews explicitly want atom-sized changes. It is fine to combine several checklist bullets when they share scope and touch the same area.
