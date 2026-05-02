@@ -94,3 +94,18 @@ In **Settings → Secrets and variables → Actions**:
 - **Optional:** `TONET_RELEASE_PRODUCTION` — default `true`; set to `false` so a workflow run publishes **preview** aliases only (does not overwrite stable short names).
 
 When `CLOUDFLARE_R2_BUCKET` is set, `publish-cdn` uploads versioned assets, alias objects, and merges `version.json` into R2.
+
+## Re-publish CDN without bumping the crate version
+
+The **release-on-version-bump** workflow only runs builds and `publish-cdn` when `Cargo.toml` version increases. If you already shipped a version but need to fix R2 (for example variables were wrong, or you must refresh `version.json`), do **not** bump semver only for that.
+
+**Option A — GitHub Actions (recommended):** in **Actions**, run workflow **CDN republish (manual)** (`.github/workflows/cdn-republish.yml`). Provide the existing semver (e.g. `0.2.1`); it must match a **`v0.2.1` GitHub Release** whose assets are complete. Toggle **production** to choose stable short names vs preview aliases (same meaning as `TONET_RELEASE_PRODUCTION` in CI).
+
+**Option B — Local:** from the repo root, with `gh` logged in and secrets in `.env` as above:
+
+```bash
+chmod +x scripts/publish-cdn-from-release.sh
+./scripts/publish-cdn-from-release.sh 0.2.1 true
+```
+
+Second argument is `true` (stable aliases) or `false` (preview aliases only). Delete or ignore `assets/` afterward if you do not want large binaries in the tree.

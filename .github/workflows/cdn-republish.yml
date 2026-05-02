@@ -1,0 +1,98 @@
+# Re-publish Windows/Linux/macOS assets to R2 + merge version.json WITHOUT bumping crate version.
+# Use when publish-cdn was skipped (e.g. CDN vars fixed after release) or manifest needs fixing.
+name: CDN republish (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semver matching an existing tag (e.g. 0.2.1). Release must exist as vX.Y.Z on GitHub."
+        required: true
+        type: string
+      production:
+        description: "Stable aliases (Tonet-Setup.exe). Uncheck for preview-only aliases (Tonet-Setup-Preview.exe)."
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  publish-cdn:
+    if: vars.CLOUDFLARE_R2_BUCKET != ''
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+      CDN_BASE: ${{ vars.TONET_CDN_BASE_URL }}
+      VERSION: ${{ inputs.version }}
+      # Normalize workflow_dispatch boolean to string true|false for bash + merge script.
+      TONET_RELEASE_PRODUCTION: ${{ inputs.production && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release assets from GitHub
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          TAG="v${VERSION}"
+          gh release download "$TAG" --repo "${{ github.repository }}" --dir assets --clobber
+
+      - name: Setup Node (manifest merge + wrangler)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Wrangler
+        run: npm i -g wrangler@3
+
+      - name: Upload versioned release assets to R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in assets/*; do
+            name="$(basename "$f")"
+            wrangler r2 object put "${R2_BUCKET}/${name}" --file "$f"
+          done
+
+      - name: Upload stable or preview alias objects (short filenames)
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="${VERSION}"
+          if [ "${TONET_RELEASE_PRODUCTION}" = "false" ]; then
+            wrangler r2 object put "${R2_BUCKET}/Tonet-Setup-Preview.exe" --file "assets/Tonet-Setup-${V}-x64.exe"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-x64-preview.msi" --file "assets/Tonet-${V}-x64.msi"
+            wrangler r2 object put "${R2_BUCKET}/tonet_amd64-preview.deb" --file "assets/tonet_${V}_amd64.deb"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-macos-preview.tar.gz" --file "assets/Tonet-${V}-macos.tar.gz"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-windows-x64-portable-preview.zip" --file "assets/Tonet-${V}-windows-x64-portable.zip"
+          else
+            wrangler r2 object put "${R2_BUCKET}/Tonet-Setup.exe" --file "assets/Tonet-Setup-${V}-x64.exe"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-x64.msi" --file "assets/Tonet-${V}-x64.msi"
+            wrangler r2 object put "${R2_BUCKET}/tonet_amd64.deb" --file "assets/tonet_${V}_amd64.deb"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-macos.tar.gz" --file "assets/Tonet-${V}-macos.tar.gz"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-windows-x64-portable.zip" --file "assets/Tonet-${V}-windows-x64-portable.zip"
+          fi
+
+      - name: Merge CDN manifest (channels + release history)
+        shell: bash
+        env:
+          PREV_PATH: prev.json
+        run: |
+          set -euo pipefail
+          base="${CDN_BASE%/}"
+          curl -sfL "${base}/version.json" -o prev.json || echo '{}' > prev.json
+          export CDN_BASE="$base"
+          export VERSION="${VERSION}"
+          node scripts/cdn-merge-manifest.mjs > version.json
+
+      - name: Upload version.json to R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          wrangler r2 object put "${R2_BUCKET}/version.json" --file version.json
