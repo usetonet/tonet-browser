@@ -3,61 +3,112 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Tonet comparison: design goals versus mainstream browsers." />
+    <meta name="description" content="Tonet vs Chrome, Brave, Firefox — factual comparison table." />
     <title>Compare Browsers — Tonet</title>
     <link rel="icon" href="/tonet.svg" type="image/svg+xml" />
     <script type="module" src="/src/docs.ts"></script>
   </head>
-  <body>
-    <header class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="/">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>Tonet</span>
-        </a>
-        <nav class="nav-links">
-          <a href="/">Home</a>
-          <a href="/#download">Download</a>
-          <a href="/docs.html">Documentation</a>
-          <a href="/roadmap.html">Roadmap</a>
-        </nav>
-      </div>
-    </header>
-    <main class="section" style="padding-top: 40px">
-      <h1>Tonet compared to mainstream browsers</h1>
-      <p class="lead">
-        Tonet is not trying to clone every browser feature on day one. The project chooses a narrow focus: lightweight browsing,
-        explicit behavior, and operational control.
+  <body data-page="compare">
+    <div id="site-nav-root"></div>
+
+    <div class="compare-wrap">
+      <h1>Tonet vs mainstream browsers</h1>
+      <p class="compare-lead">
+        Tonet is intentionally narrow in scope: a transparent, policy-driven surface built around an in-repo engine path (Servo for web
+        content on desktop). This page summarizes <strong>documented product facts</strong> today — not benchmark winners — so teams can
+        decide fit quickly.
       </p>
 
-      <article class="card" style="margin-bottom: 16px">
-        <h2 style="margin-top: 0">Positioning</h2>
-        <p>
-          Chrome and Brave optimize for broad compatibility and massive ecosystem depth. Tonet optimizes for product teams and advanced
-          users who need a controlled browser surface with clear internals and deterministic packaging.
-        </p>
-      </article>
+      <div class="compare-table-wrap">
+        <table class="compare-table" aria-label="Browser comparison">
+          <thead>
+            <tr>
+              <th scope="col">Dimension</th>
+              <th scope="col">Tonet</th>
+              <th scope="col">Google Chrome</th>
+              <th scope="col">Brave</th>
+              <th scope="col">Mozilla Firefox</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rendering engine (core)</td>
+              <td>Servo (in-process for pages); custom shell — not Blink/WebKit/CEF.</td>
+              <td>Blink (Chromium).</td>
+              <td>Blink (Chromium).</td>
+              <td>Gecko + SpiderMonkey.</td>
+            </tr>
+            <tr>
+              <td>Primary distribution model</td>
+              <td>Self-hosted CDN manifest (<code>version.json</code>) + GitHub releases artifacts.</td>
+              <td>Google update infra + OEM bundles.</td>
+              <td>Brave update channels.</td>
+              <td>Mozilla + distro packages.</td>
+            </tr>
+            <tr>
+              <td>Open-source license (browser)</td>
+              <td>GPL-3.0-or-later (repository).</td>
+              <td>Chromium BSD-style + proprietary Chrome additions.</td>
+              <td>MPL/Chromium mix; Brave-owned services.</td>
+              <td>MPL 2.0.</td>
+            </tr>
+            <tr>
+              <td>Default web compatibility target</td>
+              <td>MVP reading/search stack; strict page-size policy (e.g. 1 MB guard).</td>
+              <td>Full modern web.</td>
+              <td>Full modern web + shields.</td>
+              <td>Full modern web.</td>
+            </tr>
+            <tr>
+              <td>Extension ecosystem</td>
+              <td>Not a goal for MVP (no Web Store parity).</td>
+              <td>Chrome Web Store.</td>
+              <td>Chrome-compatible extensions.</td>
+              <td>Firefox AMO + MV3 transition.</td>
+            </tr>
+            <tr>
+              <td>Update check mechanism (Tonet app)</td>
+              <td>Configurable manifest URL; no GitHub Releases API dependency at runtime.</td>
+              <td>Google updater.</td>
+              <td>Brave updater.</td>
+              <td>Mozilla updater.</td>
+            </tr>
+            <tr>
+              <td>Typical install size (order of magnitude)</td>
+              <td>Single-digit ×10 MB binary + platform deps (Windows ANGLE DLLs alongside exe).</td>
+              <td>Hundreds of MB installed.</td>
+              <td>Similar to Chromium-class.</td>
+              <td>Hundreds of MB installed.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="compare-note">
+        Rows reflect architecture and delivery choices described in this repository as of the current milestone — not marketing claims or
+        independent benchmarks. Refresh this table when major milestones ship (see <a href="/roadmap.html">Roadmap</a>).
+      </p>
 
-      <article class="card" style="margin-bottom: 16px">
-        <h2 style="margin-top: 0">Current strengths</h2>
+      <article class="card" style="margin-top: 28px">
+        <h2 style="margin-top: 0">When Tonet is a strong fit</h2>
         <ul style="line-height: 1.7; color: var(--muted)">
-          <li>Minimal baseline and explicit policy controls.</li>
-          <li>Open implementation roadmap and integration checklist.</li>
-          <li>CDN-driven update distribution without hard dependency on GitHub Releases APIs.</li>
-          <li>Public docs that include architecture, operations, and release process guidance.</li>
+          <li>You need audit-friendly internals and deterministic packaging over maximal site compatibility.</li>
+          <li>You prefer CDN-owned artifacts and manifests over opaque auto-update channels.</li>
+          <li>You accept MVP limits today in exchange for an explicit roadmap (<code>TONET_VISION.md</code>).</li>
         </ul>
       </article>
+    </div>
 
-      <article class="card">
-        <h2 style="margin-top: 0">Known gaps (transparent by design)</h2>
-        <ul style="line-height: 1.7; color: var(--muted)">
-          <li>Broader web compatibility is still evolving through phased milestones.</li>
-          <li>Feature breadth is intentionally narrower than mature consumer browsers.</li>
-          <li>Some platform packaging tracks are still in-progress and documented as such.</li>
-        </ul>
-      </article>
-    </main>
     <footer class="footer">
+      <p class="footer-lang-row">
+        <label id="lang-switcher-label" class="lang-label" for="site-lang">Site language</label>
+        <select id="site-lang" name="site-lang" class="lang-select" aria-describedby="lang-switcher-label">
+          <option value="auto">Auto (browser)</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+        </select>
+      </p>
       <p><a href="/docs.html">Explore full documentation</a></p>
     </footer>
   </body>

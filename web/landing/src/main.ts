@@ -1,4 +1,5 @@
 import "./styles/global.css";
+import { mountSiteNav } from "./mount-nav";
 import { detectOS, type DetectedOS } from "./detect-os";
 import {
   applyLandingLocale,
@@ -8,6 +9,8 @@ import {
   wireCopyButtons,
   wireLanguageSwitcher,
 } from "./site-i18n";
+
+mountSiteNav();
 
 type DownloadMap = {
   windowsSetup: string;
@@ -112,6 +115,32 @@ function stableVersionLabel(meta: VersionMeta): string {
   return meta.channels?.stable?.version ?? meta.version;
 }
 
+/** Primary installer URL for stable channel (short CDN names where applicable). */
+function primaryInstallerUrl(os: DetectedOS, meta: VersionMeta): string | null {
+  const d = meta.channels?.stable?.download ?? meta.download;
+  if (!d) return null;
+  const effective = os === "unknown" ? "windows" : os;
+  if (effective === "windows") return d.windowsSetup ?? null;
+  if (effective === "linux") return d.linuxSetup ?? null;
+  if (effective === "macos") return d.macSetup ?? null;
+  return null;
+}
+
+function configureHeroDownload(meta: VersionMeta | null, os: DetectedOS): void {
+  const hero = document.getElementById("hero-download") as HTMLAnchorElement | null;
+  if (!hero) return;
+  if (!meta) {
+    hero.href = "#download";
+    return;
+  }
+  const url = primaryInstallerUrl(os, meta);
+  if (url) {
+    hero.href = url;
+    return;
+  }
+  hero.href = "#download";
+}
+
 async function main(): Promise<void> {
   const lang = resolveSiteLang();
   applyLandingLocale(lang);
@@ -134,6 +163,8 @@ async function main(): Promise<void> {
   });
 
   const meta = await loadVersion();
+  configureHeroDownload(meta, os);
+
   const releasesFallback = meta?.releasesUrl ?? "https://dl.usetonet.com/";
   const pill = document.getElementById("version-pill");
   if (pill) {
