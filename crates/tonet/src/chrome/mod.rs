@@ -1,6 +1,7 @@
 //! Browser chrome components: tab strip, toolbar, and window caption controls.
 
 mod caption;
+pub mod ids;
 mod tab_strip;
 mod toolbar;
 

@@ -9,6 +9,7 @@ use crate::i18n::{self, Locale};
 use crate::theme;
 
 use super::caption::{apply_drag_or_maximize, show_window_caption_controls, CAPTION_BTN};
+use super::ids::{new_tab_button, tab_strip_tab};
 
 const TAB_ROW_H: f32 = 33.0;
 
@@ -54,7 +55,7 @@ fn draw_tab(
 
     let compact_mode = !show_title;
 
-    let push_resp = ui.push_id(index as i32, |ui| {
+    let push_resp = ui.push_id(tab_strip_tab(index), |ui| {
         ui.set_max_width(max_w);
 
         let mut favicon_center = egui::Pos2::ZERO;
@@ -262,8 +263,8 @@ pub fn show_tab_bar(
 
                     ui.add_space(theme::SP);
 
-                    if ui
-                        .add(
+                    let new_click = ui.push_id(new_tab_button(), |ui| {
+                        ui.add(
                             egui::Button::new(
                                 RichText::new("+")
                                     .size(18.0)
@@ -271,9 +272,11 @@ pub fn show_tab_bar(
                             )
                             .frame(false),
                         )
+                    })
+                    .inner
                         .on_hover_text(i18n::tab_new_tooltip(loc))
-                        .clicked()
-                    {
+                        .clicked();
+                    if new_click {
                         out.new_tab = true;
                     }
 

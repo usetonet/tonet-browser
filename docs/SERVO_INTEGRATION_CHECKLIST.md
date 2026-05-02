@@ -113,7 +113,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 
 | Status | Task |
 |--------|------|
-| [~] | Stable `egui::Id` sources on main toolbar controls (`chrome/toolbar.rs`) for focus and AT hooks. |
+| [~] | Stable `egui::Id` sources: **`crates/tonet/src/chrome/ids.rs`** defines toolbar + tab strip + “new tab” ids (with regression tests); omnibox remains `ui::omnibox_id`. Screen-reader labels / full keyboard order still TBD. |
 | [~] | Full keyboard order and screen-reader labels per control — **procedure** in **§ Accessibility audit templates**; egui limits still TBD per control. |
 | [~] | Contrast / scaling audit vs system settings — same **§ Accessibility audit templates** (spot-check matrix). |
 
@@ -290,3 +290,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-04-17 | **Manual smoke:** step **17b** (extensionless `…/download|export|attachment` + `HEAD` / `Content-Disposition` / MIME heuristic download). |
 | 2026-04-17 | **B1 / B3:** omnibox history **keyboard hint** (`i18n::omnibox_history_keyboard_hint`); **`background_download`** unit tests for `HEAD` **MIME** allowlist (`mime_*`). |
 | 2026-05-02 | **Policy + matrix:** Windows default = **in-process** Servo embed (readback → egui); optional **`TONET_SERVO_WIN32_POPUP=1`** legacy owned popup. Aligns with `TONET_VISION.md` §13 and `runtime_win.rs` module docs. |
+| 2026-05-02 | **B2:** `chrome/ids.rs` centralizes stable `egui::Id` values for toolbar, tab cells, and **+** new-tab; unit test locks string names. |

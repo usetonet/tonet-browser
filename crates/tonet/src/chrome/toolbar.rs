@@ -12,6 +12,11 @@ use crate::i18n::{self, Locale};
 use crate::theme;
 use crate::ui::omnibox_id;
 
+use super::ids::{
+    chrome_back, chrome_forward, chrome_menu, chrome_reload, chrome_stop, chrome_tool_1,
+    chrome_tool_2, chrome_tool_3, chrome_tool_4, chrome_tool_5, chrome_tool_6, chrome_tool_7,
+};
+
 const TOOLBAR_H: f32 = 38.0;
 
 fn omnibox_history_sel_id() -> egui::Id {
@@ -104,7 +109,7 @@ pub fn show_chrome_toolbar(
         // ── Left: navigation buttons ────────────────────────────
         if chrome_button(
             ui,
-            egui::Id::new("tonet_chrome_back"),
+            chrome_back(),
             "<",
             16.0,
             nav_color(can_back),
@@ -118,7 +123,7 @@ pub fn show_chrome_toolbar(
 
         if chrome_button(
             ui,
-            egui::Id::new("tonet_chrome_forward"),
+            chrome_forward(),
             ">",
             16.0,
             nav_color(can_forward),
@@ -133,7 +138,7 @@ pub fn show_chrome_toolbar(
         if loading {
             if chrome_button(
                 ui,
-                egui::Id::new("tonet_chrome_stop"),
+                chrome_stop(),
                 "✕",
                 14.0,
                 theme::nav_glyph(),
@@ -146,7 +151,7 @@ pub fn show_chrome_toolbar(
             }
         } else if chrome_button(
             ui,
-            egui::Id::new("tonet_chrome_reload"),
+            chrome_reload(),
             "↻",
             16.0,
             theme::nav_glyph(),
@@ -317,17 +322,17 @@ pub fn show_chrome_toolbar(
         // ── Right: icon group ───────────────────────────────────
         ui.spacing_mut().item_spacing.x = theme::SP;
 
-        let _ = chrome_button(ui, egui::Id::new("tonet_chrome_tool_1"), "☆", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, egui::Id::new("tonet_chrome_tool_2"), "◯", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, egui::Id::new("tonet_chrome_tool_3"), "⊛", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, egui::Id::new("tonet_chrome_tool_4"), "⤓", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, egui::Id::new("tonet_chrome_tool_5"), "↺", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, egui::Id::new("tonet_chrome_tool_6"), "⊞", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, egui::Id::new("tonet_chrome_tool_7"), "◎", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_1(), "☆", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_2(), "◯", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_3(), "⊛", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_4(), "⤓", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_5(), "↺", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_6(), "⊞", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_7(), "◎", 16.0, theme::tool_icon(), true);
 
         if chrome_button(
             ui,
-            egui::Id::new("tonet_chrome_menu"),
+            chrome_menu(),
             "☰",
             16.0,
             theme::tool_icon(),
