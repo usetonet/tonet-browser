@@ -119,6 +119,21 @@
         <p class="lead" id="download-lead">
           We highlight the option that matches your system. You can always switch tabs manually.
         </p>
+        <div class="download-channel card" id="download-channel-wrap">
+          <div class="download-channel-row">
+            <label class="download-channel-label" for="channel-select">Release channel</label>
+            <select id="channel-select" class="channel-select" aria-describedby="channel-hint">
+              <option value="stable">Latest stable (recommended)</option>
+              <option value="development">Latest preview / development</option>
+              <option value="specific">Specific version…</option>
+            </select>
+          </div>
+          <div class="download-channel-row" id="version-row" hidden>
+            <label class="download-channel-label" for="version-select">Version</label>
+            <select id="version-select" class="channel-select"></select>
+          </div>
+          <p class="channel-hint" id="channel-hint"></p>
+        </div>
         <p class="detected-badge" id="os-detected" hidden></p>
         <div class="os-tabs" role="tablist" aria-label="Operating system">
           <button type="button" class="os-tab" data-os="windows" role="tab" aria-selected="false">Windows</button>
@@ -146,7 +161,7 @@
             >
           </p>
           <p style="color: var(--muted); font-size: 0.9rem" id="panel-win-foot">
-            Advanced: versioned <code>Tonet-&lt;version&gt;-x64.msi</code> and <code>Tonet-Setup-&lt;version&gt;-x64.exe</code> are linked automatically when this site knows the current version.
+            Stable downloads use short names on the CDN (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) that always track the latest stable release. Choose “Specific version” for an exact build.
           </p>
         </div>
 

@@ -168,7 +168,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelWinP1:
       "Primary download is the CI-built Inno Setup installer (EXE) for the version embedded on this site. MSI and other formats are linked below.",
     panelWinFoot:
-      "Advanced: this page also links the CI-built <code>Tonet-&lt;version&gt;-x64.msi</code> and <code>Tonet-Setup-&lt;version&gt;-x64.exe</code> when the embedded version matches the latest GitHub tag.",
+      "On the CDN, stable builds use short names (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) that always point to the latest stable release. Choose <strong>Specific version</strong> to download a particular build.",
     winSetup: "Download Tonet (Windows)",
     winMsi: "MSI (x64)",
     winExe: "Inno Setup EXE (x64)",
@@ -218,7 +218,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelWinP1:
       "La descarga principal es el instalador Inno Setup (EXE) generado en CI para la versión incrustada en esta web. El MSI y otros formatos están enlazados abajo.",
     panelWinFoot:
-      "Avanzado: esta página enlaza también el <code>Tonet-&lt;versión&gt;-x64.msi</code> y el <code>Tonet-Setup-&lt;versión&gt;-x64.exe</code> generados en CI cuando la versión incrustada coincide con el último tag de GitHub.",
+      "En el CDN, la rama estable usa nombres cortos (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) que siempre apuntan a la última versión estable. Elige <strong>Versión concreta</strong> para bajar un build exacto.",
     winSetup: "Descargar Tonet (Windows)",
     winMsi: "MSI (x64)",
     winExe: "EXE Inno Setup (x64)",
@@ -268,7 +268,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelWinP1:
       "Haupt-Download: Inno-Setup-Installer (EXE) aus der CI-Pipeline für die auf dieser Seite eingebettete Version. MSI und weitere Formate sind unten verlinkt.",
     panelWinFoot:
-      "Fortgeschritten: Diese Seite verlinkt außerdem die CI-Builds <code>Tonet-&lt;Version&gt;-x64.msi</code> und <code>Tonet-Setup-&lt;Version&gt;-x64.exe</code>, wenn die eingebettete Version mit dem neuesten GitHub-Tag übereinstimmt.",
+      "Im CDN nutzen stabile Builds kurze Dateinamen (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>), die stets die aktuelle stabile Version referenzieren. Wähle <strong>Bestimmte Version</strong> für einen konkreten Build.",
     winSetup: "Tonet herunterladen (Windows)",
     winMsi: "MSI (x64)",
     winExe: "Inno-Setup-EXE (x64)",
@@ -318,7 +318,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelWinP1:
       "Téléchargement principal : installateur Inno Setup (EXE) produit en CI pour la version intégrée sur ce site. Le MSI et d’autres formats sont liés ci-dessous.",
     panelWinFoot:
-      "Avancé : cette page lie aussi les artefacts CI <code>Tonet-&lt;version&gt;-x64.msi</code> et <code>Tonet-Setup-&lt;version&gt;-x64.exe</code> lorsque la version intégrée correspond au dernier tag GitHub.",
+      "Sur le CDN, les builds stables utilisent des noms courts (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) vers la dernière version stable. Choisissez <strong>Version spécifique</strong> pour un build précis.",
     winSetup: "Télécharger Tonet (Windows)",
     winMsi: "MSI (x64)",
     winExe: "EXE Inno Setup (x64)",

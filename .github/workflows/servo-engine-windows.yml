@@ -20,10 +20,11 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      # MSVC 2022 14.4x headers (STL1000) require libclang 19+ when included through bindgen/mozangle.
       - name: Install LLVM (libclang for bindgen)
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "18"
+          version: "19"
 
       - name: cargo check (tonet + servo-engine)
         shell: pwsh

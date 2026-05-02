@@ -221,6 +221,42 @@ a:hover {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+/* Download channel picker */
+.download-channel {
+  margin-bottom: 20px;
+  padding: 20px 22px;
+}
+.download-channel-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 10px;
+}
+.download-channel-label {
+  min-width: 120px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.channel-select {
+  min-width: 220px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.channel-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--stroke);

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- CDN manifest schema v2 with `channels.stable`, optional `channels.development`, and `releases` history for version picker.
+- Stable short filenames on R2 (`Tonet-Setup.exe`, `tonet_amd64.deb`, …) overwritten each stable release; preview aliases (`Tonet-Setup-Preview.exe`, …) when `TONET_RELEASE_PRODUCTION=false`.
+- Landing download section: channel selector (stable / preview / specific version) wired to manifest URLs.
+- `scripts/cdn-merge-manifest.mjs` used by CI and local landing embed step.
+
+### Changed
+- Release `publish-cdn` job uploads alias objects, fetches previous `version.json`, merges history, and uploads the merged manifest.
+
 ## 0.2.1
 
 ### Added

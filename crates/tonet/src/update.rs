@@ -19,7 +19,20 @@ fn downloads_page_url() -> &'static str {
 }
 
 #[derive(Debug, Deserialize)]
-struct ManifestRelease {
+struct UpdateManifest {
+    version: String,
+    #[serde(default)]
+    channels: Option<ManifestChannels>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ManifestChannels {
+    #[serde(default)]
+    stable: Option<ManifestChannel>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ManifestChannel {
     version: String,
 }
 
@@ -47,8 +60,15 @@ pub fn check_for_newer_release() -> anyhow::Result<Option<Version>> {
         );
     }
 
-    let body: ManifestRelease = resp.json().context("parse update manifest JSON")?;
-    let remote_text = body.version.trim().trim_start_matches('v');
+    let body: UpdateManifest = resp.json().context("parse update manifest JSON")?;
+    let remote_text = body
+        .channels
+        .as_ref()
+        .and_then(|c| c.stable.as_ref())
+        .map(|s| s.version.as_str())
+        .unwrap_or(body.version.as_str())
+        .trim()
+        .trim_start_matches('v');
     let remote = Version::parse(remote_text)
         .with_context(|| format!("invalid remote version: {remote_text}"))?;
 

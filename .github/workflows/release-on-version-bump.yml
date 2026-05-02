@@ -289,7 +289,11 @@ jobs:
       R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
       CDN_BASE: ${{ vars.TONET_CDN_BASE_URL }}
       VERSION: ${{ needs.check-version.outputs.version }}
+      # Repository variable: set to "false" to publish as preview/development (updates preview aliases + manifest, not stable Tonet-Setup.exe).
+      TONET_RELEASE_PRODUCTION: ${{ vars.TONET_RELEASE_PRODUCTION || 'true' }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download Windows installers
         uses: actions/download-artifact@v4
         with:
@@ -308,7 +312,7 @@ jobs:
           name: release-macos-${{ needs.check-version.outputs.version }}
           path: assets
 
-      - name: Setup Node for Wrangler
+      - name: Setup Node (manifest merge + wrangler)
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -316,7 +320,7 @@ jobs:
       - name: Install Wrangler
         run: npm i -g wrangler@3
 
-      - name: Upload release assets to R2
+      - name: Upload versioned release assets to R2
         shell: bash
         run: |
           set -euo pipefail
@@ -325,27 +329,39 @@ jobs:
             wrangler r2 object put "${R2_BUCKET}/${name}" --file "$f"
           done
 
-      - name: Generate and upload CDN version manifest
+      - name: Upload stable or preview alias objects (short filenames)
         shell: bash
         run: |
           set -euo pipefail
+          V="${VERSION}"
+          if [ "${TONET_RELEASE_PRODUCTION}" = "false" ]; then
+            wrangler r2 object put "${R2_BUCKET}/Tonet-Setup-Preview.exe" --file "assets/Tonet-Setup-${V}-x64.exe"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-x64-preview.msi" --file "assets/Tonet-${V}-x64.msi"
+            wrangler r2 object put "${R2_BUCKET}/tonet_amd64-preview.deb" --file "assets/tonet_${V}_amd64.deb"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-macos-preview.tar.gz" --file "assets/Tonet-${V}-macos.tar.gz"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-windows-x64-portable-preview.zip" --file "assets/Tonet-${V}-windows-x64-portable.zip"
+          else
+            wrangler r2 object put "${R2_BUCKET}/Tonet-Setup.exe" --file "assets/Tonet-Setup-${V}-x64.exe"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-x64.msi" --file "assets/Tonet-${V}-x64.msi"
+            wrangler r2 object put "${R2_BUCKET}/tonet_amd64.deb" --file "assets/tonet_${V}_amd64.deb"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-macos.tar.gz" --file "assets/Tonet-${V}-macos.tar.gz"
+            wrangler r2 object put "${R2_BUCKET}/Tonet-windows-x64-portable.zip" --file "assets/Tonet-${V}-windows-x64-portable.zip"
+          fi
+
+      - name: Merge CDN manifest (channels + release history)
+        shell: bash
+        env:
+          PREV_PATH: prev.json
+        run: |
+          set -euo pipefail
           base="${CDN_BASE%/}"
-          cat > version.json <<EOF
-          {
-            "version": "${VERSION}",
-            "releasesUrl": "${base}/",
-            "cdnBaseUrl": "${base}",
-            "updateManifestUrl": "${base}/version.json",
-            "download": {
-              "windowsSetup": "${base}/Tonet-Setup-${VERSION}-x64.exe",
-              "linuxSetup": "${base}/tonet_${VERSION}_amd64.deb",
-              "macSetup": "${base}/Tonet-${VERSION}-macos.tar.gz",
-              "windowsMsi": "${base}/Tonet-${VERSION}-x64.msi",
-              "windowsExe": "${base}/Tonet-Setup-${VERSION}-x64.exe",
-              "windowsPortableZip": "${base}/Tonet-${VERSION}-windows-x64-portable.zip",
-              "deb": "${base}/tonet_${VERSION}_amd64.deb",
-              "macTarball": "${base}/Tonet-${VERSION}-macos.tar.gz"
-            }
-          }
-          EOF
+          curl -sfL "${base}/version.json" -o prev.json || echo '{}' > prev.json
+          export CDN_BASE="$base"
+          export VERSION="${VERSION}"
+          node scripts/cdn-merge-manifest.mjs > version.json
+
+      - name: Upload version.json to R2
+        shell: bash
+        run: |
+          set -euo pipefail
           wrangler r2 object put "${R2_BUCKET}/version.json" --file version.json
