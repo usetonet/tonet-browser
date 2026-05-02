@@ -22,6 +22,10 @@ fn omnibox_history_fp_id() -> egui::Id {
     omnibox_id().with("visit_history_kb_fp")
 }
 
+fn omnibox_anchor_rect_id() -> egui::Id {
+    omnibox_id().with("omnibox_anchor_rect")
+}
+
 pub struct ToolbarResult {
     pub navigate: bool,
     pub reload: bool,
@@ -182,56 +186,62 @@ pub fn show_chrome_toolbar(
         ui.vertical(|ui| {
             ui.set_width(omnibox_w);
             let mut omnibox_has_focus = false;
-            ui.allocate_ui_with_layout(
-                Vec2::new(omnibox_w, theme::CHROME_BTN),
-                Layout::left_to_right(Align::Center),
-                |ui| {
-                    egui::Frame::none()
-                        .fill(theme::omnibox_fill())
-                        .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
-                        .rounding(20.0)
-                        .inner_margin(egui::Margin::symmetric(theme::SP3, theme::SP + 2.0))
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.spacing_mut().item_spacing.x = theme::SP2;
-                                ui.label(
-                                    RichText::new(chip_icon)
-                                        .size(14.0)
-                                        .color(theme::chip()),
-                                )
-                                .on_hover_text(chip_tip);
+            let omnibox_outer = ui
+                .allocate_ui_with_layout(
+                    Vec2::new(omnibox_w, theme::CHROME_BTN),
+                    Layout::left_to_right(Align::Center),
+                    |ui| {
+                        egui::Frame::none()
+                            .fill(theme::omnibox_fill())
+                            .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
+                            .rounding(20.0)
+                            .inner_margin(egui::Margin::symmetric(theme::SP3, theme::SP + 2.0))
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.spacing_mut().item_spacing.x = theme::SP2;
+                                    ui.label(
+                                        RichText::new(chip_icon)
+                                            .size(14.0)
+                                            .color(theme::chip()),
+                                    )
+                                    .on_hover_text(chip_tip);
 
-                                let te = egui::TextEdit::singleline(url_input)
-                                    .id(omnibox_id())
-                                    .frame(false)
-                                    .text_color(theme::omnibox_text())
-                                    .hint_text(i18n::address_hint(loc))
-                                    .desired_rows(1)
-                                    .desired_width(ui.available_width());
-                                let output = te.show(ui);
-                                omnibox_has_focus = output.response.has_focus();
+                                    let te = egui::TextEdit::singleline(url_input)
+                                        .id(omnibox_id())
+                                        .frame(false)
+                                        .text_color(theme::omnibox_text())
+                                        .hint_text(i18n::address_hint(loc))
+                                        .desired_rows(1)
+                                        .desired_width(ui.available_width());
+                                    let output = te.show(ui);
+                                    omnibox_has_focus = output.response.has_focus();
 
-                                if focus_omnibox_select_all {
-                                    let id = output.response.id;
-                                    let n = url_input.chars().count();
-                                    ui.ctx().memory_mut(|m| m.request_focus(id));
-                                    let mut state = output.state;
-                                    state.cursor.set_char_range(Some(
-                                        CCursorRange::two(
-                                            CCursor::new(0),
-                                            CCursor::new(n),
-                                        ),
-                                    ));
-                                    state.store(ui.ctx(), id);
-                                }
+                                    if focus_omnibox_select_all {
+                                        let id = output.response.id;
+                                        let n = url_input.chars().count();
+                                        ui.ctx().memory_mut(|m| m.request_focus(id));
+                                        let mut state = output.state;
+                                        state.cursor.set_char_range(Some(
+                                            CCursorRange::two(
+                                                CCursor::new(0),
+                                                CCursor::new(n),
+                                            ),
+                                        ));
+                                        state.store(ui.ctx(), id);
+                                    }
 
-                                output
-                                    .response
-                                    .on_hover_text(i18n::omnibox_focus_shortcut_hint(loc));
-                            });
-                        });
-                },
-            );
+                                    output
+                                        .response
+                                        .on_hover_text(i18n::omnibox_focus_shortcut_hint(loc));
+                                });
+                            })
+                    },
+                )
+                .inner;
+            ui.ctx().data_mut(|d| {
+                *d.get_temp_mut_or_insert_with(omnibox_anchor_rect_id(), || None::<egui::Rect>) =
+                    Some(omnibox_outer.response.rect);
+            });
 
             let n_sugg = omnibox_visit_suggestions.len();
             let mut fp = String::with_capacity(url_input.len().saturating_add(n_sugg * 48));
@@ -297,53 +307,6 @@ pub fn show_chrome_toolbar(
                 }
             }
 
-            if omnibox_focused && !omnibox_visit_suggestions.is_empty() {
-                ui.add_space(2.0);
-                egui::Frame::none()
-                    .fill(theme::omnibox_fill())
-                    .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
-                    .rounding(10.0)
-                    .inner_margin(egui::Margin::symmetric(theme::SP2, theme::SP))
-                    .show(ui, |ui| {
-                        ui.label(
-                            RichText::new(i18n::omnibox_history_heading(loc))
-                                .small()
-                                .color(theme::omnibox_text()),
-                        )
-                        .on_hover_text(i18n::omnibox_history_keyboard_hint(loc));
-                        ui.add_space(2.0);
-                        egui::ScrollArea::vertical()
-                            .id_salt("tonet_omnibox_history_scroll")
-                            .max_height(140.0)
-                            .show(ui, |ui| {
-                                for (idx, s) in omnibox_visit_suggestions.iter().enumerate() {
-                                    let label = match &s.title {
-                                        Some(t) if !t.trim().is_empty() => {
-                                            format!("{}\n{}", s.url, t.trim())
-                                        }
-                                        _ => s.url.clone(),
-                                    };
-                                    let row_selected = kb_row == Some(idx);
-                                    if ui
-                                        .add(egui::SelectableLabel::new(
-                                            row_selected,
-                                            RichText::new(label).size(11.5),
-                                        ))
-                                        .clicked()
-                                    {
-                                        *url_input = s.url.clone();
-                                        navigate = true;
-                                        ui.ctx().data_mut(|d| {
-                                            *d.get_temp_mut_or_insert_with(
-                                                omnibox_history_sel_id(),
-                                                || None::<usize>,
-                                            ) = None;
-                                        });
-                                    }
-                                }
-                            });
-                    });
-            }
         });
         if url_enter {
             navigate = true;
@@ -376,6 +339,71 @@ pub fn show_chrome_toolbar(
             navigate_to_settings = true;
         }
     });
+
+    {
+        let ctx = ui.ctx();
+        let anchor = ctx
+            .data(|d| d.get_temp::<Option<egui::Rect>>(omnibox_anchor_rect_id()))
+            .flatten();
+        let omnibox_focused_now = ctx.memory(|m| m.has_focus(omnibox_id()));
+        let kb_row_popup: Option<usize> = ctx.data(|d| d.get_temp(omnibox_history_sel_id())).flatten();
+        if omnibox_focused_now && !omnibox_visit_suggestions.is_empty() {
+            if let Some(anchor) = anchor {
+                let w = anchor.width();
+                egui::Area::new(omnibox_id().with("hist_popup_layer"))
+                    .order(egui::Order::Foreground)
+                    .fixed_pos(anchor.left_bottom() + Vec2::new(0.0, 2.0))
+                    .show(ctx, |ui| {
+                        ui.set_width(w);
+                        egui::Frame::none()
+                            .fill(theme::omnibox_fill())
+                            .stroke(Stroke::new(1.0, theme::omnibox_stroke()))
+                            .rounding(10.0)
+                            .inner_margin(egui::Margin::symmetric(theme::SP2, theme::SP))
+                            .show(ui, |ui| {
+                                ui.label(
+                                    RichText::new(i18n::omnibox_history_heading(loc))
+                                        .small()
+                                        .color(theme::omnibox_text()),
+                                )
+                                .on_hover_text(i18n::omnibox_history_keyboard_hint(loc));
+                                ui.add_space(2.0);
+                                egui::ScrollArea::vertical()
+                                    .id_salt("tonet_omnibox_history_scroll")
+                                    .max_height(140.0)
+                                    .show(ui, |ui| {
+                                        for (idx, s) in omnibox_visit_suggestions.iter().enumerate()
+                                        {
+                                            let label = match &s.title {
+                                                Some(t) if !t.trim().is_empty() => {
+                                                    format!("{}\n{}", s.url, t.trim())
+                                                }
+                                                _ => s.url.clone(),
+                                            };
+                                            let row_selected = kb_row_popup == Some(idx);
+                                            if ui
+                                                .add(egui::SelectableLabel::new(
+                                                    row_selected,
+                                                    RichText::new(label).size(11.5),
+                                                ))
+                                                .clicked()
+                                            {
+                                                *url_input = s.url.clone();
+                                                navigate = true;
+                                                ui.ctx().data_mut(|d| {
+                                                    *d.get_temp_mut_or_insert_with(
+                                                        omnibox_history_sel_id(),
+                                                        || None::<usize>,
+                                                    ) = None;
+                                                });
+                                            }
+                                        }
+                                    });
+                            });
+                    });
+            }
+        }
+    }
 
     ToolbarResult {
         navigate,
