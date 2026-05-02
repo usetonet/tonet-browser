@@ -15,8 +15,8 @@ use url::Url;
 /// Conservative: no `html`/`htm`, no common in-browser media (`png`, `mp4`, …).
 const MAIN_FRAME_DOWNLOAD_EXTENSIONS: &[&str] = &[
     "7z", "apk", "bin", "bz2", "csv", "dat", "deb", "dmg", "doc", "docx", "exe", "gz", "iso",
-    "msi", "odb", "odp", "ods", "odt", "pdf", "ppt", "pptx", "rar", "rpm", "tar", "tgz",
-    "torrent", "wasm", "xls", "xlsx", "xz", "zip",
+    "msi", "odb", "odp", "ods", "odt", "pdf", "ppt", "pptx", "rar", "rpm", "tar", "tgz", "torrent",
+    "wasm", "xls", "xlsx", "xz", "zip",
 ];
 
 #[inline]
@@ -164,7 +164,12 @@ mod tests {
     fn options_put_delete_patch_no() {
         for method in [Method::OPTIONS, Method::PUT, Method::DELETE, Method::PATCH] {
             assert!(
-                !should_intercept_main_frame_binary_get(&method, &u("https://example.com/a.zip"), true, false),
+                !should_intercept_main_frame_binary_get(
+                    &method,
+                    &u("https://example.com/a.zip"),
+                    true,
+                    false
+                ),
                 "{method:?}"
             );
         }
@@ -324,6 +329,38 @@ mod tests {
         assert!(should_intercept_main_frame_binary_get(
             &Method::GET,
             &u("https://[::1]:8443/files/app.zip"),
+            true,
+            false,
+        ));
+    }
+
+    #[test]
+    fn head_probe_no_on_redirect_or_subresource_or_non_get() {
+        assert!(!should_head_probe_main_frame_binary_get(
+            &Method::GET,
+            &u("https://example.com/download"),
+            true,
+            true,
+        ));
+        assert!(!should_head_probe_main_frame_binary_get(
+            &Method::GET,
+            &u("https://example.com/download"),
+            false,
+            false,
+        ));
+        assert!(!should_head_probe_main_frame_binary_get(
+            &Method::POST,
+            &u("https://example.com/download"),
+            true,
+            false,
+        ));
+    }
+
+    #[test]
+    fn head_probe_attachment_segment_case_insensitive() {
+        assert!(should_head_probe_main_frame_binary_get(
+            &Method::GET,
+            &u("https://cdn.example/foo/Attachment"),
             true,
             false,
         ));
