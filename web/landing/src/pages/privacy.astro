@@ -1,0 +1,121 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { SiteChromeBoot } from "../components/SiteChromeBoot";
+---
+
+<BaseLayout
+  title="Privacy Policy — Tonet"
+  description="How usetonet.com and Tonet-related distribution handle personal data: hosting, downloads, local settings, and your rights."
+  page="privacy"
+>
+  <main class="legal-page">
+    <h1>Privacy Policy</h1>
+    <p class="legal-updated"><strong>Last updated:</strong> May 2, 2026</p>
+    <p class="legal-lang-note" role="note">
+      <strong>Language:</strong> This page is available in <strong>English only</strong>. It is not part of the site’s translated interface; the
+      language selector in the footer only affects navigation labels on other pages.
+    </p>
+
+    <p>
+      This policy describes how information is handled in connection with the Tonet project website (<strong>usetonet.com</strong>), public
+      GitHub repositories, and the Tonet browser binaries we distribute. It is written to support transparency requirements (including the EU
+      General Data Protection Regulation — GDPR) where they apply. The <strong>official language of this policy is English</strong>; translated
+      summaries may be added later and will defer to the English text in case of conflict.
+    </p>
+
+    <h2>1. Who we are</h2>
+    <p>
+      Tonet is an <strong>open source</strong> browser project. The website and downloads are operated as a community/project publication. There
+      is no physical office address for Tonet; we do not list corporate “office” locations on this site. For privacy requests or questions about
+      this policy, use <a href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a> on the public repository.
+    </p>
+
+    <h2>2. Scope</h2>
+    <p>This policy covers:</p>
+    <ul>
+      <li>This marketing and documentation site (static pages served via Cloudflare Workers).</li>
+      <li>Download infrastructure (e.g. CDN / manifest URLs documented in the project) when you fetch installers or version metadata.</li>
+      <li>Interaction with GitHub when you visit or contribute to our repositories.</li>
+      <li>Local settings stored by this website in your browser (site language preference).</li>
+    </ul>
+    <p>
+      It does not replace the privacy policies of third parties you may interact with while using Tonet to browse the web (for example, website
+      operators, operating-system vendors, or search providers).
+    </p>
+
+    <h2>3. What we do not do</h2>
+    <ul>
+      <li>We do not sell your personal data.</li>
+      <li>We do not operate user accounts on this website.</li>
+      <li>We do not run advertising analytics or cross-site tracking pixels on this static landing.</li>
+      <li>
+        The Tonet browser is designed as a <strong>minimal, transparent</strong> product; it does not implement the broad telemetry,
+        sync, or rewards ecosystems found in many mainstream browsers. (See project docs for current capabilities.)
+      </li>
+    </ul>
+
+    <h2>4. Website hosting &amp; logs</h2>
+    <p>
+      The site is delivered through <strong>Cloudflare</strong> (Workers / CDN). As with any web host, Cloudflare and related infrastructure may
+      process technical data such as IP address, TLS metadata, User-Agent, and request paths for security, reliability, and aggregate statistics.
+      See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare’s privacy policy</a> for
+      details. We do not use this data to build individual profiles of visitors to usetonet.com.
+    </p>
+
+    <h2>5. Downloads &amp; update checks</h2>
+    <p>
+      When you download Tonet, your client retrieves binaries and may retrieve <strong>version manifests</strong> as described in the project
+      documentation (including URLs you or your organization configure). Those requests are ordinary HTTPS transfers; the CDN or hosting provider
+      may log technical data in line with their policies. We do not attach those logs to “accounts” on our side because we do not offer accounts.
+    </p>
+
+    <h2>6. GitHub</h2>
+    <p>
+      Source code and releases may be hosted on <strong>GitHub</strong>. If you open issues, pull requests, or clone repositories, Microsoft’s
+      GitHub privacy terms apply. Do not post secrets or sensitive personal data in public issues.
+    </p>
+
+    <h2>7. Local storage (language preference)</h2>
+    <p>
+      The language selector on this site may store your choice in <code>localStorage</code> in your browser so the preference persists between
+      visits. This is not used for tracking across sites. You can clear it using your browser’s settings.
+    </p>
+
+    <h2>8. Legal bases (GDPR)</h2>
+    <p>Where GDPR applies, we rely on:</p>
+    <ul>
+      <li><strong>Legitimate interests</strong> in operating a secure public website and distributing open source software (Art. 6(1)(f) GDPR).</li>
+      <li>
+        <strong>Consent</strong> where required for strictly optional mechanisms (we currently do not use optional marketing cookies on this
+        landing).
+      </li>
+    </ul>
+
+    <h2>9. International transfers</h2>
+    <p>
+      Infrastructure providers (e.g. Cloudflare, GitHub) may process data in the United States and other countries. Where required, they use
+      appropriate safeguards such as Standard Contractual Clauses. Review their policies for details.
+    </p>
+
+    <h2>10. Your rights</h2>
+    <p>
+      Depending on your jurisdiction, you may have rights to access, rectify, erase, restrict, or object to processing of personal data, and to
+      lodge a complaint with a supervisory authority. Because we collect minimal data, many requests may be limited to what appears in provider logs.
+      Contact us via <a href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a> for privacy-related requests; we will respond
+      within a reasonable time.
+    </p>
+
+    <h2>11. Children</h2>
+    <p>
+      Tonet and this site are intended for a general audience and not directed at children under 16. We do not knowingly collect personal data
+      from children for marketing purposes.
+    </p>
+
+    <h2>12. Changes</h2>
+    <p>
+      We may update this policy when practices change materially. The “Last updated” date at the top will change accordingly. Continued use of the
+      site after changes constitutes acceptance of the updated policy where permitted by law.
+    </p>
+  </main>
+  <SiteChromeBoot client:load />
+</BaseLayout>

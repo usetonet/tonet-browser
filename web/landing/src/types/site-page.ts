@@ -5,4 +5,7 @@ export type SitePage =
   | "roadmap"
   | "handbook"
   | "download"
-  | "guide";
+  | "guide"
+  | "privacy"
+  | "terms"
+  | "about";

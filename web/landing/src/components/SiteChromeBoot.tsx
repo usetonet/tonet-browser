@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { applyHandbookLocale } from "../i18n/extra-pages";
 import { applyFooterLocale, resolveSiteLang, wireLanguageSwitcher } from "../site-i18n";
 
-export function HandbookBoot(): null {
+/** Footer + language select without overwriting page title/meta (legal / about pages). */
+export function SiteChromeBoot(): null {
   useEffect(() => {
     const lang = resolveSiteLang();
-    applyHandbookLocale(lang);
+    document.documentElement.lang = lang;
     applyFooterLocale(lang);
     wireLanguageSwitcher(lang);
   }, []);

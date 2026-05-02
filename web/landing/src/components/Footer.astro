@@ -1,29 +1,104 @@
 ---
 ---
 
-<footer
-  class="border-t border-white/[0.08] px-6 py-10 pb-12 text-center text-[0.9rem] text-[#9aa3b5]"
->
-  <p class="mb-4 flex flex-wrap items-center justify-center gap-2.5">
-    <label id="lang-switcher-label" class="text-[0.85rem] text-[#9aa3b5]" for="site-lang">Site language</label>
-    <select
-      id="site-lang"
-      name="site-lang"
-      class="select-tonet min-w-0 text-[0.85rem] py-2 pl-3 pr-9"
-      aria-describedby="lang-switcher-label"
+<footer class="footer-tonet mt-auto text-[0.9rem] text-[#e8ecf4]">
+  <div class="mx-auto max-w-[1120px] px-6 pb-10 pt-14 lg:px-8">
+    <div class="grid grid-cols-2 gap-10 md:grid-cols-4 lg:gap-14">
+      <div>
+        <h2 class="footer-tonet-heading" id="footer-col-explore">Explore</h2>
+        <ul class="footer-tonet-list">
+          <li>
+            <a class="footer-tonet-link" href="/download.html" id="footer-link-download">Download</a>
+          </li>
+          <li>
+            <a class="footer-tonet-link" href="/#features" id="footer-link-features">Features</a>
+          </li>
+          <li>
+            <a class="footer-tonet-link" href="/guide.html" id="footer-link-guide">Using Tonet</a>
+          </li>
+          <li>
+            <a class="footer-tonet-link" href="/docs.html" id="footer-link-docs">Technical docs</a>
+          </li>
+          <li>
+            <a class="footer-tonet-link" href="/compare.html" id="footer-link-compare">Compare</a>
+          </li>
+          <li>
+            <a class="footer-tonet-link" href="/roadmap.html" id="footer-link-roadmap">Roadmap</a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="footer-tonet-heading" id="footer-col-legal">Legal</h2>
+        <ul class="footer-tonet-list">
+          <li>
+            <a class="footer-tonet-link" href="/privacy.html" id="footer-link-privacy">Privacy Policy</a>
+          </li>
+          <li>
+            <a class="footer-tonet-link" href="/terms.html" id="footer-link-terms">Terms of Use</a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="footer-tonet-heading" id="footer-col-project">Project</h2>
+        <ul class="footer-tonet-list">
+          <li>
+            <a class="footer-tonet-link" href="/about.html" id="footer-link-about">About</a>
+          </li>
+          <li>
+            <a
+              class="footer-tonet-link"
+              href="https://github.com/usetonet/tonet-browser"
+              target="_blank"
+              rel="noopener noreferrer"
+              id="footer-link-github">GitHub</a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="footer-tonet-heading" id="footer-col-contact">Contact</h2>
+        <div class="footer-tonet-contact" id="footer-contact-html">
+          Questions about this site or Tonet? Use
+          <a class="text-tonet-link" href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a>.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-tonet-divider mt-12 flex flex-wrap items-center justify-between gap-6 border-t border-white/[0.12] pt-8">
+      <label id="lang-switcher-label" class="text-[0.85rem] text-[#c8d0e0]" for="site-lang">
+        Site language
+      </label>
+      <select
+        id="site-lang"
+        name="site-lang"
+        class="select-tonet max-w-full text-[0.85rem] py-2 pl-3 pr-9"
+        aria-describedby="lang-switcher-label"
+      >
+        <option value="auto">Auto (browser)</option>
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+      </select>
+    </div>
+
+    <div
+      class="footer-tonet-divider mt-8 flex flex-col gap-4 border-t border-white/[0.12] pt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
     >
-      <option value="auto">Auto (browser)</option>
-      <option value="en">English</option>
-      <option value="es">Español</option>
-      <option value="de">Deutsch</option>
-      <option value="fr">Français</option>
-    </select>
-  </p>
-  <p>
-    <strong class="text-[#e8ecf4]">usetonet.com</strong> — <span id="footer-line1-prefix">project</span>
-    <a class="text-tonet-link" href="https://github.com/usetonet/tonet-browser">usetonet/tonet-browser</a>
-  </p>
-  <p id="footer-line2" class="mt-1">
-    Landing on Cloudflare Workers · Servo-based Tonet browser under active development
-  </p>
+      <a class="flex items-center gap-2.5 font-semibold text-[#e8ecf4] no-underline hover:opacity-90" href="/">
+        <span
+          class="size-8 shrink-0 rounded-[9px] bg-[url('/tonet.svg')] bg-contain bg-center bg-no-repeat shadow-[0_8px_28px_rgba(90,153,255,0.35)]"
+          aria-hidden="true"
+        ></span>
+        <span>Tonet</span>
+      </a>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.88rem]">
+        <a class="footer-tonet-strip-link" href="/terms.html" id="footer-strip-terms">Terms of Use</a>
+        <span class="text-white/25" aria-hidden="true">|</span>
+        <a class="footer-tonet-strip-link" href="/privacy.html" id="footer-strip-privacy">Privacy Policy</a>
+      </div>
+      <p class="m-0 max-w-[520px] text-[0.82rem] leading-relaxed text-[#b8c0d0]" id="footer-copyright">
+        © 2026 Tonet · usetonet.com · Open source · Servo-based browser under active development
+      </p>
+    </div>
+  </div>
 </footer>

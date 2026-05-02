@@ -104,6 +104,8 @@ interface LandingStrings {
   pageTitleGuide: string;
   metaDescriptionGuide: string;
   navAria: string;
+  /** Navbar repo link fallback when stars unavailable or zero */
+  navGithub: string;
   navDownload: string;
   navFeatures: string;
   navGuide: string;
@@ -146,8 +148,23 @@ interface LandingStrings {
   panelMacTitle: string;
   panelMacP1: string;
   macSetup: string;
-  footer1: string;
-  footer2: string;
+  /** Brave-style footer */
+  footerColExplore: string;
+  footerColLegal: string;
+  footerColProject: string;
+  footerColContact: string;
+  footerLinkFeatures: string;
+  footerLinkDownload: string;
+  footerLinkGuide: string;
+  footerLinkDocs: string;
+  footerLinkCompare: string;
+  footerLinkRoadmap: string;
+  footerLinkPrivacy: string;
+  footerLinkTerms: string;
+  footerLinkAbout: string;
+  footerLinkGithub: string;
+  footerContactHtml: string;
+  footerCopyright: string;
   langSwitcher: string;
   /** Home-only sections (beyond hero + first feature grid) */
   homeBannerTitle: string;
@@ -162,6 +179,16 @@ interface LandingStrings {
   kpi2Strong: string;
   kpi3Label: string;
   kpi3Strong: string;
+  /** Hero KPI card supporting line (Brave-style) */
+  kpi1Hint: string;
+  kpi2Hint: string;
+  kpi3Hint: string;
+  /** Caption under scroll-pinned browser showcase */
+  homeScrollFoot: string;
+  /** Final lockup between Tonet mark and Servo mark */
+  scrollPoweredBy: string;
+  homeScrollAria: string;
+  homeScrollHint: string;
   c5t: string;
   c5p: string;
   c6t: string;
@@ -225,6 +252,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescriptionGuide:
       "Plain-language help: install Tonet, check for updates, and use settings—without developer jargon.",
     navAria: "Main",
+    navGithub: "GitHub",
     navDownload: "Download",
     navFeatures: "Features",
     navGuide: "Using Tonet",
@@ -272,6 +300,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     panelMacP1:
       "macOS binaries (tarball or TonetSetup) appear on GitHub Releases when published for a tag. Until then, build from source below. A signed <code>.app</code> bundle is on the roadmap.",
     macSetup: "GitHub releases (macOS)",
+    footerColExplore: "Explore",
+    footerColLegal: "Legal",
+    footerColProject: "Project",
+    footerColContact: "Contact",
+    footerLinkFeatures: "Features",
+    footerLinkDownload: "Download",
+    footerLinkGuide: "Using Tonet",
+    footerLinkDocs: "Technical docs",
+    footerLinkCompare: "Compare",
+    footerLinkRoadmap: "Roadmap",
+    footerLinkPrivacy: "Privacy Policy",
+    footerLinkTerms: "Terms of Use",
+    footerLinkAbout: "About",
+    footerLinkGithub: "GitHub",
+    footerContactHtml:
+      'Questions about this site or Tonet? Use <a class="text-tonet-link" href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a>.',
+    footerCopyright:
+      "© 2026 Tonet · usetonet.com · Open source · Servo-based browser under active development",
     homeBannerTitle: "Ready to install?",
     homeBannerLead:
       "Choose your OS and format on the download page—the installer downloads like any normal file.",
@@ -287,6 +333,14 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi2Strong: "Windows + Linux",
     kpi3Label: "Updates",
     kpi3Strong: "Manifest URL",
+    kpi1Hint: "A thin shell on Servo — not another Blink bundle.",
+    kpi2Hint: "Desktop builds you can mirror; channels you control.",
+    kpi3Hint: "Your manifest URL on your CDN — no release-API roulette.",
+    homeScrollFoot:
+      "Tonet is designed for focus: a clear window onto the web, with infrastructure you can reason about — not an endless compatibility treadmill.",
+    scrollPoweredBy: "powered by",
+    homeScrollAria: "Scroll the page: layers combine into a Tonet and Servo lockup.",
+    homeScrollHint: "Scroll to assemble",
     c5t: "Servo rendering",
     c5p:
       "Web content uses the Servo engine—not Chromium, WebKit, or CEF. Fewer opaque layers between your policy and the network.",
@@ -308,8 +362,6 @@ const landing: Record<SiteLang, LandingStrings> = {
     d3t: "Docs-first project",
     d3p:
       "Public documentation covers setup, architecture, use cases, comparisons, release notes, and implementation plans.",
-    footer1: "usetonet.com — project",
-    footer2: "Landing on Cloudflare Workers · Servo-based Tonet browser under active development",
     langSwitcher: "Site language",
     homeGoToDownloads: "Go to downloads",
     homeLinkGuide: "Using Tonet (plain language)",
@@ -360,6 +412,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescriptionGuide:
       "Ayuda en lenguaje claro: instalar Tonet, actualizar y usar ajustes, sin tecnicismos de desarrollo.",
     navAria: "Principal",
+    navGithub: "GitHub",
     navDownload: "Descargar",
     navFeatures: "Características",
     navGuide: "Uso de Tonet",
@@ -422,6 +475,14 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi2Strong: "Windows + Linux",
     kpi3Label: "Actualizaciones",
     kpi3Strong: "URL del manifiesto",
+    kpi1Hint: "Capa fina sobre Servo — no otro paquete tipo Blink.",
+    kpi2Hint: "Builds de escritorio que puedes replicar; canales bajo tu control.",
+    kpi3Hint: "Tu URL de manifiesto en tu CDN — sin ruleta de API de releases.",
+    homeScrollFoot:
+      "Tonet está pensado para el foco: una ventana clara a la web, con infraestructura que puedes entender — no una cinta interminable de compatibilidad.",
+    scrollPoweredBy: "impulsado por",
+    homeScrollAria: "Desplázate: las capas forman el bloque Tonet y Servo.",
+    homeScrollHint: "*scrollea para continuar",
     c5t: "Renderizado Servo",
     c5p:
       "El contenido web usa el motor Servo: sin Chromium, WebKit ni CEF. Menos capas opacas entre tu política y la red.",
@@ -443,9 +504,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     d3t: "Proyecto con documentación",
     d3p:
       "Documentación pública: instalación, arquitectura, casos de uso, comparativas y notas de versión.",
-    footer1: "usetonet.com — proyecto",
-    footer2:
-      "Landing servida con Cloudflare Workers · Navegador Tonet basado en Servo en desarrollo activo",
+    footerColExplore: "Explorar",
+    footerColLegal: "Legal",
+    footerColProject: "Proyecto",
+    footerColContact: "Contacto",
+    footerLinkFeatures: "Funciones",
+    footerLinkDownload: "Descargas",
+    footerLinkGuide: "Uso de Tonet",
+    footerLinkDocs: "Documentación técnica",
+    footerLinkCompare: "Comparar",
+    footerLinkRoadmap: "Hoja de ruta",
+    footerLinkPrivacy: "Política de privacidad",
+    footerLinkTerms: "Condiciones de uso",
+    footerLinkAbout: "Acerca de",
+    footerLinkGithub: "GitHub",
+    footerContactHtml:
+      '¿Dudas sobre esta web o Tonet? Usa <a class="text-tonet-link" href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a>.',
+    footerCopyright:
+      "© 2026 Tonet · usetonet.com · Código abierto · Navegador basado en Servo en desarrollo activo",
     langSwitcher: "Idioma del sitio",
     homeGoToDownloads: "Ir a descargas",
     homeLinkGuide: "Uso de Tonet (lenguaje claro)",
@@ -496,6 +572,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescriptionGuide:
       "Klartext-Hilfe: Installation, Updates und Einstellungen — ohne Entwicklerjargon.",
     navAria: "Hauptnavigation",
+    navGithub: "GitHub",
     navDownload: "Download",
     navFeatures: "Funktionen",
     navGuide: "Tonet nutzen",
@@ -558,6 +635,14 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi2Strong: "Windows + Linux",
     kpi3Label: "Updates",
     kpi3Strong: "Manifest-URL",
+    kpi1Hint: "Dünne Shell auf Servo — kein weiteres Blink-Paket.",
+    kpi2Hint: "Desktop-Builds zum Spiegeln; Kanäle unter deiner Kontrolle.",
+    kpi3Hint: "Manifest-URL auf deinem CDN — ohne Release-API-Roulette.",
+    homeScrollFoot:
+      "Tonet ist auf Fokus ausgelegt: ein klares Fenster ins Web mit nachvollziehbarer Infrastruktur — kein endloser Kompatibilitätshamster.",
+    scrollPoweredBy: "angetrieben von",
+    homeScrollAria: "Scrollen: Ebenen fügen sich zu Tonet und Servo zusammen.",
+    homeScrollHint: "Zum Zusammensetzen scrollen",
     c5t: "Servo-Rendering",
     c5p:
       "Webinhalte laufen über Servo — nicht Chromium, WebKit oder CEF. Weniger undurchsichtige Schichten zwischen Policy und Netz.",
@@ -579,8 +664,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     d3t: "Dokumentationsfokus",
     d3p:
       "Öffentliche Docs: Setup, Architektur, Use Cases, Vergleich, Release Notes, Pläne.",
-    footer1: "usetonet.com — Projekt",
-    footer2: "Landing auf Cloudflare Workers · Tonet-Engine in aktiver Entwicklung",
+    footerColExplore: "Entdecken",
+    footerColLegal: "Rechtliches",
+    footerColProject: "Projekt",
+    footerColContact: "Kontakt",
+    footerLinkFeatures: "Funktionen",
+    footerLinkDownload: "Download",
+    footerLinkGuide: "Tonet nutzen",
+    footerLinkDocs: "Technische Dokumentation",
+    footerLinkCompare: "Vergleich",
+    footerLinkRoadmap: "Roadmap",
+    footerLinkPrivacy: "Datenschutzerklärung",
+    footerLinkTerms: "Nutzungsbedingungen",
+    footerLinkAbout: "Über Tonet",
+    footerLinkGithub: "GitHub",
+    footerContactHtml:
+      'Fragen zu dieser Website oder Tonet? Nutzen Sie <a class="text-tonet-link" href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a>.',
+    footerCopyright:
+      "© 2026 Tonet · usetonet.com · Open Source · Servo-basierter Browser in aktiver Entwicklung",
     langSwitcher: "Sprache der Website",
     homeGoToDownloads: "Zur Download-Seite",
     homeLinkGuide: "Tonet nutzen (einfach erklärt)",
@@ -631,6 +732,7 @@ const landing: Record<SiteLang, LandingStrings> = {
     metaDescriptionGuide:
       "Aide en langage clair : installer Tonet, mises à jour et réglages, sans jargon technique.",
     navAria: "Principal",
+    navGithub: "GitHub",
     navDownload: "Télécharger",
     navFeatures: "Fonctionnalités",
     navGuide: "Utiliser Tonet",
@@ -693,6 +795,14 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi2Strong: "Windows + Linux",
     kpi3Label: "Mises à jour",
     kpi3Strong: "URL du manifeste",
+    kpi1Hint: "Coque fine sur Servo — pas un autre bundle Blink.",
+    kpi2Hint: "Installateurs desktop que vous pouvez miroiter ; canaux maîtrisés.",
+    kpi3Hint: "Votre URL de manifeste sur votre CDN — sans roulette API releases.",
+    homeScrollFoot:
+      "Tonet est pensé pour la concentration : une fenêtre claire sur le web, avec une infrastructure que vous comprenez — pas un tapis roulant infini de compatibilité.",
+    scrollPoweredBy: "propulsé par",
+    homeScrollAria: "Faites défiler : les couches forment le bloc Tonet et Servo.",
+    homeScrollHint: "Défilez pour assembler",
     c5t: "Rendu Servo",
     c5p:
       "Le contenu web passe par Servo — pas Chromium, WebKit ni CEF. Moins de couches opaques entre la politique et le réseau.",
@@ -714,9 +824,24 @@ const landing: Record<SiteLang, LandingStrings> = {
     d3t: "Projet orienté documentation",
     d3p:
       "Docs publiques : installation, architecture, cas d’usage, comparaisons, notes de version, plans.",
-    footer1: "usetonet.com — projet",
-    footer2:
-      "Landing sur Cloudflare Workers · Navigateur Tonet fondé sur Servo en développement actif",
+    footerColExplore: "Explorer",
+    footerColLegal: "Mentions légales",
+    footerColProject: "Projet",
+    footerColContact: "Contact",
+    footerLinkFeatures: "Fonctionnalités",
+    footerLinkDownload: "Téléchargements",
+    footerLinkGuide: "Utiliser Tonet",
+    footerLinkDocs: "Documentation technique",
+    footerLinkCompare: "Comparer",
+    footerLinkRoadmap: "Feuille de route",
+    footerLinkPrivacy: "Politique de confidentialité",
+    footerLinkTerms: "Conditions d’utilisation",
+    footerLinkAbout: "À propos",
+    footerLinkGithub: "GitHub",
+    footerContactHtml:
+      'Questions sur ce site ou Tonet ? Utilisez <a class="text-tonet-link" href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a>.',
+    footerCopyright:
+      "© 2026 Tonet · usetonet.com · Open source · Navigateur fondé sur Servo en développement actif",
     langSwitcher: "Langue du site",
     homeGoToDownloads: "Aller aux téléchargements",
     homeLinkGuide: "Utiliser Tonet (langage simple)",
@@ -759,8 +884,13 @@ const landing: Record<SiteLang, LandingStrings> = {
   },
 };
 
+export function getLandingStrings(lang: SiteLang): LandingStrings {
+  return landing[lang];
+}
+
 export function getNavLabels(lang: SiteLang): {
   ariaMain: string;
+  github: string;
   download: string;
   roadmap: string;
   more: string;
@@ -774,6 +904,7 @@ export function getNavLabels(lang: SiteLang): {
   const L = landing[lang];
   return {
     ariaMain: L.navAria,
+    github: L.navGithub,
     download: L.navDownload,
     roadmap: L.navRoadmap,
     more: L.navMore,
@@ -798,6 +929,32 @@ function setHtml(id: string, html: string): void {
 function setText(id: string, text: string): void {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
+}
+
+/** Footer column links + copyright + language label (safe on any page). */
+export function applyFooterLocale(lang: SiteLang): void {
+  const L = landing[lang];
+  setText("footer-col-explore", L.footerColExplore);
+  setText("footer-col-legal", L.footerColLegal);
+  setText("footer-col-project", L.footerColProject);
+  setText("footer-col-contact", L.footerColContact);
+  setText("footer-link-features", L.footerLinkFeatures);
+  setText("footer-link-download", L.footerLinkDownload);
+  setText("footer-link-guide", L.footerLinkGuide);
+  setText("footer-link-docs", L.footerLinkDocs);
+  setText("footer-link-compare", L.footerLinkCompare);
+  setText("footer-link-roadmap", L.footerLinkRoadmap);
+  setText("footer-link-privacy", L.footerLinkPrivacy);
+  setText("footer-link-terms", L.footerLinkTerms);
+  setText("footer-link-about", L.footerLinkAbout);
+  setText("footer-link-github", L.footerLinkGithub);
+  setText("footer-strip-terms", L.footerLinkTerms);
+  setText("footer-strip-privacy", L.footerLinkPrivacy);
+  setHtml("footer-contact-html", L.footerContactHtml);
+  setText("footer-copyright", L.footerCopyright);
+  const swLabel = document.getElementById("lang-switcher-label");
+  if (swLabel) swLabel.textContent = L.langSwitcher;
+  applyLanguageSelectLabels(lang);
 }
 
 export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "download" | "guide" }): void {
@@ -853,6 +1010,10 @@ export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "dow
   setText("kpi-2-strong", L.kpi2Strong);
   setText("kpi-3-label", L.kpi3Label);
   setText("kpi-3-strong", L.kpi3Strong);
+  setText("kpi-1-hint", L.kpi1Hint);
+  setText("kpi-2-hint", L.kpi2Hint);
+  setText("kpi-3-hint", L.kpi3Hint);
+  setText("home-scroll-foot", L.homeScrollFoot);
   setText("diff-1-t", L.d1t);
   setText("diff-1-p", L.d1p);
   setText("diff-2-t", L.d2t);
@@ -876,12 +1037,6 @@ export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "dow
   setText("panel-mac-h3", L.panelMacTitle);
   setHtml("panel-mac-p1", L.panelMacP1);
   setText("mac-setup", L.macSetup);
-  setText("footer-line1-prefix", L.footer1);
-  setText("footer-line2", L.footer2);
-  const swLabel = document.getElementById("lang-switcher-label");
-  if (swLabel) swLabel.textContent = L.langSwitcher;
-
-  applyLanguageSelectLabels(lang);
 
   const goDl = document.getElementById("home-go-download");
   if (goDl) goDl.textContent = L.homeGoToDownloads;
@@ -930,6 +1085,8 @@ export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "dow
   if (modalHelp) modalHelp.textContent = L.downloadModalHelp;
   const closeBtn = document.getElementById("modal-close-btn");
   if (closeBtn) closeBtn.setAttribute("aria-label", L.modalCloseLabel);
+
+  applyFooterLocale(lang);
 }
 
 export function applyLanguageSelectLabels(lang: SiteLang): void {
