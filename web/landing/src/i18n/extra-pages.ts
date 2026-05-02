@@ -287,6 +287,10 @@ const handbookPage: Record<
   {
     h1: string;
     lead: string;
+    servoH: string;
+    servoP1: string;
+    servoP2: string;
+    servoP3: string;
     useH: string;
     useL1: string;
     useL2: string;
@@ -313,6 +317,13 @@ const handbookPage: Record<
     h1: "Public handbook",
     lead:
       "Expanded project documentation: use cases, internal pages, product evolution, and implementation tracks.",
+    servoH: "Servo and Tonet",
+    servoP1:
+      "<strong>Servo</strong> is a free and open-source <strong>web rendering engine</strong> written in <strong>Rust</strong>. It is designed for <strong>embedding</strong> (WebView-style APIs), <strong>parallel</strong> layout and paint, and <strong>memory safety</strong> by construction. The project explains its goals and downloads on the official site: <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a> — a lightweight, embeddable alternative for applications that need real web technology without shipping an entire Chromium-sized platform.",
+    servoP2:
+      "<strong>History (short):</strong> Servo began at <strong>Mozilla</strong> around 2012 as a research engine; the <strong>Rust</strong> language grew up alongside it. After Mozilla restructured R&amp;D, the community kept Servo alive; governance now sits under <strong>Linux Foundation Europe</strong>, with open rules and a public Technical Steering Committee. Servo ships as Rust crates (including on <strong>crates.io</strong>) and targets desktop, mobile, and embedded scenarios. For a neutral overview, see Wikipedia’s article <a class=\"text-tonet-link hover:underline\" href=\"https://en.wikipedia.org/wiki/Servo_(software)\" target=\"_blank\" rel=\"noopener noreferrer\">Servo (software)</a>.",
+    servoP3:
+      "<strong>Why Tonet uses Servo:</strong> Tonet is a <strong>minimal browser shell</strong> that embeds Servo to render <strong>real web pages in-process</strong>. We want an engine surface that teams can <strong>audit and reason about</strong> — without the full weight and opacity of a Chromium-class embedding stack, and with room for <strong>policy-first</strong> browsing and explicit resource limits. Servo’s direction — Rust, modularity, embedding — matches that product bet. Official Servo home: <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
     useH: "Use cases",
     useL1: "Low-overhead browsing where predictable behavior matters.",
     useL2: "Education and R&D where browser internals must stay transparent.",
@@ -340,6 +351,13 @@ const handbookPage: Record<
     h1: "Manual público",
     lead:
       "Documentación ampliada del proyecto: casos de uso, páginas internas, evolución del producto y líneas de implementación.",
+    servoH: "Servo y Tonet",
+    servoP1:
+      "<strong>Servo</strong> es un <strong>motor de renderizado web</strong> libre y de código abierto escrito en <strong>Rust</strong>. Está pensado para <strong>embeberse</strong> (API estilo WebView), paralelizar diseño y pintado y ofrecer <strong>seguridad de memoria</strong>. La documentación y los objetivos del proyecto están en <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
+    servoP2:
+      "<strong>Historia (breve):</strong> Servo nació en <strong>Mozilla</strong> hacia 2012 como motor de investigación; <strong>Rust</strong> creció en paralelo. Tras la reorganización de Mozilla, la comunidad mantuvo Servo; la gobernanza pasó a <strong>Linux Foundation Europe</strong>, con reglas abiertas. Los crates se publican entre otros en <strong>crates.io</strong>. Visión general neutral: Wikipedia <a class=\"text-tonet-link hover:underline\" href=\"https://en.wikipedia.org/wiki/Servo_(software)\" target=\"_blank\" rel=\"noopener noreferrer\">Servo (software)</a> (artículo en inglés).",
+    servoP3:
+      "<strong>Por qué Tonet usa Servo:</strong> Tonet es un <strong>shell mínimo</strong> que integra Servo para renderizar <strong>páginas web reales en proceso</strong>. Buscamos una superficie de motor <strong>auditable</strong>, sin la opacidad de un stack tipo Chromium, con espacio para políticas claras y límites de recursos. Sitio oficial: <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
     useH: "Casos de uso",
     useL1: "Navegación ligera donde importa un comportamiento predecible.",
     useL2: "Educación e I+D donde los internals del navegador deben ser transparentes.",
@@ -367,6 +385,13 @@ const handbookPage: Record<
     h1: "Öffentliches Handbuch",
     lead:
       "Erweiterte Projektdokumentation: Anwendungsfälle, interne Seiten, Produktentwicklung und Umsetzungspfade.",
+    servoH: "Servo und Tonet",
+    servoP1:
+      "<strong>Servo</strong> ist eine freie, quelloffene <strong>Web-Rendering-Engine</strong> in <strong>Rust</strong>, ausgelegt auf <strong>Einbettung</strong> (WebView-APIs), Parallelität und Speichersicherheit. Ziele und Downloads: <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
+    servoP2:
+      "<strong>Geschichte (kurz):</strong> Servo startete bei <strong>Mozilla</strong> um 2012 als Forschungsmotor; <strong>Rust</strong> entwickelte sich parallel. Nach Umstrukturierungen führte die Community Servo weiter; die Governance liegt bei der <strong>Linux Foundation Europe</strong>. Crates u. a. auf <strong>crates.io</strong>. Neutraler Überblick: Wikipedia <a class=\"text-tonet-link hover:underline\" href=\"https://en.wikipedia.org/wiki/Servo_(software)\" target=\"_blank\" rel=\"noopener noreferrer\">Servo (software)</a> (englisch).",
+    servoP3:
+      "<strong>Warum Tonet Servo nutzt:</strong> Tonet ist eine <strong>minimale Shell</strong>, die Servo für echtes Web-Rendering <strong>im Prozess</strong> einbindet. Ziel ist eine nachvollziehbare Engine-Oberfläche ohne vollen Chromium-Stapel — mit Raum für klare Policies und Ressourcenlimits. Offizielle Seite: <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
     useH: "Anwendungsfälle",
     useL1: "Browsing mit geringem Overhead, wo deterministisches Verhalten zählt.",
     useL2: "Lehre und Forschung, wo Browser-Internals transparent bleiben müssen.",
@@ -394,6 +419,13 @@ const handbookPage: Record<
     h1: "Manuel public",
     lead:
       "Documentation élargie : cas d’usage, pages internes, évolution du produit et pistes d’implémentation.",
+    servoH: "Servo et Tonet",
+    servoP1:
+      "<strong>Servo</strong> est un <strong>moteur de rendu web</strong> libre et open source, écrit en <strong>Rust</strong>, conçu pour l’<strong>embarquement</strong> (API de type WebView), le parallélisme et la sûreté mémoire. Présentation officielle : <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
+    servoP2:
+      "<strong>Histoire (bref) :</strong> Servo démarre chez <strong>Mozilla</strong> vers 2012 comme projet de moteur de rendu ; <strong>Rust</strong> évolue en parallèle. Après les restructurations, la communauté poursuit le projet ; gouvernance ouverte sous la <strong>Linux Foundation Europe</strong>. Crates notamment sur <strong>crates.io</strong>. Vue d’ensemble : Wikipédia <a class=\"text-tonet-link hover:underline\" href=\"https://en.wikipedia.org/wiki/Servo_(software)\" target=\"_blank\" rel=\"noopener noreferrer\">Servo (software)</a> (anglais).",
+    servoP3:
+      "<strong>Pourquoi Tonet utilise Servo :</strong> Tonet est une <strong>coque minimaliste</strong> qui embarque Servo pour afficher le <strong>web réel en processus</strong>. Nous visons une surface de moteur <strong>auditable</strong>, sans la pile opaque d’un empilement type Chromium, avec de la place pour des politiques explicites et des limites de ressources. Site officiel : <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
     useH: "Cas d’usage",
     useL1: "Navigation sobre lorsque le comportement prévisible compte.",
     useL2: "Enseignement et R&D où les internals du navigateur doivent rester transparents.",
@@ -423,6 +455,10 @@ export function applyHandbookLocale(lang: SiteLang): void {
   const H = handbookPage[lang];
   setText("handbook-h1", H.h1);
   setText("handbook-lead", H.lead);
+  setText("handbook-servo-h", H.servoH);
+  setHtml("handbook-servo-p1", H.servoP1);
+  setHtml("handbook-servo-p2", H.servoP2);
+  setHtml("handbook-servo-p3", H.servoP3);
   setText("handbook-use-h", H.useH);
   setText("handbook-use-l1", H.useL1);
   setText("handbook-use-l2", H.useL2);
@@ -819,6 +855,7 @@ const docsExtra: Record<
   {
     sidebarTitle: string;
     navOverview: string;
+    navServo: string;
     navMap: string;
     navInstall: string;
     navUpdates: string;
@@ -859,6 +896,7 @@ const docsExtra: Record<
   en: {
     sidebarTitle: "On this page",
     navOverview: "Overview",
+    navServo: "Servo engine",
     navMap: "Documentation map",
     navInstall: "Installation",
     navUpdates: "In-browser updates",
@@ -902,6 +940,7 @@ const docsExtra: Record<
   es: {
     sidebarTitle: "En esta página",
     navOverview: "Resumen",
+    navServo: "Motor Servo",
     navMap: "Mapa de documentación",
     navInstall: "Instalación",
     navUpdates: "Actualizaciones en la app",
@@ -945,6 +984,7 @@ const docsExtra: Record<
   de: {
     sidebarTitle: "Auf dieser Seite",
     navOverview: "Überblick",
+    navServo: "Servo-Engine",
     navMap: "Dokumentationskarte",
     navInstall: "Installation",
     navUpdates: "Updates in der App",
@@ -988,6 +1028,7 @@ const docsExtra: Record<
   fr: {
     sidebarTitle: "Sur cette page",
     navOverview: "Vue d’ensemble",
+    navServo: "Moteur Servo",
     navMap: "Carte de la documentation",
     navInstall: "Installation",
     navUpdates: "Mises à jour dans l’app",
@@ -1034,6 +1075,7 @@ export function applyDocsExtraLocale(lang: SiteLang): void {
   const D = docsExtra[lang];
   setText("docs-sidebar-title", D.sidebarTitle);
   setText("docs-nav-overview", D.navOverview);
+  setText("docs-nav-servo", D.navServo);
   setText("docs-nav-map", D.navMap);
   setText("docs-nav-install", D.navInstall);
   setText("docs-nav-updates", D.navUpdates);

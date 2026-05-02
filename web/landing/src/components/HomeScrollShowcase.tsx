@@ -59,60 +59,109 @@ export function HomeScrollShowcase() {
   const t3 = smoothstep(p, 0.36, 0.68);
   const tFinal = smoothstep(p, 0.74, 0.98);
   const dimLayers = 1 - smoothstep(p, 0.7, 0.94);
+  /** At end of scroll range `dimLayers`→0; keep artwork visible in reduced-motion snapshot. */
+  const dimActive = reduced ? 1 : dimLayers;
   const hintOpacity = 1 - smoothstep(p, 0.2, 0.5);
+
+  const tPreface = reduced ? 0.95 : 1 - smoothstep(p, 0, 0.22);
+  /** Fades badge copy before the final lockup; multiplied with parent layer opacity (via stage `layerStyle`). */
+  const tBadgeDim = reduced ? 1 : 1 - smoothstep(p, 0.62, 0.88);
+  /** Fade shield label as the card layer takes over so two messages never compete side‑by‑side. */
+  const tShieldLabel = reduced ? 1 : 1 - smoothstep(t3, 0.22, 0.52);
+
+  const lockup = (
+    <div className="home-scroll-final-row flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+      <img src="/tonet.svg" width={40} height={40} className="size-10 rounded-[10px] shadow-lg" alt="Tonet" />
+      <span className="home-scroll-final-mid text-balance">{L.scrollPoweredBy}</span>
+      <img
+        src="/servo-logo.webp"
+        width={200}
+        height={48}
+        className="h-9 w-auto max-w-[min(78vw,240px)] object-contain sm:h-10"
+        alt="Servo"
+      />
+    </div>
+  );
 
   const viewportInner = (
     <>
       <div className="home-scroll-viewport-bg" style={{ opacity: 0.35 + 0.4 * p }} />
-      <div className="home-scroll-layer-wrap">
-        <img
-          src="/showcase/layer-1.svg"
-          alt=""
-          className="home-scroll-art-img"
-          width={800}
-          height={500}
-          decoding="async"
-          style={layerStyle(t1, 55, 0, dimLayers)}
-        />
+
+      {/* Layer stack (bottom → top): waves → preface → shield → card → final. Upper paints over lower. */}
+      <div className="home-scroll-layer-wrap home-scroll-layer-wrap--z1">
+        <div className="home-scroll-art-stage" style={layerStyle(t1, 0, 0, dimActive)}>
+          <img
+            src="/showcase/layer-1.svg"
+            alt=""
+            className="home-scroll-art-img"
+            width={800}
+            height={500}
+            decoding="async"
+          />
+        </div>
       </div>
-      <div className="home-scroll-layer-wrap">
-        <img
-          src="/showcase/layer-2.svg"
-          alt=""
-          className="home-scroll-art-img"
-          width={800}
-          height={500}
-          decoding="async"
-          style={layerStyle(t2, -50, 0, dimLayers)}
-        />
+
+      <div className="home-scroll-preface-wrap" aria-hidden="true">
+        <p
+          className="home-scroll-preface"
+          style={{
+            opacity: tPreface,
+            transform: `translateY(${(1 - tPreface) * 14}px)`,
+          }}
+        >
+          {L.scrollIncoming}
+        </p>
       </div>
-      <div className="home-scroll-layer-wrap">
-        <img
-          src="/showcase/layer-3.svg"
-          alt=""
-          className="home-scroll-art-img"
-          width={800}
-          height={500}
-          decoding="async"
-          style={layerStyle(t3, 0, 45, dimLayers)}
-        />
+
+      <div className="home-scroll-layer-wrap home-scroll-layer-wrap--z2">
+        <div className="home-scroll-art-stage" style={layerStyle(t2, 0, 0, dimActive)}>
+          <img
+            src="/showcase/layer-2.svg"
+            alt=""
+            className="home-scroll-art-img"
+            width={800}
+            height={500}
+            decoding="async"
+          />
+          <div
+            className="home-scroll-embed home-scroll-embed--shield"
+            aria-hidden="true"
+            style={{ opacity: tBadgeDim * tShieldLabel }}
+          >
+            {L.scrollBadgeSecure}
+          </div>
+        </div>
       </div>
+
+      <div className="home-scroll-layer-wrap home-scroll-layer-wrap--z3">
+        <div className="home-scroll-art-stage" style={layerStyle(t3, 0, 45, dimActive)}>
+          <img
+            src="/showcase/layer-3.svg"
+            alt=""
+            className="home-scroll-art-img"
+            width={800}
+            height={500}
+            decoding="async"
+          />
+          <div className="home-scroll-embed home-scroll-embed--card" aria-hidden="true" style={{ opacity: tBadgeDim }}>
+            {L.scrollBadgePrivacy}
+          </div>
+        </div>
+      </div>
+
       <div
         className="home-scroll-final"
         style={{
           opacity: tFinal,
-          transform: `translate3d(0, ${(1 - tFinal) * 24}px, 0) scale(${0.97 + 0.03 * tFinal})`,
+          transform: `translate3d(0, ${(1 - tFinal) * 20}px, 0) scale(${0.97 + 0.03 * tFinal})`,
         }}
       >
-        <img src="/tonet.svg" width={40} height={40} className="size-10 rounded-[10px] shadow-lg" alt="Tonet" />
-        <span className="home-scroll-final-mid text-balance">{L.scrollPoweredBy}</span>
-        <img
-          src="/servo-logo.webp"
-          width={200}
-          height={48}
-          className="h-9 w-auto max-w-[min(78vw,240px)] object-contain sm:h-10"
-          alt="Servo"
-        />
+        <div className="home-scroll-final-stack">
+          <p className="home-scroll-final-engine" style={{ opacity: Math.min(1, tFinal * 1.15) }}>
+            {L.scrollEngineTagline}
+          </p>
+          {lockup}
+        </div>
       </div>
     </>
   );

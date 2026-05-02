@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { HomeBoot } from "../components/HomeBoot";
 import { HomeReveal } from "../components/HomeReveal";
 import { HomeScrollShowcase } from "../components/HomeScrollShowcase";
+import { HomePlatformIcons } from "../components/HomePlatformIcons";
 ---
 
 <BaseLayout
@@ -68,46 +69,36 @@ import { HomeScrollShowcase } from "../components/HomeScrollShowcase";
             <article
               class="home-kpi-rich border-[rgba(230,195,92,0.22)] bg-gradient-to-b from-[rgba(230,195,92,0.07)] to-[#070a10]">
               <div class="home-kpi-rich-visual home-kpi-rich-visual--platform">
-                <div class="home-kpi-os-row" aria-hidden="true">
-                  <div class="home-kpi-os-ico text-[#5A99FF]" title="Windows">
-                    <svg viewBox="0 0 24 24" class="size-8" fill="currentColor" aria-hidden="true">
-                      <path
-                        d="M3 5.5 10.5 4.3v7.1H3V5.5zm0 8.3h7.5v8.1L3 20.4v-6.6zm8.5-9.4L21 3.2v7.2h-9.5V4.4zm0 8.2H21v7.2l-9.5 1.6v-8.8z"
-                      ></path>
-                    </svg>
-                  </div>
-                  <div class="home-kpi-os-ico text-[#e6c35c]" title="Linux">
-                    <svg viewBox="0 0 24 24" class="size-8" fill="currentColor" aria-hidden="true">
-                      <path
-                        d="M12 2C9 7 8 9 8 12v3l-2 5h12l-2-5v-3c0-3-1-5-4-10zm-3 18h6v1c0 .8-.7 2-3 2s-3-1.2-3-2v-1z"
-                      ></path>
-                    </svg>
-                  </div>
-                </div>
+                <HomePlatformIcons client:visible />
               </div>
               <div class="home-kpi-rich-copy">
                 <span id="kpi-2-label">Primary channels</span>
                 <strong id="kpi-2-strong">Windows + Linux</strong>
                 <p class="home-kpi-rich-hint" id="kpi-2-hint">
-                  Desktop builds you can mirror; channels you control.
+                  Shipping on desktop today. Soon: macOS, Android, and iPhone — EU builds target Servo; outside the EU,
+                  WebKit-class builds may apply 👎
                 </p>
               </div>
             </article>
             <article
               class="home-kpi-rich border-[rgba(138,92,255,0.28)] bg-gradient-to-b from-[rgba(138,92,255,0.08)] to-[#070a10]">
-              <div class="home-kpi-rich-visual home-kpi-rich-visual--manifest">
-                <div class="home-kpi-json" aria-hidden="true">
-                  <span class="text-[#8eb8ff]">{"{"}</span><br />
-                  &nbsp;&nbsp;<span class="text-[#e8ecf4]">"version"</span>: "1.2.3",<br />
-                  &nbsp;&nbsp;<span class="text-[#e8ecf4]">"url"</span>: <span class="text-[#3dd68c]">"…/stable"</span><br />
-                  <span class="text-[#8eb8ff]">{"}"}</span>
+              <div class="home-kpi-rich-visual home-kpi-rich-visual--updates">
+                <div class="home-kpi-updates-mock" aria-hidden="true">
+                  <div class="home-kpi-updates-mock-line">
+                    <span class="home-kpi-updates-mock-dot"></span>
+                    <span>Pick your version &amp; channel</span>
+                  </div>
+                  <div class="home-kpi-updates-mock-line home-kpi-updates-mock-line--muted">
+                    <span class="home-kpi-updates-mock-dot"></span>
+                    <span>Update only when you choose</span>
+                  </div>
                 </div>
               </div>
               <div class="home-kpi-rich-copy">
-                <span id="kpi-3-label">Updates</span>
-                <strong id="kpi-3-strong">Manifest URL</strong>
+                <span id="kpi-3-label">On your terms</span>
+                <strong id="kpi-3-strong">You choose</strong>
                 <p class="home-kpi-rich-hint" id="kpi-3-hint">
-                  Your manifest URL on your CDN — no release-API roulette.
+                  Pick the version you want and update when you want — no surprise upgrades, no forced “what’s new”.
                 </p>
               </div>
             </article>
@@ -125,6 +116,52 @@ import { HomeScrollShowcase } from "../components/HomeScrollShowcase";
         Tonet is designed for focus: a clear window onto the web, with infrastructure you can reason about — not an endless
         compatibility treadmill.
       </p>
+    </section>
+
+    <section
+      class="mx-auto max-w-[1120px] px-6 pb-4 pt-2 sm:pb-6"
+      id="servo-intro"
+      data-reveal
+      aria-labelledby="home-servo-title">
+      <div
+        class="flex flex-col gap-6 rounded-[22px] border border-[rgba(90,153,255,0.22)] bg-gradient-to-br from-[rgba(90,153,255,0.08)] to-[#070a10] p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
+        <a
+          class="flex shrink-0 justify-center sm:w-[min(200px,32%)]"
+          href="https://servo.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Servo — servo.org">
+          <img
+            src="/servo-logo.webp"
+            alt=""
+            width="200"
+            height="48"
+            class="h-11 w-auto max-w-full object-contain opacity-95 sm:h-12"
+            loading="lazy"
+          />
+        </a>
+        <div class="min-w-0 flex-1 text-left">
+          <h2 class="mb-2 text-balance text-[1.35rem] font-semibold tracking-[-0.02em] sm:text-[1.5rem]" id="home-servo-title">
+            The Servo engine
+          </h2>
+          <p class="mb-5 text-balance text-[0.95rem] leading-relaxed text-[#9aa3b5] sm:text-[1.02rem]" id="home-servo-p">
+            Servo is an open-source web rendering engine written in Rust—built for embedding, parallelism, and memory safety. Tonet uses
+            Servo to render real web pages with a minimal shell you can audit, instead of bolting on another Chromium-sized stack.
+          </p>
+          <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+            <a
+              class="inline-flex items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.06] px-4 py-2.5 text-[0.9rem] font-semibold text-[#e8ecf4] transition hover:border-white/[0.2] hover:bg-white/[0.1]"
+              id="home-servo-cta"
+              href="/handbook.html#servo">Servo chapter in the Handbook</a>
+            <a
+              class="text-[0.9rem] font-medium text-[#5A99FF] hover:underline"
+              id="home-servo-official"
+              href="https://servo.org/"
+              target="_blank"
+              rel="noopener noreferrer">servo.org ↗</a>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="mx-auto mt-2 max-w-[1120px] px-6 py-14 sm:py-20" id="features" data-reveal>
