@@ -862,6 +862,39 @@ fn initial_nav_url(tab_url: &str) -> Url {
     }
 }
 
+#[cfg(test)]
+mod initial_nav_url_tests {
+    use super::initial_nav_url;
+
+    #[test]
+    fn https_uses_trimmed_url() {
+        let u = initial_nav_url("  https://example.com/path  ");
+        assert_eq!(u.as_str(), "https://example.com/path");
+    }
+
+    #[test]
+    fn http_urls_supported() {
+        let u = initial_nav_url("http://127.0.0.1:8080/");
+        assert!(u.scheme() == "http");
+    }
+
+    #[test]
+    fn file_scheme_falls_back_to_blank_idle_surface() {
+        let u = initial_nav_url("file:///tmp/x.html");
+        assert_eq!(u.as_str(), "about:blank");
+    }
+
+    #[test]
+    fn tonet_internal_normalized_into_webview() {
+        let u = initial_nav_url("tonet://settings");
+        assert!(
+            u.as_str().starts_with("tonet://"),
+            "expected tonet URL, got {}",
+            u.as_str()
+        );
+    }
+}
+
 fn pump_messages_for_hwnd(hwnd: HWND) {
     unsafe {
         let mut msg = std::mem::zeroed::<MSG>();
