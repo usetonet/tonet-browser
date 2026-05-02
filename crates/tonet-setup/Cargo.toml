@@ -4,7 +4,7 @@ version = "0.2.1"
 edition = "2021"
 description = "Tonet web installer — downloads and installs the latest release"
 authors = ["Tonet Contributors"]
-license = "PolyForm-Noncommercial-1.0.0"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/usetonet/tonet-browser"
 build = "build.rs"
 

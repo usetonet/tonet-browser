@@ -41,9 +41,9 @@ When a commit lands on **`main`** and the version in [`crates/tonet/Cargo.toml`]
 
 ## License
 
-Tonet is licensed under the **PolyForm Noncommercial License 1.0.0**—see [`LICENSE`](LICENSE).
+Tonet is **free software**: you may use, study, modify, and redistribute it under the terms of the [**GNU General Public License v3.0**](https://www.gnu.org/licenses/gpl-3.0.html) **or any later version** published by the Free Software Foundation—see [`LICENSE`](LICENSE) for the full license text.
 
-**In short:** you may use, study, modify, and share the project for **noncommercial** purposes. **Selling** the software or offering it as part of a paid product or service (other than as permitted in the license text) is **not** allowed for third parties. The **copyright holders** (Usetonet and Tonet contributors) retain the right to operate commercial offerings, services, and infrastructure around Tonet. For commercial licensing questions, contact the project maintainers via [usetonet.com](https://usetonet.com).
+When you distribute a modified version or a binary built from this source, the GPL requires you to preserve those freedoms for recipients (including making Corresponding Source available under the same license when you convey object code). Read the license for exact obligations.
 
 ## Links
 

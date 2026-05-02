@@ -10,6 +10,7 @@
 
 ### Changed
 - Release `publish-cdn` job uploads alias objects, fetches previous `version.json`, merges history, and uploads the merged manifest.
+- Project license is now **GNU GPL v3 or later** (`GPL-3.0-or-later`), replacing PolyForm Noncommercial; see `LICENSE`, `README.md`, and `CONTRIBUTING.md`.
 
 ## 0.2.1
 

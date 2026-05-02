@@ -36,26 +36,11 @@ Tonet challenges the modern trend of overloaded websites:
 - `installer/`, `packaging/`, `wix/`: Packaging scripts
 - `.github/workflows/`: CI/CD and automatic releases
 
-## Contributor License Agreement (CLA)
+## Licensing your contributions
 
-### Why Do We Need a CLA?
+By opening a pull request or otherwise contributing code or documentation to this repository, you agree that your contribution is **licensed under the same terms as the project**: the **GNU General Public License, version 3 or later** (SPDX: `GPL-3.0-or-later`), as set out in [`LICENSE`](LICENSE). You must have the right to grant that license (for example, it is your own work, or your employer has authorized the contribution under those terms).
 
-To maintain the project's legal integrity and enable future commercial licensing options, we require all contributors to accept our CLA.
-
-### CLA Process
-
-1. **First Pull Request**: When you submit your first PR, the CLA Assistant bot will notify you
-2. **Digital Signature**: You must sign the agreement by clicking the provided link
-3. **Automatic Verification**: Once signed, the bot will automatically verify future contributions
-
-### What Does the CLA Establish?
-
-By contributing, you grant Usetonet:
-- Perpetual license to use your code for commercial and non-commercial purposes
-- Rights to modify, distribute, and sublicense your contributions
-- You maintain ownership of your code, but grant permission to include it in Tonet
-
-**The CLA is mandatory** for us to accept your contributions.
+There is **no separate Contributor License Agreement (CLA)**: inbound contributions are treated as **GPL-3.0-or-later**, consistent with the outbound license of the combined work.
 
 ## Contribution Guidelines
 
@@ -90,8 +75,8 @@ This project follows a professional code of conduct. We expect all contributors 
 
 ## Frequently Asked Questions
 
-**Can I use Tonet for commercial projects?**
-Consult the PolyForm Noncommercial license in the LICENSE file.
+**Can I use or redistribute Tonet commercially?**
+The GPL allows commercial use and redistribution, including selling copies, provided you follow the license (notably source and license terms for recipients when you convey binaries). Read [`LICENSE`](LICENSE) and the [GPL FAQ](https://www.gnu.org/licenses/gpl-faq.html).
 
 **What happens if my website exceeds 1MB?**
 Tonet will display a clear message explaining the limit and suggesting optimizations.
