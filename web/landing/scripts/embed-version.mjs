@@ -18,19 +18,25 @@ const downloadsPage = process.env.TONET_SITE_DOWNLOADS_PAGE || `${cdnBase}/`;
 const production = (process.env.TONET_RELEASE_PRODUCTION || "true").toLowerCase() !== "false";
 
 fs.mkdirSync(dist, { recursive: true });
-const emptyPrevPath = path.join(dist, ".embed-prev-manifest.json");
-fs.writeFileSync(
-  emptyPrevPath,
-  JSON.stringify({ releases: [], repo: "usetonet/tonet-browser" }),
-  "utf8"
-);
+const publicManifestPath = path.join(__dirname, "..", "public", "version.json");
+let prevPath = publicManifestPath;
+let cleanupTemp = null;
+if (!fs.existsSync(publicManifestPath)) {
+  cleanupTemp = path.join(dist, ".embed-prev-manifest.json");
+  fs.writeFileSync(
+    cleanupTemp,
+    JSON.stringify({ releases: [], repo: "usetonet/tonet-browser" }),
+    "utf8"
+  );
+  prevPath = cleanupTemp;
+}
 
 const env = {
   ...process.env,
   CDN_BASE: cdnBase,
   VERSION: version,
   TONET_RELEASE_PRODUCTION: production ? "true" : "false",
-  PREV_PATH: emptyPrevPath,
+  PREV_PATH: prevPath,
 };
 
 const merged = execFileSync(process.execPath, [mergeScript], {
@@ -43,7 +49,7 @@ payload.releasesUrl = downloadsPage;
 payload.updateManifestUrl = `${cdnBase}${versionPath.startsWith("/") ? versionPath : `/${versionPath}`}`;
 
 fs.writeFileSync(path.join(dist, "version.json"), JSON.stringify(payload, null, 2));
-fs.rmSync(emptyPrevPath, { force: true });
+if (cleanupTemp) fs.rmSync(cleanupTemp, { force: true });
 console.log(
   "version.json →",
   payload.version,

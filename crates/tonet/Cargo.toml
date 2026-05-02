@@ -1,6 +1,6 @@
 [package]
 name = "tonet"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "Tonet — minimal from-scratch browser (MVP). https://usetonet.com"
 authors = ["Tonet Contributors"]
