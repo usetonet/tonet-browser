@@ -1000,7 +1000,7 @@ pub fn show_settings_page(
                                                 .color(theme::loading_muted()),
                                         );
                                         ui.add_space(16.0);
-                                        let form_id = egui::Id::new("tonet_settings_internal");
+                                        let form_id = crate::ui::settings_internal_form_id();
                                         match nav {
                                             SettingsNav::GetStarted => {
                                                 render_get_started(ui, loc, settings, form_id);

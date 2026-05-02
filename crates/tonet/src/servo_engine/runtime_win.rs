@@ -57,6 +57,7 @@ use crate::i18n::Locale;
 use crate::platform_windows::win32_hwnd_from_frame;
 use crate::servo_engine::background_download;
 use crate::servo_engine::download_heuristic;
+use crate::servo_engine::embedder_ids;
 use crate::servo_engine::servo_favicon;
 use crate::servo_engine::slint_embed::GPURenderingContext;
 use crate::servo_engine::tonet_scheme_html;
@@ -1727,7 +1728,7 @@ impl ServoWinHost {
             _ => crate::i18n::servo_notification_fallback_title(loc).to_string(),
         };
         let body = snapshot.body.clone();
-        egui::Area::new(egui::Id::new("tonet_servo_web_notification"))
+        egui::Area::new(embedder_ids::web_notification())
             .order(egui::Order::Foreground)
             .anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 52.0))
             .show(ctx, |ui| {
@@ -1813,6 +1814,7 @@ impl ServoWinHost {
         let cancel_clicked = Cell::new(false);
 
         let _ = egui::Window::new(title)
+            .id(embedder_ids::simple_dialog())
             .collapsible(false)
             .resizable(true)
             .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
@@ -1923,7 +1925,7 @@ impl ServoWinHost {
         let cancel_clicked = Cell::new(false);
 
         let _ = egui::Window::new(crate::i18n::servo_http_auth_title(loc))
-            .id(egui::Id::new("tonet_servo_http_auth"))
+            .id(embedder_ids::http_auth())
             .collapsible(false)
             .resizable(true)
             .constrain(true)
@@ -2029,7 +2031,7 @@ impl ServoWinHost {
         let deny_clicked = Cell::new(false);
 
         let _ = egui::Window::new(crate::i18n::servo_permission_title(loc))
-            .id(egui::Id::new("tonet_servo_permission"))
+            .id(embedder_ids::site_permission())
             .collapsible(false)
             .resizable(false)
             .constrain(true)
@@ -2229,7 +2231,7 @@ impl ServoWinHost {
         let escape = Cell::new(false);
 
         let mut win = egui::Window::new(crate::i18n::servo_context_menu_title(loc))
-            .id(egui::Id::new("tonet_servo_context_menu"))
+            .id(embedder_ids::context_menu())
             .collapsible(false)
             .resizable(false)
             .constrain(true)
@@ -2407,7 +2409,7 @@ impl ServoWinHost {
         let select_draft = self.select_draft.clone();
 
         let _ = egui::Window::new(crate::i18n::servo_select_title(loc))
-            .id(egui::Id::new("tonet_servo_select_element"))
+            .id(embedder_ids::select_element())
             .collapsible(false)
             .resizable(true)
             .constrain(true)
@@ -2513,7 +2515,7 @@ impl ServoWinHost {
         let draft = self.color_picker_draft.clone();
 
         let _ = egui::Window::new(crate::i18n::servo_color_picker_title(loc))
-            .id(egui::Id::new("tonet_servo_color_picker"))
+            .id(embedder_ids::color_picker())
             .collapsible(false)
             .resizable(false)
             .constrain(true)

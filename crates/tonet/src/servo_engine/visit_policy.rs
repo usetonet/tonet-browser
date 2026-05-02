@@ -214,4 +214,33 @@ mod tests {
             None,
         ));
     }
+
+    #[test]
+    fn history_url_rejects_view_source_wrapper() {
+        assert!(!is_http_or_https_history_url(
+            "view-source:https://example.com/",
+        ));
+    }
+
+    #[test]
+    fn history_url_rejects_gopher() {
+        assert!(!is_http_or_https_history_url("gopher://foo.example/1"));
+    }
+
+    #[test]
+    fn history_url_rejects_tel_and_sms() {
+        assert!(!is_http_or_https_history_url("tel:+15551234567"));
+        assert!(!is_http_or_https_history_url("sms:+15551234567"));
+    }
+
+    #[test]
+    fn history_url_rejects_rtsp_and_irc() {
+        assert!(!is_http_or_https_history_url("rtsp://media.example/stream"));
+        assert!(!is_http_or_https_history_url("irc://irc.example/channel"));
+    }
+
+    #[test]
+    fn history_url_rejects_about_scheme() {
+        assert!(!is_http_or_https_history_url("about:config"));
+    }
 }

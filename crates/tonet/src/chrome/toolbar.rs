@@ -15,6 +15,7 @@ use crate::ui::omnibox_id;
 use super::ids::{
     chrome_back, chrome_forward, chrome_menu, chrome_reload, chrome_stop, chrome_tool_1,
     chrome_tool_2, chrome_tool_3, chrome_tool_4, chrome_tool_5, chrome_tool_6, chrome_tool_7,
+    omnibox_history_popup_layer, omnibox_history_scroll,
 };
 
 const TOOLBAR_H: f32 = 38.0;
@@ -355,7 +356,7 @@ pub fn show_chrome_toolbar(
         if omnibox_focused_now && !omnibox_visit_suggestions.is_empty() {
             if let Some(anchor) = anchor {
                 let w = anchor.width();
-                egui::Area::new(omnibox_id().with("hist_popup_layer"))
+                egui::Area::new(omnibox_history_popup_layer(omnibox_id()))
                     .order(egui::Order::Foreground)
                     .fixed_pos(anchor.left_bottom() + Vec2::new(0.0, 2.0))
                     .show(ctx, |ui| {
@@ -374,7 +375,7 @@ pub fn show_chrome_toolbar(
                                 .on_hover_text(i18n::omnibox_history_keyboard_hint(loc));
                                 ui.add_space(2.0);
                                 egui::ScrollArea::vertical()
-                                    .id_salt("tonet_omnibox_history_scroll")
+                                    .id_salt(omnibox_history_scroll())
                                     .max_height(140.0)
                                     .show(ui, |ui| {
                                         for (idx, s) in omnibox_visit_suggestions.iter().enumerate()

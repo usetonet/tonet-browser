@@ -204,6 +204,7 @@ This section documents **how** Servo is wired today, **when** it is active, and 
 | Area | Location (under `crates/tonet/`) |
 |------|----------------------------------|
 | Feature + URL gating + runtime shell API | `src/servo_engine/mod.rs` |
+| Stable `egui::Id` for Servo embedder windows / toast (script dialog, HTTP auth, permission, context menu, `<select>` / color pickers, web notification area, page console strip) | `src/servo_engine/embedder_ids.rs` |
 | Win32 popup, surfman, input subclass, shell snapshot, `WM_SETCURSOR`, script dialogs, HTTP auth modal, site permissions + JSON store, context menu, `<select>` / color / native file (`rfd`), web notification toasts (`show_notification`), page console (`show_console_message` → `Tab::servo_console`), heuristic `load_web_resource` downloads, Drop teardown | `src/servo_engine/runtime_win.rs` |
 | Servo permission persistence (`servo_permissions.json`) | `src/servo_engine/permission_store.rs` |
 | Central panel, omnibox, navigation, sync after tick | `src/app.rs` |
@@ -311,5 +312,8 @@ This section documents **how** Servo is wired today, **when** it is active, and 
 | 2026-04-17 | Checklist manual smoke: step **17b** for extensionless download + `HEAD` probe. |
 | 2026-04-17 | Shell: omnibox history keyboard **tooltip** (i18n); **`background_download`** MIME allowlist tests for `HEAD` probe. |
 | 2026-05-02 | **§1 / §13:** Servo-default policy on Windows vs `tonet-engine` fallback; **§13.3** documents default in-process embed vs optional Win32 popup (`TONET_SERVO_WIN32_POPUP`); Linux/macOS no-op embed cross-linked to checklist (embed tracked, not abandoned). |
+| 2026-05-02 | **§13.5:** `servo_engine/embedder_ids.rs` in code map; stable `egui::Id` for Servo embedder modals + `tonet_servo_simple_dialog` for script `alert` / `confirm` / `prompt`. |
+| 2026-05-02 | **§13.5:** `embedder_ids` includes page console strip id (wired from `app.rs`). |
+| 2026-05-02 | **§13.5:** `ui::settings_modal_id` / `settings_internal_form_id` (legacy settings window + `tonet://settings` form). |
 
 Update this file when phases complete, budgets change, or the reference machine changes.
