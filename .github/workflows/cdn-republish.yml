@@ -41,7 +41,14 @@ jobs:
           set -euo pipefail
           mkdir -p assets
           TAG="v${VERSION}"
-          gh release download "$TAG" --repo "${{ github.repository }}" --dir assets --clobber
+          V="${VERSION}"
+          # Only Tonet installers — skip stray GitHub release attachments (e.g. *.wixobj).
+          gh release download "$TAG" --repo "${{ github.repository }}" --dir assets --clobber \
+            -p "Tonet-Setup-${V}-x64.exe" \
+            -p "Tonet-${V}-x64.msi" \
+            -p "tonet_${V}_amd64.deb" \
+            -p "Tonet-${V}-macos.tar.gz" \
+            -p "Tonet-${V}-windows-x64-portable.zip"
 
       - name: Setup Node (manifest merge + wrangler)
         uses: actions/setup-node@v4
@@ -55,10 +62,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in assets/*; do
-            name="$(basename "$f")"
-            wrangler r2 object put "${R2_BUCKET}/${name}" --file "$f"
-          done
+          V="${VERSION}"
+          put() { wrangler r2 object put "${R2_BUCKET}/$(basename "$1")" --file "$1"; }
+          put "assets/Tonet-Setup-${V}-x64.exe"
+          put "assets/Tonet-${V}-x64.msi"
+          put "assets/tonet_${V}_amd64.deb"
+          put "assets/Tonet-${V}-macos.tar.gz"
+          put "assets/Tonet-${V}-windows-x64-portable.zip"
 
       - name: Upload stable or preview alias objects (short filenames)
         shell: bash

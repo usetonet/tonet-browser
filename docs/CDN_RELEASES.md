@@ -109,3 +109,5 @@ chmod +x scripts/publish-cdn-from-release.sh
 ```
 
 Second argument is `true` (stable aliases) or `false` (preview aliases only). Delete or ignore `assets/` afterward if you do not want large binaries in the tree.
+
+The republish flow only downloads and uploads the **five** versioned Tonet artifacts (`.exe`, `.msi`, `.deb`, macOS `.tar.gz`, portable `.zip`). Extra files attached to the GitHub Release (for example WiX `*.wixobj`) are ignored. If R2 returns **403**, confirm the API token can write to the bucket (R2 / Workers R2 Storage permissions for that account).

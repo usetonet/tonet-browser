@@ -31,18 +31,26 @@ export VERSION
 export TONET_RELEASE_PRODUCTION="$PRODUCTION"
 
 mkdir -p assets
-gh release download "v${VERSION}" --dir assets --clobber
+V="${VERSION}"
+# Only Tonet installers — skip stray GitHub release attachments (e.g. *.wixobj).
+gh release download "v${VERSION}" --dir assets --clobber \
+  -p "Tonet-Setup-${V}-x64.exe" \
+  -p "Tonet-${V}-x64.msi" \
+  -p "tonet_${V}_amd64.deb" \
+  -p "Tonet-${V}-macos.tar.gz" \
+  -p "Tonet-${V}-windows-x64-portable.zip"
 
 if ! command -v wrangler >/dev/null 2>&1; then
   npm i -g wrangler@3
 fi
 
-for f in assets/*; do
-  name="$(basename "$f")"
-  wrangler r2 object put "${R2_BUCKET}/${name}" --file "$f"
-done
+put() { wrangler r2 object put "${R2_BUCKET}/$(basename "$1")" --file "$1"; }
+put "assets/Tonet-Setup-${V}-x64.exe"
+put "assets/Tonet-${V}-x64.msi"
+put "assets/tonet_${V}_amd64.deb"
+put "assets/Tonet-${V}-macos.tar.gz"
+put "assets/Tonet-${V}-windows-x64-portable.zip"
 
-V="${VERSION}"
 if [ "${TONET_RELEASE_PRODUCTION}" = "false" ]; then
   wrangler r2 object put "${R2_BUCKET}/Tonet-Setup-Preview.exe" --file "assets/Tonet-Setup-${V}-x64.exe"
   wrangler r2 object put "${R2_BUCKET}/Tonet-x64-preview.msi" --file "assets/Tonet-${V}-x64.msi"
