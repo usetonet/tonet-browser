@@ -11,27 +11,12 @@
     <link rel="icon" href="/tonet.svg" type="image/svg+xml" />
     <script type="module" src="/src/main.ts"></script>
   </head>
-  <body>
-    <header class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="/">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>Tonet</span>
-        </a>
-        <nav class="nav-links" id="site-nav-links" aria-label="Main">
-          <a id="nav-download" href="#download">Download</a>
-          <a id="nav-features" href="#features">Features</a>
-          <a href="/compare.html">Compare</a>
-          <a href="/roadmap.html">Roadmap</a>
-          <a id="nav-docs" href="/docs.html">Documentation</a>
-          <a href="https://github.com/usetonet/tonet-browser" target="_blank" rel="noopener">GitHub</a>
-        </nav>
-      </div>
-    </header>
+  <body data-page="home">
+    <div id="site-nav-root"></div>
 
     <main>
       <section class="hero">
-        <span class="pill" id="version-pill">Current project version: …</span>
+        <span class="pill" id="version-pill">Latest release: …</span>
         <h1 id="hero-title">Browse without the weight.<br />Push back on web bloat.</h1>
         <p class="hero-lead" id="hero-lead">
           Tonet is a browser built with a clear goal: extreme speed, minimal weight, and an in-house engine for essential content.
@@ -79,6 +64,32 @@
           <article class="card">
             <h3 id="card-opensource-t">Open source</h3>
             <p id="card-opensource-p">Full transparency on GitHub. Signed installers and documented pipelines for operators.</p>
+          </article>
+          <article class="card">
+            <h3>In-house engine path</h3>
+            <p>
+              Servo-based rendering is embedded for web pages — not Chromium, WebKit, or CEF. Fewer opaque layers between your policy and
+              what hits the network.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Strict resource bounds</h3>
+            <p>
+              The 1 MB page ceiling keeps accidental megabyte payloads out of your session; failures are explicit instead of grinding the
+              UI.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Operational transparency</h3>
+            <p>
+              Own your CDN and <code>version.json</code>: updates don’t depend on calling GitHub’s release API from the client at runtime.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Privacy-minded defaults</h3>
+            <p>
+              Minimal surface area for trackers and third-party SDKs compared to mainstream browsers built for maximal compatibility.
+            </p>
           </article>
         </div>
       </section>

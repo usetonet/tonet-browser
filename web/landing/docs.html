@@ -8,135 +8,146 @@
     <link rel="icon" href="/tonet.svg" type="image/svg+xml" />
     <script type="module" src="/src/docs.ts"></script>
   </head>
-  <body>
-    <header class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="/">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>Tonet</span>
-        </a>
-        <nav class="nav-links" id="site-nav-links">
-          <a id="docs-nav-home" href="/">Home</a>
-          <a id="docs-nav-download" href="/#download">Download</a>
-          <a href="/compare.html">Compare</a>
-          <a href="/roadmap.html">Roadmap</a>
-          <a href="https://github.com/usetonet/tonet-browser" target="_blank" rel="noopener">GitHub</a>
+  <body data-page="docs">
+    <div id="site-nav-root"></div>
+
+    <div class="docs-shell">
+      <aside class="docs-sidebar" aria-label="On this page">
+        <p class="docs-sidebar-title">On this page</p>
+        <nav>
+          <a href="#docs-overview">Overview</a>
+          <a href="#docs-install-h">Installation</a>
+          <a href="#docs-updates-h">In-browser updates</a>
+          <a href="#docs-sign-h">Authenticode (Windows)</a>
+          <a href="#docs-deb-h">Debian (.deb)</a>
+          <a href="#docs-app-h">AppImage</a>
+          <a href="#docs-cf-h">Deploy landing</a>
+          <a href="#ops-docs">CDN variables</a>
+          <a href="#product-docs">Use cases</a>
+          <a href="#engineering-docs">Engineering</a>
         </nav>
-      </div>
-    </header>
+      </aside>
 
-    <main class="section" style="padding-top: 40px">
-      <h1 id="docs-h1">Documentation</h1>
-      <p class="lead" id="docs-lead">Short guides for users and maintainers.</p>
+      <main class="docs-main section" style="padding: 40px 0 56px">
+        <h1 id="docs-h1">Documentation</h1>
+        <p class="lead" id="docs-lead">Guides for users, operators, and contributors — structured like a product docs portal.</p>
 
-      <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">Documentation map</h2>
-        <p style="color: var(--muted)">
-          This site now follows a structured portal style (like Vercel/Netlify docs): clear sections, deep guides, and public roadmap
-          visibility.
-        </p>
-        <div class="grid">
-          <a class="card" href="#product-docs" style="text-decoration: none">
-            <h3 style="margin-top: 0">Product and use cases</h3>
-            <p>Target users, deployment scenarios, and comparison framing.</p>
-          </a>
-          <a class="card" href="#ops-docs" style="text-decoration: none">
-            <h3 style="margin-top: 0">Operations and delivery</h3>
-            <p>CDN, release assets, update manifest, and signing flow.</p>
-          </a>
-          <a class="card" href="#engineering-docs" style="text-decoration: none">
-            <h3 style="margin-top: 0">Engineering</h3>
-            <p>Architecture, implementation phases, and future work tracking.</p>
-          </a>
-        </div>
-      </article>
+        <article class="card" style="margin-bottom: 20px" id="docs-overview">
+          <h2 style="margin-top: 0">How this portal is organized</h2>
+          <p style="color: var(--muted); line-height: 1.65">
+            Use the <strong>left outline</strong> (desktop) or jump links below on mobile. Sections follow the usual docs mental model:
+            install → updates → packaging → deploy → audience → engineering tracks — similar to Docusaurus / GitBook navigation patterns,
+            without pulling in a second SPA framework.
+          </p>
+        </article>
 
-      <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0" id="docs-install-h">Installation</h2>
-        <p id="docs-install-p">
-          See the <a href="/#download">downloads section</a>. The landing reads <code>version.json</code> (from <code>crates/tonet</code>) and points primary
-          buttons at real filenames on GitHub <code>releases/latest/download</code> (for example the Inno EXE and <code>.deb</code>). MSI and tag-scoped links use
-          <code>releases/download/vX.Y.Z/…</code>. The optional <strong>TonetSetup</strong> web installer is attached when the release workflow publishes it.
-        </p>
-      </article>
+        <article class="card" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0">Documentation map</h2>
+          <p style="color: var(--muted)">
+            Deep guides live beside the repo; this page is the entry hub with anchors into each topic.
+          </p>
+          <div class="grid">
+            <a class="card" href="#product-docs" style="text-decoration: none">
+              <h3 style="margin-top: 0">Product and use cases</h3>
+              <p>Target users, deployment scenarios, and comparison framing.</p>
+            </a>
+            <a class="card" href="#ops-docs" style="text-decoration: none">
+              <h3 style="margin-top: 0">Operations and delivery</h3>
+              <p>CDN, release assets, update manifest, and signing flow.</p>
+            </a>
+            <a class="card" href="#engineering-docs" style="text-decoration: none">
+              <h3 style="margin-top: 0">Engineering</h3>
+              <p>Architecture, implementation phases, and future work tracking.</p>
+            </a>
+          </div>
+        </article>
 
-      <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0" id="docs-updates-h">In-browser updates</h2>
-        <p id="docs-updates-p">
-          Tonet checks your update manifest endpoint (it does not install binaries for you). By default it checks on startup. In
-          <strong>Settings (⚙)</strong> you can choose:
-        </p>
-        <ul style="color: var(--muted); line-height: 1.7">
-          <li id="docs-updates-li1"><strong>On startup only</strong> — one check when the app opens.</li>
-          <li id="docs-updates-li2"><strong>Automatic (24 h)</strong> — repeats while Tonet is running.</li>
-          <li id="docs-updates-li3"><strong>Manual only</strong> — only with “Check now”.</li>
-        </ul>
-        <p id="docs-updates-p2">
-          Settings are stored in the system config directory (for example <code>%APPDATA%\tonet</code> on Windows).
-        </p>
-      </article>
+        <article class="card" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0" id="docs-install-h">Installation</h2>
+          <p id="docs-install-p">
+            See the <a href="/#download">downloads section</a>. The landing reads <code>version.json</code> (built from
+            <code>crates/tonet</code> at build time) and points buttons at CDN filenames. MSI and tag-scoped links use versioned paths on
+            the same CDN when published.
+          </p>
+        </article>
 
-      <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0" id="docs-sign-h">Authenticode signing (Windows)</h2>
-        <p id="docs-sign-p">
-          For SmartScreen trust, sign MSI and EXE with a code-signing certificate (SHA-256) on Windows using <code>signtool</code> from the
-          Windows SDK.
-        </p>
-        <div class="code-block" style="padding-top: 44px">
-          <button type="button" class="copy-btn" data-copy="sign-msi">Copy</button>
-          <pre id="sign-msi">signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-x.x.x-x64.msi
+        <article class="card" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0" id="docs-updates-h">In-browser updates</h2>
+          <p id="docs-updates-p">
+            Tonet checks your update manifest endpoint (it does not install binaries for you). By default it checks on startup. In
+            <strong>Settings (⚙)</strong> you can choose:
+          </p>
+          <ul style="color: var(--muted); line-height: 1.7">
+            <li id="docs-updates-li1"><strong>On startup only</strong> — one check when the app opens.</li>
+            <li id="docs-updates-li2"><strong>Automatic (24 h)</strong> — repeats while Tonet is running.</li>
+            <li id="docs-updates-li3"><strong>Manual only</strong> — only with “Check now”.</li>
+          </ul>
+          <p id="docs-updates-p2">
+            Settings are stored in the system config directory (for example <code>%APPDATA%\tonet</code> on Windows).
+          </p>
+        </article>
+
+        <article class="card" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0" id="docs-sign-h">Authenticode signing (Windows)</h2>
+          <p id="docs-sign-p">
+            For SmartScreen trust, sign MSI and EXE with a code-signing certificate (SHA-256) on Windows using <code>signtool</code> from the
+            Windows SDK.
+          </p>
+          <div class="code-block" style="padding-top: 44px">
+            <button type="button" class="copy-btn" data-copy="sign-msi">Copy</button>
+            <pre id="sign-msi">signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-x.x.x-x64.msi
 signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-Setup-x.x.x-x64.exe</pre>
-        </div>
-        <p style="color: var(--muted); font-size: 0.9rem" id="docs-sign-foot">
-          In CI, store the PFX in an encrypted secret and use a self-hosted runner or an action that invokes <code>signtool</code>. Never commit
-          certificates to the repository.
-        </p>
-      </article>
+          </div>
+          <p style="color: var(--muted); font-size: 0.9rem" id="docs-sign-foot">
+            In CI, store the PFX in an encrypted secret and use a self-hosted runner or an action that invokes <code>signtool</code>. Never commit
+            certificates to the repository.
+          </p>
+        </article>
 
-      <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0" id="docs-deb-h">Debian package (.deb)</h2>
-        <p id="docs-deb-p">
-          The script <code>packaging/debian/build-deb.sh</code> builds a <code>.deb</code> from <code>cargo build --release -p tonet</code>.
-          Requires <code>dpkg-deb</code> (Linux).
-        </p>
-        <div class="code-block" style="padding-top: 44px">
-          <button type="button" class="copy-btn" data-copy="deb-build">Copy</button>
-          <pre id="deb-build">cargo build --release -p tonet
+        <article class="card" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0" id="docs-deb-h">Debian package (.deb)</h2>
+          <p id="docs-deb-p">
+            The script <code>packaging/debian/build-deb.sh</code> builds a <code>.deb</code> from <code>cargo build --release -p tonet</code>.
+            Requires <code>dpkg-deb</code> (Linux).
+          </p>
+          <div class="code-block" style="padding-top: 44px">
+            <button type="button" class="copy-btn" data-copy="deb-build">Copy</button>
+            <pre id="deb-build">cargo build --release -p tonet
 ./packaging/debian/build-deb.sh</pre>
-        </div>
-      </article>
+          </div>
+        </article>
 
-      <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0" id="docs-app-h">AppImage (Linux)</h2>
-        <p id="docs-app-p">
-          Shipping a universal AppImage requires bundling GTK/GL dependencies — consider
-          <a href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + the GTK plugin once the binary
-          stabilizes. A dedicated workflow may land in a future release.
-        </p>
-      </article>
+        <article class="card" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0" id="docs-app-h">AppImage (Linux)</h2>
+          <p id="docs-app-p">
+            Shipping a universal AppImage requires bundling GTK/GL dependencies — consider
+            <a href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + the GTK plugin once the binary
+            stabilizes. A dedicated workflow may land in a future release.
+          </p>
+        </article>
 
-      <article class="card" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0" id="docs-cf-h">Deploy this landing (Cloudflare Workers)</h2>
-        <p id="docs-cf-p1">From the <code>web/landing</code> directory:</p>
-        <div class="code-block" style="padding-top: 44px">
-          <button type="button" class="copy-btn" data-copy="cf-deploy">Copy</button>
-          <pre id="cf-deploy">npm ci
+        <article class="card" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0" id="docs-cf-h">Deploy this landing (Cloudflare Workers)</h2>
+          <p id="docs-cf-p1">From the <code>web/landing</code> directory:</p>
+          <div class="code-block" style="padding-top: 44px">
+            <button type="button" class="copy-btn" data-copy="cf-deploy">Copy</button>
+            <pre id="cf-deploy">npm ci
 npm run deploy</pre>
-        </div>
-        <p style="color: var(--muted)" id="docs-cf-p2">
-          Set <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code> in GitHub Actions, or run
-          <code>wrangler login</code> locally.
-        </p>
-      </article>
+          </div>
+          <p style="color: var(--muted)" id="docs-cf-p2">
+            Set <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code> in GitHub Actions, or run
+            <code>wrangler login</code> locally.
+          </p>
+        </article>
 
-      <article class="card" id="ops-docs" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">CDN configuration (required variables)</h2>
-        <p style="color: var(--muted)">
-          To stop depending on GitHub releases endpoints, define CDN URLs in the landing build and in Tonet runtime.
-        </p>
-        <div class="code-block" style="padding-top: 44px">
-          <button type="button" class="copy-btn" data-copy="cdn-env">Copy</button>
-          <pre id="cdn-env"># web/landing/.env(.production)
+        <article class="card" id="ops-docs" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0">CDN configuration (required variables)</h2>
+          <p style="color: var(--muted)">
+            To stop depending on GitHub releases endpoints, define CDN URLs in the landing build and in Tonet runtime.
+          </p>
+          <div class="code-block" style="padding-top: 44px">
+            <button type="button" class="copy-btn" data-copy="cdn-env">Copy</button>
+            <pre id="cdn-env"># web/landing/.env(.production)
 TONET_CDN_BASE_URL=https://downloads.example.com
 TONET_CDN_VERSION_PATH=/version.json
 TONET_SITE_DOWNLOADS_PAGE=https://downloads.example.com/
@@ -144,42 +155,42 @@ TONET_SITE_DOWNLOADS_PAGE=https://downloads.example.com/
 # rust build environment for Tonet app updates
 TONET_UPDATE_MANIFEST_URL=https://downloads.example.com/version.json
 TONET_DOWNLOADS_PAGE_URL=https://downloads.example.com/</pre>
-        </div>
-      </article>
+          </div>
+        </article>
 
-      <article class="card" id="product-docs" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">Use cases and audience</h2>
-        <ul style="line-height: 1.7; color: var(--muted)">
-          <li>Minimal browsing environments where deterministic behavior matters.</li>
-          <li>Teams that need transparent browser internals and release control.</li>
-          <li>Operators that prefer CDN-governed artifacts and update manifests.</li>
-          <li>Power users who want a focused browser without broad platform noise.</li>
-        </ul>
-      </article>
+        <article class="card" id="product-docs" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0">Use cases and audience</h2>
+          <ul style="line-height: 1.7; color: var(--muted)">
+            <li>Minimal browsing environments where deterministic behavior matters.</li>
+            <li>Teams that need transparent browser internals and release control.</li>
+            <li>Operators that prefer CDN-governed artifacts and update manifests.</li>
+            <li>Power users who want a focused browser without broad platform noise.</li>
+          </ul>
+        </article>
 
-      <article class="card" id="engineering-docs" style="margin-bottom: 20px">
-        <h2 style="margin-top: 0">Implementation and future work</h2>
-        <ul style="line-height: 1.7; color: var(--muted)">
-          <li><strong>Current:</strong> Servo integration foundation, policy modules, and CI coverage.</li>
-          <li><strong>Next:</strong> broader web compatibility layers and stronger packaging parity.</li>
-          <li><strong>Planned:</strong> deeper conformance targets, perf budgets, and expanded platform support.</li>
-        </ul>
-        <p style="color: var(--muted)">
-          For detailed milestones, consult <code>TONET_VISION.md</code> and <code>docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
-        </p>
-        <p style="color: var(--muted)">
-          Structured docs source (MkDocs-style): <code>web/landing/docs-site</code>.
-        </p>
-      </article>
+        <article class="card" id="engineering-docs" style="margin-bottom: 20px">
+          <h2 style="margin-top: 0">Implementation and future work</h2>
+          <ul style="line-height: 1.7; color: var(--muted)">
+            <li><strong>Current:</strong> Servo integration foundation, policy modules, and CI coverage.</li>
+            <li><strong>Next:</strong> broader web compatibility layers and stronger packaging parity.</li>
+            <li><strong>Planned:</strong> deeper conformance targets, perf budgets, and expanded platform support.</li>
+          </ul>
+          <p style="color: var(--muted)">
+            For detailed milestones, consult <code>TONET_VISION.md</code> and <code>docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
+          </p>
+          <p style="color: var(--muted)">
+            Structured docs source (MkDocs-style): <code>web/landing/docs-site</code>.
+          </p>
+        </article>
 
-      <article class="card">
-        <h2 style="margin-top: 0">Additional pages</h2>
-        <p style="color: var(--muted)">
-          Explore focused subpages:
-          <a href="/handbook.html">Handbook</a>, <a href="/compare.html">Compare</a>, and <a href="/roadmap.html">Roadmap</a>.
-        </p>
-      </article>
-    </main>
+        <article class="card">
+          <h2 style="margin-top: 0">Additional pages</h2>
+          <p style="color: var(--muted)">
+            <a href="/handbook.html">Handbook</a>, <a href="/compare.html">Compare</a>, and <a href="/roadmap.html">Roadmap</a>.
+          </p>
+        </article>
+      </main>
+    </div>
 
     <footer class="footer">
       <p class="footer-lang-row">

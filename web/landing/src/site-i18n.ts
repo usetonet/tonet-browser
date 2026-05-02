@@ -85,10 +85,10 @@ export function detectedOsLine(lang: SiteLang, os: DetectedOS): string {
 
 export function versionPillPrefix(lang: SiteLang): string {
   const map: Record<SiteLang, string> = {
-    en: "Current project version:",
-    es: "Versión actual del proyecto:",
-    de: "Aktuelle Projektversion:",
-    fr: "Version actuelle du projet :",
+    en: "Latest release:",
+    es: "Última versión:",
+    de: "Aktuelle Version:",
+    fr: "Dernière version :",
   };
   return map[lang];
 }
@@ -574,12 +574,14 @@ const docs: Record<SiteLang, DocsStrings> = {
 
 export function applyDocsLocale(lang: SiteLang): void {
   const D = docs[lang];
+  const L = landing[lang];
   document.documentElement.lang = lang;
   document.title = D.title;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
   if (meta) meta.content = D.metaDescription;
-  setText("docs-nav-home", D.navHome);
-  setText("docs-nav-download", D.navDownload);
+  setText("nav-download", D.navDownload);
+  setText("nav-features", L.navFeatures);
+  setText("nav-docs", L.navDocs);
   setText("docs-h1", D.h1);
   setText("docs-lead", D.lead);
   setText("docs-install-h", D.installH);

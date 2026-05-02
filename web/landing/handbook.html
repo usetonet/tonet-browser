@@ -8,21 +8,8 @@
     <link rel="icon" href="/tonet.svg" type="image/svg+xml" />
     <script type="module" src="/src/docs.ts"></script>
   </head>
-  <body>
-    <header class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="/">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>Tonet</span>
-        </a>
-        <nav class="nav-links">
-          <a href="/">Home</a>
-          <a href="/#download">Download</a>
-          <a href="/docs.html">Docs portal</a>
-          <a href="/roadmap.html">Roadmap</a>
-        </nav>
-      </div>
-    </header>
+  <body data-page="handbook">
+    <div id="site-nav-root"></div>
     <main class="section" style="padding-top: 40px">
       <h1>Public handbook</h1>
       <p class="lead">
@@ -77,6 +64,16 @@
       </article>
     </main>
     <footer class="footer">
+      <p class="footer-lang-row">
+        <label id="lang-switcher-label" class="lang-label" for="site-lang">Site language</label>
+        <select id="site-lang" name="site-lang" class="lang-select" aria-describedby="lang-switcher-label">
+          <option value="auto">Auto (browser)</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+        </select>
+      </p>
       <p><a href="/docs.html">Back to docs portal</a></p>
     </footer>
   </body>

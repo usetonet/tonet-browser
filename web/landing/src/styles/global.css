@@ -89,12 +89,44 @@ a:hover {
   flex-wrap: wrap;
   align-items: center;
 }
+.nav-links a.nav-link,
 .nav-links a {
   color: var(--muted);
   font-size: 0.95rem;
 }
 .nav-links a:hover {
   color: var(--text);
+}
+.nav-link-active {
+  color: var(--text) !important;
+  font-weight: 600;
+}
+.nav-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+.nav-github:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+.nav-github-text {
+  display: inline;
+}
+@media (max-width: 900px) {
+  .nav-github-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
 }
 
 .btn {
@@ -384,9 +416,170 @@ a:hover {
   margin-bottom: 12px;
 }
 
+/* Docs: Docusaurus-style two-column layout */
+.docs-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 56px;
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+.docs-sidebar {
+  position: sticky;
+  top: 72px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 16px 18px;
+  font-size: 0.9rem;
+}
+.docs-sidebar-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.docs-sidebar a {
+  display: block;
+  padding: 6px 0;
+  color: var(--muted);
+  border-radius: 8px;
+}
+.docs-sidebar a:hover {
+  color: var(--text);
+}
+.docs-main {
+  min-width: 0;
+}
+.docs-main h1 {
+  margin-top: 0;
+}
+.docs-main .card {
+  scroll-margin-top: 88px;
+}
+
+@media (max-width: 960px) {
+  .docs-shell {
+    grid-template-columns: 1fr;
+  }
+  .docs-sidebar {
+    position: relative;
+    top: auto;
+  }
+}
+
+/* Roadmap timeline */
+.roadmap-intro {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 40px 24px 20px;
+}
+.roadmap-track {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.roadmap-phase {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 20px;
+  padding: 24px 0;
+  border-left: 3px solid rgba(79, 140, 255, 0.45);
+  margin-left: 18px;
+  padding-left: 28px;
+  position: relative;
+}
+.roadmap-phase::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 28px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 0 4px var(--bg0);
+}
+.roadmap-phase-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+.roadmap-phase h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+.roadmap-phase ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* Comparison tables */
+.compare-wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 40px 24px 56px;
+}
+.compare-lead {
+  color: var(--muted);
+  max-width: 780px;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+.compare-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.compare-table th,
+.compare-table td {
+  border: 1px solid var(--stroke);
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+.compare-table th {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-weight: 600;
+}
+.compare-table td:first-child {
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.compare-note {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 12px;
+}
+
 @media (max-width: 640px) {
   .nav-inner {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .roadmap-phase {
+    grid-template-columns: 1fr;
+    border-left: none;
+    padding-left: 0;
+    margin-left: 0;
+  }
+  .roadmap-phase::before {
+    display: none;
   }
 }

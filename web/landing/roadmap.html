@@ -3,63 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Tonet roadmap: current focus, next phases, and future priorities." />
+    <meta name="description" content="Tonet roadmap: phases, milestones, and tracking." />
     <title>Roadmap — Tonet</title>
     <link rel="icon" href="/tonet.svg" type="image/svg+xml" />
     <script type="module" src="/src/docs.ts"></script>
   </head>
-  <body>
-    <header class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="/">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>Tonet</span>
-        </a>
-        <nav class="nav-links">
-          <a href="/">Home</a>
-          <a href="/#download">Download</a>
-          <a href="/docs.html">Documentation</a>
-          <a href="/compare.html">Compare</a>
-        </nav>
-      </div>
-    </header>
-    <main class="section" style="padding-top: 40px">
-      <h1>Roadmap and implementation focus</h1>
+  <body data-page="roadmap">
+    <div id="site-nav-root"></div>
+
+    <div class="roadmap-intro">
+      <h1>Roadmap</h1>
       <p class="lead">
-        Tonet roadmap tracks measurable quality gates: compatibility, stability, security, and user-facing delivery quality.
+        Phases below mirror how engineering tracks work in public: quality gates in <code>TONET_VISION.md</code>, CI on main, and CDN-backed
+        releases. Dates are intentionally not faux-precision — milestones ship when gates pass.
       </p>
-      <div class="grid">
-        <article class="card">
-          <h3>Near term</h3>
-          <p>
-            Expand landing and docs visibility, harden release delivery through Cloudflare CDN, and keep Servo integration quality checks
-            repeatable.
-          </p>
-        </article>
-        <article class="card">
-          <h3>Mid term</h3>
-          <p>
-            Grow HTML/CSS compatibility layers and improve browser shell ergonomics while preserving deterministic update and packaging
-            paths.
-          </p>
-        </article>
-        <article class="card">
-          <h3>Long term</h3>
-          <p>
-            Push deeper conformance and performance targets, broaden platform coverage, and keep all milestones documented with clear
-            release notes.
-          </p>
-        </article>
-      </div>
-      <article class="card" style="margin-top: 18px">
-        <h2 style="margin-top: 0">Where to track details</h2>
-        <p>
-          The authoritative milestone document remains <code>TONET_VISION.md</code>. Public-facing summaries and use-case narratives live
-          in the documentation portal.
+    </div>
+
+    <div class="roadmap-track">
+      <section class="roadmap-phase">
+        <div class="roadmap-phase-badge">Phase — Now</div>
+        <div>
+          <h2>Ship &amp; operate</h2>
+          <ul>
+            <li>Stable installers (Windows MSI/Inno + Linux .deb) published via CI and CDN manifest v2.</li>
+            <li>Servo integration smoke paths repeatable on Windows (LLVM/bindgen, ANGLE DLLs next to exe).</li>
+            <li>Landing + docs portal aligned with operator-runbooks (this site).</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="roadmap-phase">
+        <div class="roadmap-phase-badge">Phase — Next</div>
+        <div>
+          <h2>Compatibility &amp; shell</h2>
+          <ul>
+            <li>Grow HTML/CSS coverage toward documented conformance milestones (see engine checklist).</li>
+            <li>Browser chrome ergonomics: tabs, navigation, and settings parity with Tonet’s minimalist contract.</li>
+            <li>Packaging parity (macOS signing track, optional AppImage evaluation).</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="roadmap-phase">
+        <div class="roadmap-phase-badge">Phase — Later</div>
+        <div>
+          <h2>Depth &amp; scale</h2>
+          <ul>
+            <li>Performance budgets and measurable regressions in CI (beyond smoke).</li>
+            <li>Broader platform coverage where Servo + packaging support aligns.</li>
+            <li>Security assurance processes spelled alongside feature growth.</li>
+          </ul>
+        </div>
+      </section>
+
+      <article class="card" style="margin-top: 8px">
+        <h2 style="margin-top: 0">Authoritative detail</h2>
+        <p style="color: var(--muted); margin: 0">
+          Full milestones: <code>TONET_VISION.md</code>. Integration discipline: <code>docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
         </p>
       </article>
-    </main>
+    </div>
+
     <footer class="footer">
+      <p class="footer-lang-row">
+        <label id="lang-switcher-label" class="lang-label" for="site-lang">Site language</label>
+        <select id="site-lang" name="site-lang" class="lang-select" aria-describedby="lang-switcher-label">
+          <option value="auto">Auto (browser)</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+        </select>
+      </p>
       <p><a href="/docs.html">Open full docs portal</a></p>
     </footer>
   </body>

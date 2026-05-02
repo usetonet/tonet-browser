@@ -18,3 +18,6 @@ web/landing/.wrangler
 # Salida local de scripts/cdn (merge prev + version.json antes de subir a R2)
 /prev.json
 /version.json
+
+# Generated for local Vite dev (npm run dev)
+web/landing/public/version.json
