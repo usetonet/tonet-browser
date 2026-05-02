@@ -601,6 +601,7 @@ impl TonetApp {
     }
 
     fn reload_page(&mut self, ctx: &egui::Context) {
+        ctx.memory_mut(|m| m.surrender_focus(crate::ui::omnibox_id()));
         #[cfg(all(feature = "servo-engine", windows))]
         {
             let t = self.active_tab().url_input.trim();
@@ -617,6 +618,7 @@ impl TonetApp {
     }
 
     fn go_back(&mut self, ctx: &egui::Context) {
+        ctx.memory_mut(|m| m.surrender_focus(crate::ui::omnibox_id()));
         #[cfg(all(feature = "servo-engine", windows))]
         {
             let t = self.active_tab().url_input.trim();
@@ -649,6 +651,7 @@ impl TonetApp {
     }
 
     fn go_forward(&mut self, ctx: &egui::Context) {
+        ctx.memory_mut(|m| m.surrender_focus(crate::ui::omnibox_id()));
         #[cfg(all(feature = "servo-engine", windows))]
         {
             let t = self.active_tab().url_input.trim();
@@ -1277,9 +1280,11 @@ impl eframe::App for TonetApp {
                     }
                 }
                 if tb.navigate {
+                    ctx.memory_mut(|m| m.surrender_focus(crate::ui::omnibox_id()));
                     self.start_fetch_new(ctx);
                 }
                 if tb.navigate_to_settings {
+                    ctx.memory_mut(|m| m.surrender_focus(crate::ui::omnibox_id()));
                     self.active_tab_mut().url_input =
                         InternalRoute::Settings.canonical_url().to_string();
                     self.start_fetch_new(ctx);

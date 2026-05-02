@@ -637,7 +637,7 @@ unsafe fn client_point(lparam: LPARAM) -> DevicePoint {
     DevicePoint::new(x as f32, y as f32)
 }
 
-unsafe fn dispatch_mouse_to_servo(_hwnd: HWND, state: &PopupInputState, msg: u32, wparam: WPARAM, lparam: LPARAM) {
+unsafe fn dispatch_mouse_to_servo(hwnd: HWND, state: &PopupInputState, msg: u32, wparam: WPARAM, lparam: LPARAM) {
     match msg {
         WM_MOUSEMOVE => {
             let dp = client_point(lparam);
@@ -714,7 +714,13 @@ unsafe fn dispatch_mouse_to_servo(_hwnd: HWND, state: &PopupInputState, msg: u32
             let delta = ((wparam >> 16) as u32 & 0xFFFF) as i16 as i32;
             const WHEEL_DELTA: f64 = 120.0;
             let dy = (delta as f64 / WHEEL_DELTA) * 76.0;
-            let dp = client_point(lparam);
+            // `lParam` for WM_MOUSEWHEEL is screen coordinates; WebView expects client coords.
+            let mut pt = POINT {
+                x: (lparam & 0xFFFF) as i16 as i32,
+                y: ((lparam >> 16) & 0xFFFF) as i16 as i32,
+            };
+            let _ = ScreenToClient(hwnd, &mut pt);
+            let dp = DevicePoint::new(pt.x as f32, pt.y as f32);
             state.last_move.set(Some(dp));
             state.webview.notify_input_event(InputEvent::Wheel(WheelEvent::new(
                 WheelDelta {
@@ -730,7 +736,12 @@ unsafe fn dispatch_mouse_to_servo(_hwnd: HWND, state: &PopupInputState, msg: u32
             let delta = ((wparam >> 16) as u32 & 0xFFFF) as i16 as i32;
             const WHEEL_DELTA: f64 = 120.0;
             let dx = (delta as f64 / WHEEL_DELTA) * 76.0;
-            let dp = client_point(lparam);
+            let mut pt = POINT {
+                x: (lparam & 0xFFFF) as i16 as i32,
+                y: ((lparam >> 16) & 0xFFFF) as i16 as i32,
+            };
+            let _ = ScreenToClient(hwnd, &mut pt);
+            let dp = DevicePoint::new(pt.x as f32, pt.y as f32);
             state.last_move.set(Some(dp));
             state.webview.notify_input_event(InputEvent::Wheel(WheelEvent::new(
                 WheelDelta {
@@ -840,7 +851,7 @@ fn initial_nav_url(tab_url: &str) -> Url {
     let t = tab_url.trim();
     let tl = t.to_ascii_lowercase();
     if tl.starts_with("http://") || tl.starts_with("https://") {
-        Url::parse(t).unwrap_or_else(|_| Url::parse("https://example.com/").expect("static url"))
+        Url::parse(t).unwrap_or_else(|_| Url::parse("about:blank").expect("static url"))
     } else if let Some(p) = crate::internal_pages::parse_tonet_url(t) {
         let u = p.normalized_url();
         Url::parse(&u).unwrap_or_else(|_| Url::parse("about:blank").expect("static url"))
@@ -3110,12 +3121,15 @@ impl ServoWinHost {
             self.input.needs_paint.set(true);
         }
 
-        let next = initial_nav_url(tab_url);
-        let next_s = next.to_string();
-        if next_s != self.last_tab_url {
-            self.input.webview.load(next);
-            self.last_tab_url = next_s;
-            self.input.needs_paint.set(true);
+        // While the user edits the omnibox, do not push partial URLs into Servo each frame.
+        if !ctx.memory(|m| m.has_focus(omnibox_id())) {
+            let next = initial_nav_url(tab_url);
+            let next_s = next.to_string();
+            if next_s != self.last_tab_url {
+                self.input.webview.load(next);
+                self.last_tab_url = next_s;
+                self.input.needs_paint.set(true);
+            }
         }
 
         *self.shell_snapshot.borrow_mut() = ServoShellSnapshot::capture_from(&self.input.webview);
