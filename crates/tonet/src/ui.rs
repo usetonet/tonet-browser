@@ -14,6 +14,18 @@ pub fn omnibox_id() -> Id {
     Id::new("tonet_omnibox")
 }
 
+/// Legacy floating **Settings** window from [`show_settings_window`].
+#[inline]
+pub fn settings_modal_id() -> Id {
+    Id::new("tonet_settings_modal")
+}
+
+/// `tonet://settings` in-app form root (shared with language / search / update sections).
+#[inline]
+pub fn settings_internal_form_id() -> Id {
+    Id::new("tonet_settings_internal")
+}
+
 pub fn show_error_panel(ui: &mut Ui, loc: Locale, message: &str) {
     egui::Frame::default()
         .fill(theme::error_bg())
@@ -392,7 +404,7 @@ pub fn show_settings_window(
             ui,
             settings,
             loc,
-            Id::new("tonet_settings_modal"),
+            settings_modal_id(),
             update_busy,
             status_line,
             current_version,

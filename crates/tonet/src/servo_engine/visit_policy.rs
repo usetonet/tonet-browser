@@ -238,4 +238,9 @@ mod tests {
         assert!(!is_http_or_https_history_url("rtsp://media.example/stream"));
         assert!(!is_http_or_https_history_url("irc://irc.example/channel"));
     }
+
+    #[test]
+    fn history_url_rejects_about_scheme() {
+        assert!(!is_http_or_https_history_url("about:config"));
+    }
 }

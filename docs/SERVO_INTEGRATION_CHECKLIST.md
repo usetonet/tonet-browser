@@ -113,7 +113,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 
 | Status | Task |
 |--------|------|
-| [~] | Stable `egui::Id` sources: **`chrome/ids.rs`** (toolbar + tabs + new tab); **`servo_engine/embedder_ids.rs`** (Servo embedder windows/toast on Windows + regression tests); omnibox remains `ui::omnibox_id`. Screen-reader labels / full keyboard order still TBD. |
+| [~] | Stable `egui::Id` sources: **`chrome/ids.rs`** (toolbar + tabs + new tab); **`servo_engine/embedder_ids.rs`** (Servo embedder windows/toast on Windows + regression tests); **`ui.rs`** (`omnibox_id`, `settings_modal_id`, `settings_internal_form_id`). Screen-reader labels / full keyboard order still TBD. |
 | [~] | Full keyboard order and screen-reader labels per control — **procedure** in **§ Accessibility audit templates**; egui limits still TBD per control. |
 | [~] | Contrast / scaling audit vs system settings — same **§ Accessibility audit templates** (spot-check matrix). |
 
@@ -302,3 +302,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **B2:** `chrome/ids` — `omnibox_history_popup_layer(omnibox_id)` for visit-history overlay Area. |
 | 2026-05-02 | **A8:** `download_heuristic` — `CONNECT` / `TRACE` do not intercept main-frame GET heuristic. |
 | 2026-05-02 | **A8:** `visit_policy` — `rtsp:` / `irc:` excluded from history URL gate. |
+| 2026-05-02 | **B2:** `ui::settings_modal_id` / `settings_internal_form_id`; **`visit_policy`** — `about:` excluded from history URL gate. |
