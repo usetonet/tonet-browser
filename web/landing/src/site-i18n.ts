@@ -189,6 +189,16 @@ interface LandingStrings {
   scrollPoweredBy: string;
   homeScrollAria: string;
   homeScrollHint: string;
+  /** Pinned scroll showcase: preface + badges + engine line (see HomeScrollShowcase) */
+  scrollIncoming: string;
+  scrollBadgeSecure: string;
+  scrollBadgePrivacy: string;
+  scrollEngineTagline: string;
+  /** Home “Servo” band + docs stub */
+  servoSectionTitle: string;
+  servoSectionBody: string;
+  servoHandbookCta: string;
+  servoOfficialShort: string;
   c5t: string;
   c5p: string;
   c6t: string;
@@ -331,16 +341,28 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi1Strong: "Servo + minimal shell",
     kpi2Label: "Primary channels",
     kpi2Strong: "Windows + Linux",
-    kpi3Label: "Updates",
-    kpi3Strong: "Manifest URL",
+    kpi3Label: "On your terms",
+    kpi3Strong: "You choose",
     kpi1Hint: "A thin shell on Servo — not another Blink bundle.",
-    kpi2Hint: "Desktop builds you can mirror; channels you control.",
-    kpi3Hint: "Your manifest URL on your CDN — no release-API roulette.",
+    kpi2Hint:
+      "Shipping on desktop today. Soon: macOS, Android, and iPhone — EU builds target Servo; outside the EU, WebKit-class builds may apply 👎",
+    kpi3Hint:
+      "Pick the version you want and update when you want — no surprise upgrades, no forced “what’s new”.",
     homeScrollFoot:
       "Tonet is designed for focus: a clear window onto the web, with infrastructure you can reason about — not an endless compatibility treadmill.",
     scrollPoweredBy: "powered by",
-    homeScrollAria: "Scroll the page: layers combine into a Tonet and Servo lockup.",
+    homeScrollAria:
+      "Scroll the page: incoming features, badges, layers, then a from-scratch engine line and Tonet with Servo.",
     homeScrollHint: "Scroll to assemble",
+    scrollIncoming: "Incoming features",
+    scrollBadgeSecure: "Tonet Secure",
+    scrollBadgePrivacy: "No more ads & trackers",
+    scrollEngineTagline: "A complete, from-scratch web engine",
+    servoSectionTitle: "The Servo engine",
+    servoSectionBody:
+      "Servo is an open-source web rendering engine written in Rust—built for embedding, parallelism, and memory safety. Tonet uses Servo to render real web pages with a minimal shell you can audit, instead of bolting on another Chromium-sized stack.",
+    servoHandbookCta: "Servo chapter in the Handbook",
+    servoOfficialShort: "servo.org ↗",
     c5t: "Servo rendering",
     c5p:
       "Web content uses the Servo engine—not Chromium, WebKit, or CEF. Fewer opaque layers between your policy and the network.",
@@ -473,16 +495,28 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi1Strong: "Servo + shell mínima",
     kpi2Label: "Canales",
     kpi2Strong: "Windows + Linux",
-    kpi3Label: "Actualizaciones",
-    kpi3Strong: "URL del manifiesto",
+    kpi3Label: "A tu ritmo",
+    kpi3Strong: "Tú decides",
     kpi1Hint: "Capa fina sobre Servo — no otro paquete tipo Blink.",
-    kpi2Hint: "Builds de escritorio que puedes replicar; canales bajo tu control.",
-    kpi3Hint: "Tu URL de manifiesto en tu CDN — sin ruleta de API de releases.",
+    kpi2Hint:
+      "Escritorio hoy. Próximamente: macOS, Android e iPhone — en la UE, Servo; fuera de la UE, puede usarse WebKit 👎",
+    kpi3Hint:
+      "Elige la versión y cuándo actualizar — sin actualizaciones sorpresa ni novedades forzadas.",
     homeScrollFoot:
       "Tonet está pensado para el foco: una ventana clara a la web, con infraestructura que puedes entender — no una cinta interminable de compatibilidad.",
     scrollPoweredBy: "impulsado por",
-    homeScrollAria: "Desplázate: las capas forman el bloque Tonet y Servo.",
+    homeScrollAria:
+      "Desplázate: novedades, badges, capas, luego el motor hecho desde cero y Tonet con Servo.",
     homeScrollHint: "*scrollea para continuar",
+    scrollIncoming: "Novedades en camino",
+    scrollBadgeSecure: "Tonet Secure",
+    scrollBadgePrivacy: "Adiós anuncios y rastreadores",
+    scrollEngineTagline: "Un motor web completo, hecho desde cero",
+    servoSectionTitle: "El motor Servo",
+    servoSectionBody:
+      "Servo es un motor de renderizado web de código abierto, escrito en Rust, pensado para embeberse, paralelizarse y mantener la seguridad de memoria. Tonet usa Servo para mostrar la web real con un shell mínimo y auditable, en lugar de apilar otro monolito al estilo Chromium.",
+    servoHandbookCta: "Capítulo sobre Servo en el Manual",
+    servoOfficialShort: "servo.org ↗",
     c5t: "Renderizado Servo",
     c5p:
       "El contenido web usa el motor Servo: sin Chromium, WebKit ni CEF. Menos capas opacas entre tu política y la red.",
@@ -633,16 +667,28 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi1Strong: "Servo + minimale Shell",
     kpi2Label: "Plattformen",
     kpi2Strong: "Windows + Linux",
-    kpi3Label: "Updates",
-    kpi3Strong: "Manifest-URL",
+    kpi3Label: "Nach deinen Regeln",
+    kpi3Strong: "Du entscheidest",
     kpi1Hint: "Dünne Shell auf Servo — kein weiteres Blink-Paket.",
-    kpi2Hint: "Desktop-Builds zum Spiegeln; Kanäle unter deiner Kontrolle.",
-    kpi3Hint: "Manifest-URL auf deinem CDN — ohne Release-API-Roulette.",
+    kpi2Hint:
+      "Desktop jetzt. Bald: macOS, Android und iPhone — EU mit Servo; außerhalb der EU ggf. WebKit 👎",
+    kpi3Hint:
+      "Version und Update-Zeitpunkt selbst wählen — keine Überraschungs-Updates, keine erzwungenen Neuerungen.",
     homeScrollFoot:
       "Tonet ist auf Fokus ausgelegt: ein klares Fenster ins Web mit nachvollziehbarer Infrastruktur — kein endloser Kompatibilitätshamster.",
     scrollPoweredBy: "angetrieben von",
-    homeScrollAria: "Scrollen: Ebenen fügen sich zu Tonet und Servo zusammen.",
+    homeScrollAria:
+      "Scrollen: kommende Features, Abzeichen, Ebenen, dann Engine-Zeile und Tonet mit Servo.",
     homeScrollHint: "Zum Zusammensetzen scrollen",
+    scrollIncoming: "Demnächst",
+    scrollBadgeSecure: "Tonet Secure",
+    scrollBadgePrivacy: "Werbung & Tracker? Nein danke",
+    scrollEngineTagline: "Eine komplette Web-Engine, von Grund auf neu",
+    servoSectionTitle: "Die Engine Servo",
+    servoSectionBody:
+      "Servo ist eine quelloffene Web-Rendering-Engine in Rust – für Einbettung, Parallelität und Speichersicherheit. Tonet nutzt Servo, um echte Webseiten mit einer schlanken, nachvollziehbaren Shell zu rendern – statt einen weiteren Chromium-ähnlichen Stapel.",
+    servoHandbookCta: "Servo-Kapitel im Handbuch",
+    servoOfficialShort: "servo.org ↗",
     c5t: "Servo-Rendering",
     c5p:
       "Webinhalte laufen über Servo — nicht Chromium, WebKit oder CEF. Weniger undurchsichtige Schichten zwischen Policy und Netz.",
@@ -793,16 +839,28 @@ const landing: Record<SiteLang, LandingStrings> = {
     kpi1Strong: "Servo + enveloppe minimale",
     kpi2Label: "Canaux",
     kpi2Strong: "Windows + Linux",
-    kpi3Label: "Mises à jour",
-    kpi3Strong: "URL du manifeste",
+    kpi3Label: "À votre rythme",
+    kpi3Strong: "Vous choisissez",
     kpi1Hint: "Coque fine sur Servo — pas un autre bundle Blink.",
-    kpi2Hint: "Installateurs desktop que vous pouvez miroiter ; canaux maîtrisés.",
-    kpi3Hint: "Votre URL de manifeste sur votre CDN — sans roulette API releases.",
+    kpi2Hint:
+      "Bureau aujourd’hui. Bientôt : macOS, Android et iPhone — UE : Servo ; hors UE : WebKit possible 👎",
+    kpi3Hint:
+      "Choisissez la version et le moment des mises à jour — pas de surprise, pas de nouveautés imposées.",
     homeScrollFoot:
       "Tonet est pensé pour la concentration : une fenêtre claire sur le web, avec une infrastructure que vous comprenez — pas un tapis roulant infini de compatibilité.",
     scrollPoweredBy: "propulsé par",
-    homeScrollAria: "Faites défiler : les couches forment le bloc Tonet et Servo.",
+    homeScrollAria:
+      "Défilez : prochaines fonctions, badges, couches, puis moteur refait de zéro et Tonet avec Servo.",
     homeScrollHint: "Défilez pour assembler",
+    scrollIncoming: "À venir",
+    scrollBadgeSecure: "Tonet Secure",
+    scrollBadgePrivacy: "Fini pubs et traqueurs",
+    scrollEngineTagline: "Un moteur web complet, repensé de zéro",
+    servoSectionTitle: "Le moteur Servo",
+    servoSectionBody:
+      "Servo est un moteur de rendu web open source, écrit en Rust, conçu pour l’embarqué, le parallélisme et la sûreté mémoire. Tonet s’appuie sur Servo pour afficher le web réel avec une coque minimaliste et auditable, plutôt qu’une pile du type Chromium.",
+    servoHandbookCta: "Chapitre Servo dans le manuel",
+    servoOfficialShort: "servo.org ↗",
     c5t: "Rendu Servo",
     c5p:
       "Le contenu web passe par Servo — pas Chromium, WebKit ni CEF. Moins de couches opaques entre la politique et le réseau.",
@@ -1014,6 +1072,10 @@ export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "dow
   setText("kpi-2-hint", L.kpi2Hint);
   setText("kpi-3-hint", L.kpi3Hint);
   setText("home-scroll-foot", L.homeScrollFoot);
+  setText("home-servo-title", L.servoSectionTitle);
+  setText("home-servo-p", L.servoSectionBody);
+  setText("home-servo-cta", L.servoHandbookCta);
+  setText("home-servo-official", L.servoOfficialShort);
   setText("diff-1-t", L.d1t);
   setText("diff-1-p", L.d1p);
   setText("diff-2-t", L.d2t);
@@ -1147,6 +1209,9 @@ interface DocsStrings {
   cfP1: string;
   cfP2: string;
   footerBack: string;
+  /** Short pointer to Handbook Servo chapter + official site */
+  servoShortH: string;
+  servoShortP: string;
 }
 
 const docs: Record<SiteLang, DocsStrings> = {
@@ -1184,6 +1249,9 @@ const docs: Record<SiteLang, DocsStrings> = {
     cfP2:
       "Set <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code> in GitHub Actions, or run <code>wrangler login</code> locally.",
     footerBack: "← Back to home",
+    servoShortH: "Servo engine",
+    servoShortP:
+      "Tonet embeds the <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">Servo</a> project’s Rust rendering engine. For context, history, and why we chose it, read the <a class=\"text-tonet-link hover:underline\" href=\"/handbook.html#servo\">Handbook — Servo and Tonet</a> (and the official site <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>).",
   },
   es: {
     metaDescription:
@@ -1220,6 +1288,9 @@ const docs: Record<SiteLang, DocsStrings> = {
     cfP2:
       "Configura <code>CLOUDFLARE_API_TOKEN</code> y <code>CLOUDFLARE_ACCOUNT_ID</code> en GitHub Actions o ejecuta <code>wrangler login</code> en local.",
     footerBack: "← Volver al inicio",
+    servoShortH: "Motor Servo",
+    servoShortP:
+      "Tonet integra el motor de renderizado en Rust del proyecto <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">Servo</a>. Contexto, historia y motivo de la elección: <a class=\"text-tonet-link hover:underline\" href=\"/handbook.html#servo\">Manual — Servo y Tonet</a> y el sitio oficial <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
   },
   de: {
     metaDescription: "Tonet-Dokumentation: Installation, Updates, Codesignatur und Packaging.",
@@ -1255,6 +1326,9 @@ const docs: Record<SiteLang, DocsStrings> = {
     cfP2:
       "<code>CLOUDFLARE_API_TOKEN</code> und <code>CLOUDFLARE_ACCOUNT_ID</code> in GitHub Actions setzen oder lokal <code>wrangler login</code> ausführen.",
     footerBack: "← Zur Startseite",
+    servoShortH: "Servo-Engine",
+    servoShortP:
+      "Tonet bettet die Rust-Rendering-Engine des <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">Servo</a>-Projekts ein. Hintergrund, Geschichte und Wahl: <a class=\"text-tonet-link hover:underline\" href=\"/handbook.html#servo\">Handbuch — Servo und Tonet</a> und <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
   },
   fr: {
     metaDescription:
@@ -1291,6 +1365,9 @@ const docs: Record<SiteLang, DocsStrings> = {
     cfP2:
       "Définir <code>CLOUDFLARE_API_TOKEN</code> et <code>CLOUDFLARE_ACCOUNT_ID</code> dans GitHub Actions, ou lancer <code>wrangler login</code> en local.",
     footerBack: "← Retour à l’accueil",
+    servoShortH: "Moteur Servo",
+    servoShortP:
+      "Tonet intègre le moteur de rendu Rust du projet <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">Servo</a>. Contexte, historique et choix : <a class=\"text-tonet-link hover:underline\" href=\"/handbook.html#servo\">Manuel — Servo et Tonet</a> et le site officiel <a class=\"text-tonet-link hover:underline\" href=\"https://servo.org/\" target=\"_blank\" rel=\"noopener noreferrer\">servo.org</a>.",
   },
 };
 
@@ -1321,6 +1398,8 @@ export function applyDocsLocale(lang: SiteLang): void {
   setHtml("docs-cf-p1", D.cfP1);
   setHtml("docs-cf-p2", D.cfP2);
   setText("docs-footer-back", D.footerBack);
+  setText("docs-servo-short-h", D.servoShortH);
+  setHtml("docs-servo-short-p", D.servoShortP);
 }
 
 export function wireCopyButtons(lang: SiteLang): void {
