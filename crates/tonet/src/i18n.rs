@@ -130,6 +130,24 @@ pub fn stop_loading_tooltip(loc: Locale) -> &'static str {
     }
 }
 
+/// Shown when Stop is disabled because Servo’s embedder API does not expose navigation cancel yet.
+pub fn stop_loading_unavailable_servo_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => {
+            "Detener no está disponible con el motor Servo (la API aún no permite cancelar la carga)."
+        }
+        Locale::De => {
+            "Abbrechen ist mit dem Servo-Motor nicht verfügbar (API erlaubt noch kein Abbruch des Ladens)."
+        }
+        Locale::Fr => {
+            "Arrêt indisponible avec le moteur Servo (l’API ne permet pas encore d’interrompre le chargement)."
+        }
+        Locale::En => {
+            "Stop isn’t available with the Servo engine yet (embedder API has no navigation cancel)."
+        }
+    }
+}
+
 pub fn reload_shortcuts_hint(loc: Locale) -> &'static str {
     match loc {
         Locale::Es => "También: F5 o Ctrl/⌘+R",

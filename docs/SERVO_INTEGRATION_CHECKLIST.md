@@ -55,7 +55,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 | [x] | Favicon: `WebView::favicon` → PNG → `egui` `include_bytes` + `favicon_uri` (when `servo-engine` + Windows). |
 | [~] | Page errors: `LoadStatus` has no failure variant upstream; map embedder errors when API exists. |
 | [x] | **HTTP auth:** `WebViewDelegate::request_authentication` → egui modal (username + masked password, **Sign in** / cancel / close); `for_proxy` note in i18n; ordered after script dialog, before site permission; `Drop` drops pending request (Servo treats as cancel). |
-| [~] | Stop loading: no public `WebView::stop`; toolbar stop is a no-op for Servo-superseded tabs until upstream adds it. |
+| [~] | Stop loading: no public `WebView::stop`; toolbar **Stop** is **disabled** while loading on Servo-superseded tabs (tooltip explains embedder limitation); Tonet-engine tabs still cancel in-flight fetch. Upstream API still wanted for real cancel. |
 
 ### A5. Input and focus
 
@@ -207,7 +207,7 @@ Mark the B3 row **fully verified** when every cell has a dated “OK” in your 
 17. **Heuristic download:** navigate (same tab, main frame) to a **public** `https://…/file.zip` (or another URL whose path ends in an allowlisted extension per `download_heuristic.rs`) — Tonet should offer **Save as**, write the file, and append an entry in **internal Downloads** with `saved_path`. Cancel the dialog: no new row (or no path). Remember: this path does **not** use Servo’s cookie jar (cookie-auth downloads may fail).
 17b. **Heuristic download (extensionless path + `HEAD`):** same tab, main frame, to a public `https` URL whose **last path segment** is **`download`**, **`export`**, or **`attachment`** with **no** dotted extension (e.g. `https://…/api/download` or `…/EXPORT`), where the server’s **`HEAD`** response includes **`Content-Disposition`** with an allowlisted filename (e.g. `…filename="report.pdf"`) or a matching **`Content-Type`** (see `background_download::head_suggests_intercept_binary_get`) — Tonet should still intercept, **Save as**, and log **Downloads** when you save (same cookie/auth caveats as step 17). If `HEAD` is not supported (405) or headers do not indicate a binary, navigation should proceed normally.
 18. **Settings → System** (internal): **Clear saved Servo site permissions** — should remove `servo_permissions.json` and reset in-memory cache without clearing visit history; a permission prompt should reappear after clear.
-19. **Toolbar stop** on a Servo-superseded tab: expect **no-op** until upstream exposes `WebView::stop` (documented in A4); reload and navigation should still work.
+19. **Toolbar stop** on a Servo-superseded tab while loading: **Stop** is **disabled** with a tooltip (no upstream `WebView::stop` yet; see A4); reload and navigation should still work.
 20. **Login / media / PDF** (spot-check when you have URLs): OAuth or form login over `https`, `<video>` / `<audio>` playback, and in-page or navigated **PDF** — note success/failures for corpus work (A7) and file bugs.
 
 ### Performance budget template (Servo, Windows + experimental viewport)
@@ -303,3 +303,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **A8:** `download_heuristic` — `CONNECT` / `TRACE` do not intercept main-frame GET heuristic. |
 | 2026-05-02 | **A8:** `visit_policy` — `rtsp:` / `irc:` excluded from history URL gate. |
 | 2026-05-02 | **B2:** `ui::settings_modal_id` / `settings_internal_form_id`; **`visit_policy`** — `about:` excluded from history URL gate. |
+| 2026-05-02 | **A4 / UX:** toolbar **Stop** disabled while loading on Servo-superseded tabs + localized tooltip (`stop_loading_unavailable_servo_tooltip`); **`servo_supersedes_dom_paint`** tests (empty URL, `javascript:`, `ftp:`); manual smoke step 19 + A4 row updated. |

@@ -518,4 +518,19 @@ mod dom_paint_gate_tests {
         assert!(servo_supersedes_dom_paint(false, "HTTP://example/"));
         assert!(servo_supersedes_dom_paint(false, "HTTPS://example/"));
     }
+
+    #[test]
+    fn servo_supersedes_rejects_empty_or_whitespace_url() {
+        assert!(!servo_supersedes_dom_paint(false, ""));
+        assert!(!servo_supersedes_dom_paint(false, "   "));
+    }
+
+    #[test]
+    fn servo_supersedes_rejects_javascript_and_ftp() {
+        assert!(!servo_supersedes_dom_paint(
+            false,
+            "javascript:alert(1)",
+        ));
+        assert!(!servo_supersedes_dom_paint(false, "ftp://files.example/x"));
+    }
 }

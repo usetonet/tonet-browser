@@ -1242,6 +1242,21 @@ impl eframe::App for TonetApp {
                         8,
                     );
                 let omnibox_focus = std::mem::take(&mut self.omnibox_focus_select_all);
+                let servo_stop_inert = {
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    {
+                        let t = self.active_tab();
+                        t.loading
+                            && crate::servo_engine::servo_supersedes_dom_paint(
+                                self.settings.system.experimental_servo_viewport,
+                                t.url_input.trim(),
+                            )
+                    }
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    {
+                        false
+                    }
+                };
                 let active = self.active_tab_mut();
                 let chip_preview = active.url_input.trim().to_string();
                 let tb = show_chrome_toolbar(
@@ -1250,6 +1265,7 @@ impl eframe::App for TonetApp {
                     &mut active.url_input,
                     &chip_preview,
                     active.loading,
+                    servo_stop_inert,
                     can_back,
                     can_forward,
                     omnibox_focus,

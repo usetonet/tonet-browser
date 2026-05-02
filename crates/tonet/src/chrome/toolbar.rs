@@ -79,6 +79,8 @@ pub fn show_chrome_toolbar(
     url_input: &mut String,
     chip_address_preview: &str,
     loading: bool,
+    // When true (Servo-superseded http(s) / tonet:// on Windows), Stop is shown disabled; see `stop_loading_unavailable_servo_tooltip`.
+    servo_stop_inert: bool,
     can_back: bool,
     can_forward: bool,
     focus_omnibox_select_all: bool,
@@ -137,15 +139,21 @@ pub fn show_chrome_toolbar(
         }
 
         if loading {
+            let stop_enabled = !servo_stop_inert;
+            let stop_tip = if servo_stop_inert {
+                i18n::stop_loading_unavailable_servo_tooltip(loc)
+            } else {
+                i18n::stop_loading_tooltip(loc)
+            };
             if chrome_button(
                 ui,
                 chrome_stop(),
                 "✕",
                 14.0,
                 theme::nav_glyph(),
-                true,
+                stop_enabled,
             )
-            .on_hover_text(i18n::stop_loading_tooltip(loc))
+            .on_hover_text(stop_tip)
             .clicked()
             {
                 stop_loading = true;
