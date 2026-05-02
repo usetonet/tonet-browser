@@ -82,6 +82,12 @@ pub fn omnibox_history_scroll() -> Id {
     Id::new("tonet_omnibox_history_scroll")
 }
 
+/// Foreground overlay [`egui::Area`] for the visit-history popup (under the omnibox pill).
+#[inline]
+pub fn omnibox_history_popup_layer(omnibox_root: Id) -> Id {
+    omnibox_root.with("hist_popup_layer")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,5 +106,7 @@ mod tests {
             omnibox_history_scroll(),
             Id::new("tonet_omnibox_history_scroll")
         );
+        let ob = Id::new("tonet_omnibox");
+        assert_eq!(omnibox_history_popup_layer(ob), ob.with("hist_popup_layer"));
     }
 }

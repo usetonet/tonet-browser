@@ -299,3 +299,6 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **A8:** `visit_policy` — `view-source:` and `gopher:` excluded from `http(s)` history URL gate. |
 | 2026-05-02 | **B2:** `chrome/ids` — `omnibox_history_scroll()` for visit-history popup scroll area. |
 | 2026-05-02 | **A8:** `visit_policy` — `tel:` / `sms:` excluded from history URL gate. |
+| 2026-05-02 | **B2:** `chrome/ids` — `omnibox_history_popup_layer(omnibox_id)` for visit-history overlay Area. |
+| 2026-05-02 | **A8:** `download_heuristic` — `CONNECT` / `TRACE` do not intercept main-frame GET heuristic. |
+| 2026-05-02 | **A8:** `visit_policy` — `rtsp:` / `irc:` excluded from history URL gate. |

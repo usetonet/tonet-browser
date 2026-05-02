@@ -176,6 +176,21 @@ mod tests {
     }
 
     #[test]
+    fn connect_trace_no() {
+        for method in [Method::CONNECT, Method::TRACE] {
+            assert!(
+                !should_intercept_main_frame_binary_get(
+                    &method,
+                    &u("https://example.com/a.zip"),
+                    true,
+                    false
+                ),
+                "{method:?}"
+            );
+        }
+    }
+
+    #[test]
     fn pdf_main_get_yes() {
         assert!(should_intercept_main_frame_binary_get(
             &Method::GET,

@@ -232,4 +232,10 @@ mod tests {
         assert!(!is_http_or_https_history_url("tel:+15551234567"));
         assert!(!is_http_or_https_history_url("sms:+15551234567"));
     }
+
+    #[test]
+    fn history_url_rejects_rtsp_and_irc() {
+        assert!(!is_http_or_https_history_url("rtsp://media.example/stream"));
+        assert!(!is_http_or_https_history_url("irc://irc.example/channel"));
+    }
 }
