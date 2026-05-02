@@ -4,9 +4,13 @@ import { IoChevronDown } from "react-icons/io5";
 import type { SitePage } from "../types/site-page";
 import { getNavLabels, resolveSiteLang, type SiteLang } from "../site-i18n";
 
+const GITHUB_REPO_API = "https://api.github.com/repos/usetonet/tonet-browser";
+
 type Props = {
   current: SitePage;
 };
+
+type StarState = "loading" | { stars: number } | "fallback";
 
 function navCls(active: boolean): string {
   return active
@@ -14,10 +18,20 @@ function navCls(active: boolean): string {
     : "text-[0.95rem] text-[#9aa3b5] no-underline hover:text-[#e8ecf4]";
 }
 
+function formatStarCount(n: number): string {
+  if (n >= 1000) {
+    const k = n / 1000;
+    if (k >= 10) return `${Math.round(k)}k`;
+    return `${k.toFixed(1).replace(/\.0$/, "")}k`;
+  }
+  return String(n);
+}
+
 export default function SiteNav({ current }: Props) {
   const lang = resolveSiteLang() as SiteLang;
   const n = getNavLabels(lang);
   const [open, setOpen] = useState(false);
+  const [starState, setStarState] = useState<StarState>("loading");
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +48,42 @@ export default function SiteNav({ current }: Props) {
       document.removeEventListener("keydown", onKey);
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setStarState("loading");
+    void fetch(GITHUB_REPO_API, {
+      headers: { Accept: "application/vnd.github+json" },
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("github api"))))
+      .then((data: { stargazers_count?: unknown }) => {
+        if (cancelled) return;
+        const c = data.stargazers_count;
+        const nStars = typeof c === "number" && Number.isFinite(c) ? c : 0;
+        if (nStars >= 1) {
+          setStarState({ stars: nStars });
+        } else {
+          setStarState("fallback");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setStarState("fallback");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const repoHref = "https://github.com/usetonet/tonet-browser";
+  const resolvedStars =
+    starState !== "loading" && starState !== "fallback" ? starState.stars : null;
+  const hasStars = resolvedStars !== null && resolvedStars >= 1;
+  const ariaForLink =
+    starState === "loading"
+      ? "Tonet on GitHub — loading star count"
+      : hasStars && resolvedStars !== null
+        ? `Tonet on GitHub — ${resolvedStars} stars`
+        : `Tonet on GitHub — ${n.github}`;
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#070a10]/72 backdrop-blur-md">
@@ -113,13 +163,32 @@ export default function SiteNav({ current }: Props) {
             ) : null}
           </div>
           <a
-            className="inline-flex items-center gap-1.5 text-[0.95rem] text-[#9aa3b5] no-underline hover:text-[#e8ecf4] md:inline-flex"
-            href="https://github.com/usetonet/tonet-browser"
+            className="inline-flex min-h-[28px] items-center gap-2 text-[0.95rem] text-[#9aa3b5] no-underline hover:text-[#e8ecf4]"
+            href={repoHref}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={ariaForLink}
           >
-            <FaGithub aria-hidden title="GitHub" size={20} />
-            <span className="hidden md:inline">GitHub</span>
+            <FaGithub aria-hidden size={20} className="shrink-0 text-[#e8ecf4]/90" />
+            <span className="inline-flex min-w-[4.25rem] items-center gap-1 sm:min-w-[4.75rem]" aria-live="polite">
+              {starState === "loading" ? (
+                <span
+                  className="inline-block h-[1.05rem] w-[3.25rem] rounded bg-white/[0.08] motion-safe:animate-pulse sm:w-[3.75rem]"
+                  aria-hidden
+                />
+              ) : hasStars && resolvedStars !== null ? (
+                <>
+                  <span className="text-[0.85rem] text-[#e6c35c]" aria-hidden>
+                    ★
+                  </span>
+                  <span className="font-semibold tabular-nums tracking-tight text-[#e8ecf4]">
+                    {formatStarCount(resolvedStars)}
+                  </span>
+                </>
+              ) : (
+                <span className="font-medium text-[#9aa3b5]">{n.github}</span>
+              )}
+            </span>
           </a>
         </nav>
       </div>

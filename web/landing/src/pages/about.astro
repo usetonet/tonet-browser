@@ -1,0 +1,66 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { SiteChromeBoot } from "../components/SiteChromeBoot";
+---
+
+<BaseLayout
+  title="About Tonet"
+  description="What Tonet is: a lightweight Servo-based browser, open development, and how it relates to projects like Blitz."
+  page="about"
+>
+  <main class="legal-page">
+    <h1>About Tonet</h1>
+    <p class="legal-updated"><strong>Last updated:</strong> May 2, 2026</p>
+    <p class="legal-lang-note" role="note">
+      <strong>Language:</strong> This page is available in <strong>English only</strong>. It is not part of the site’s translated interface; the
+      language selector in the footer only affects navigation labels on other pages.
+    </p>
+
+    <p>
+      Tonet is an <strong>open source desktop browser</strong> built around the <strong>Servo</strong> rendering engine and a deliberately
+      minimal shell. The goal is to offer a fast, understandable surface for reading and search—with explicit policies (such as resource limits)
+      instead of chasing full compatibility with the entire modern web stack on day one.
+    </p>
+
+    <h2>Vision</h2>
+    <p>
+      Mainstream browsers optimize for maximal web compatibility, which often means large runtimes, opaque update channels, and broad telemetry
+      surfaces. Tonet takes the opposite bet: <strong>clarity over coverage</strong> for early releases—documented behavior, operator-controlled
+      update manifests, and a stack you can reason about when deploying inside a team or organization.
+    </p>
+
+    <h2>Servo engine</h2>
+    <p>
+      Web content is rendered with <strong>Servo</strong>, not Chromium, WebKit, or CEF. Servo is an independent engine with strong standards
+      credentials; Tonet adds packaging, policy, and UX choices on top. See the project repository for integration status and platform notes.
+    </p>
+
+    <h2>Open development</h2>
+    <p>
+      Source code, issue tracking, and release engineering live in public on <a
+        href="https://github.com/usetonet/tonet-browser"
+        target="_blank"
+        rel="noopener noreferrer">GitHub</a>. Installers and documentation describe how updates are verified and how operators can host their own
+      CDN layouts.
+    </p>
+
+    <h2>Related work: Blitz</h2>
+    <p>
+      <strong>Blitz</strong> is a separate open source effort: a modular web engine written in Rust, aimed at embeddability, alternative HTML use
+      cases (e.g. rendering subsets of the web stack), and experimentation—not at replacing every mainstream browser overnight. It shares the
+      broader ecosystem goal of giving developers composable engine pieces rather than only monolithic forks.
+    </p>
+    <p>
+      Tonet is <strong>not</strong> Blitz; Tonet ships as a browser product on Servo. If you want to compare philosophies—modular runtime vs.
+      Tonet’s Servo-first shell—see the Blitz project materials on
+      <a href="https://github.com/DioxusLabs/blitz" target="_blank" rel="noopener noreferrer">GitHub (DioxusLabs/blitz)</a> and upstream docs.
+    </p>
+
+    <h2>Status</h2>
+    <p>
+      Tonet is under active development. Capability matrices, roadmap phases, and quality gates are published in the repo and on
+      <a href="/roadmap.html">Roadmap</a>. Nothing on this page is a guarantee of future features or timelines.
+    </p>
+  </main>
+  <SiteChromeBoot client:load />
+</BaseLayout>

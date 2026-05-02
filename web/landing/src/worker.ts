@@ -12,7 +12,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "style-src 'self'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self'",
+    "connect-src 'self' https://api.github.com",
     "form-action 'self'",
     "upgrade-insecure-requests",
   ].join("; "),

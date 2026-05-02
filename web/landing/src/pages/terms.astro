@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { SiteChromeBoot } from "../components/SiteChromeBoot";
+---
+
+<BaseLayout
+  title="Terms of Use — Tonet"
+  description="Terms governing use of usetonet.com and Tonet software downloads: open source licensing, disclaimers, and limitations."
+  page="terms"
+>
+  <main class="legal-page">
+    <h1>Terms of Use</h1>
+    <p class="legal-updated"><strong>Last updated:</strong> May 2, 2026</p>
+    <p class="legal-lang-note" role="note">
+      <strong>Language:</strong> This page is available in <strong>English only</strong>. It is not part of the site’s translated interface; the
+      language selector in the footer only affects navigation labels on other pages.
+    </p>
+
+    <p>
+      These Terms of Use (“Terms”) govern your access to <strong>usetonet.com</strong> and your download and use of Tonet software made available
+      through official project channels. By using the site or the software, you agree to these Terms. If you do not agree, do not use the site or
+      the software.
+    </p>
+
+    <h2>1. Open source software</h2>
+    <p>
+      Tonet is distributed under the license(s) stated in the <a href="https://github.com/usetonet/tonet-browser">source repository</a> (for
+      example, MIT, MPL-2.0, or other SPDX identifiers as shipped in the repo). Third-party components (including the Servo engine and other
+      dependencies) remain under their respective licenses. Your use of the source and binaries must comply with those licenses.
+    </p>
+
+    <h2>2. No warranty</h2>
+    <p>
+      THE SOFTWARE AND THIS WEBSITE ARE PROVIDED “AS IS” AND “AS AVAILABLE,” WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+      LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. USE AT YOUR OWN RISK.
+    </p>
+
+    <h2>3. Limitation of liability</h2>
+    <p>
+      TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY INDIRECT,
+      INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR GOODWILL, ARISING OUT OF OR RELATED TO YOUR USE OF
+      THE SITE OR SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+    </p>
+
+    <h2>4. Acceptable use</h2>
+    <p>You agree not to:</p>
+    <ul>
+      <li>Use the site or software in violation of applicable law.</li>
+      <li>Attempt to disrupt the site, CDN, or repositories (e.g. abuse of automated requests).</li>
+      <li>Misrepresent affiliation with the Tonet project or Servo / Mozilla / other upstream projects.</li>
+    </ul>
+
+    <h2>5. Third-party services</h2>
+    <p>
+      The site relies on infrastructure providers (e.g. Cloudflare). Downloads may be served from URLs documented in the project. Your use of
+      those services is also subject to their terms and privacy policies.
+    </p>
+
+    <h2>6. Trademarks</h2>
+    <p>
+      “Tonet” and related branding are used to identify the project. Other names (e.g. Servo, GitHub, Cloudflare) are trademarks of their respective
+      owners. This site does not imply endorsement by those owners unless explicitly stated.
+    </p>
+
+    <h2>7. Changes</h2>
+    <p>
+      We may modify these Terms. Material changes will be reflected by updating the “Last updated” date. Continued use after changes constitutes
+      acceptance where allowed by law.
+    </p>
+
+    <h2>8. Governing law &amp; disputes</h2>
+    <p>
+      Unless mandatory consumer laws in your country provide otherwise, you agree that substantive law and disputes will be determined as
+      permitted under applicable rules for open source community projects, and you will first seek resolution in good faith via the public issue
+      tracker before initiating formal proceedings where feasible.
+    </p>
+
+    <h2>9. Contact</h2>
+    <p>
+      Questions about these Terms: open a thread on
+      <a href="https://github.com/usetonet/tonet-browser/issues">GitHub Issues</a>.
+    </p>
+  </main>
+  <SiteChromeBoot client:load />
+</BaseLayout>
