@@ -34,6 +34,7 @@ jobs:
           TONET_CDN_BASE_URL: ${{ vars.TONET_CDN_BASE_URL }}
           TONET_CDN_VERSION_PATH: ${{ vars.TONET_CDN_VERSION_PATH }}
           TONET_SITE_DOWNLOADS_PAGE: ${{ vars.TONET_SITE_DOWNLOADS_PAGE }}
+          TONET_RELEASE_PRODUCTION: ${{ vars.TONET_RELEASE_PRODUCTION || 'true' }}
         run: npm run build
 
       # Añade en GitHub → Settings → Secrets: CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID

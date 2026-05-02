@@ -12,6 +12,15 @@
 - Release `publish-cdn` job uploads alias objects, fetches previous `version.json`, merges history, and uploads the merged manifest.
 - Project license is now **GNU GPL v3 or later** (`GPL-3.0-or-later`), replacing PolyForm Noncommercial; see `LICENSE`, `README.md`, and `CONTRIBUTING.md`.
 
+## 0.2.2
+
+Preview / development channel bump; stable CDN short names and manifest top-level `version` remain **0.2.1** until you promote a release with `TONET_RELEASE_PRODUCTION=true`.
+
+### Changed
+- `crates/tonet` and `crates/tonet-setup` version **0.2.2** (`Cargo.lock` updated).
+- `web/landing/public/version.json`: `channels.development` points at **0.2.2** (`production: false`); `channels.stable` unchanged.
+- Landing embed / `gen:manifest` merge from committed `public/version.json` when present so release history is preserved; deploy workflow passes `TONET_RELEASE_PRODUCTION` from repository variables (set to `false` while publishing preview builds only).
+
 ## 0.2.1
 
 ### Added
