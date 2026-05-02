@@ -226,4 +226,10 @@ mod tests {
     fn history_url_rejects_gopher() {
         assert!(!is_http_or_https_history_url("gopher://foo.example/1"));
     }
+
+    #[test]
+    fn history_url_rejects_tel_and_sms() {
+        assert!(!is_http_or_https_history_url("tel:+15551234567"));
+        assert!(!is_http_or_https_history_url("sms:+15551234567"));
+    }
 }

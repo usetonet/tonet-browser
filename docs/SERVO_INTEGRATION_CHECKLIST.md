@@ -297,3 +297,5 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **A8:** `visit_policy` — `mailto:` / `magnet:` excluded from history URL gate + `should_record_visit`; `.cursor/rules/pr-workflow.mdc` — batch related PRs when reviewable. |
 | 2026-05-02 | **B2:** `servo_engine/embedder_ids.rs` — stable `egui::Id` for Servo embedder UI (`runtime_win` + page console strip in `app.rs`); script dialogs use `tonet_servo_simple_dialog`; unit test locks names. |
 | 2026-05-02 | **A8:** `visit_policy` — `view-source:` and `gopher:` excluded from `http(s)` history URL gate. |
+| 2026-05-02 | **B2:** `chrome/ids` — `omnibox_history_scroll()` for visit-history popup scroll area. |
+| 2026-05-02 | **A8:** `visit_policy` — `tel:` / `sms:` excluded from history URL gate. |

@@ -76,6 +76,12 @@ pub fn new_tab_button() -> Id {
     Id::new("tonet_chrome_new_tab")
 }
 
+/// Scroll area inside the omnibox visit-history popup (`toolbar` overlay).
+#[inline]
+pub fn omnibox_history_scroll() -> Id {
+    Id::new("tonet_omnibox_history_scroll")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,5 +96,9 @@ mod tests {
         assert_eq!(chrome_menu(), Id::new("tonet_chrome_menu"));
         assert_eq!(tab_strip_tab(2), Id::new("tonet_chrome_tab").with(2));
         assert_eq!(new_tab_button(), Id::new("tonet_chrome_new_tab"));
+        assert_eq!(
+            omnibox_history_scroll(),
+            Id::new("tonet_omnibox_history_scroll")
+        );
     }
 }
