@@ -34,7 +34,7 @@ Living backlog for **Servo ↔ Tonet** and **post-Servo browser polish**. Status
 | Status | Task |
 |--------|------|
 | [x] | Windows: Win32 popup + surfman + `WindowRenderingContext` + shell snapshot sync. |
-| [~] | Linux: native surface + event loop + input — **`ServoViewportRuntime::tick` is a no-op** today; links + API surface documented in **§ Linux / macOS Servo embed**. |
+| [~] | Linux: native surface + event loop + input — **`ServoViewportRuntime::tick` is a no-op** today; links + API surface documented in **§ Linux / macOS Servo embed**. **Tracking:** `.github/workflows/servo-engine-linux.yml` runs best-effort `cargo check -p tonet` on Ubuntu (default features = `servo-engine`; `continue-on-error`). |
 | [~] | macOS: embed parity — same no-op + portability plan as Linux until a native surface lands. |
 | [x] | Feature matrix (OS × viewport × input) — see **§ “Platform feature matrix”** below. |
 
@@ -148,6 +148,7 @@ Multi-WebView-per-tab remains a follow-up (see A3 table).
 ### Linux / macOS Servo embed (A2 status, `servo-engine`)
 
 - **Linux / macOS with `--features servo-engine`:** Tonet **links** the `servo` crate (`link_servo_when_enabled` in `Cargo.toml`). **`ServoViewportRuntime::tick`** is currently a **no-op** on non-Windows builds: there is **no** native `WindowRenderingContext` surface, popup, or input subclass yet.
+- **CI:** Default **`ci.yml`** on Ubuntu runs `cargo check -p tonet --no-default-features` (no Servo link) plus `cargo test --workspace --exclude tonet`. Separately, **`servo-engine-linux.yml`** attempts **`cargo check -p tonet`** with default features on **ubuntu-latest** (`continue-on-error`) to surface Linux + `servo` link regressions without blocking merges. **`servo-engine-windows.yml`** does the analogous check on Windows with LLVM for bindgen.
 - **Goal:** keep the **same** `ServoViewportRuntime` entry points as Windows (`tick`, `sync_active_tab_from_servo`, …) so the shell stays cross-platform; add Linux embed first unless platform constraints dictate otherwise.
 - **macOS:** schedule **after** Linux for parity unless product priorities change.
 
@@ -305,3 +306,4 @@ Store results where the project tracks QA (issue, spreadsheet, or appendix to th
 | 2026-05-02 | **B2:** `ui::settings_modal_id` / `settings_internal_form_id`; **`visit_policy`** — `about:` excluded from history URL gate. |
 | 2026-05-02 | **A4 / UX:** toolbar **Stop** disabled while loading on Servo-superseded tabs + localized tooltip (`stop_loading_unavailable_servo_tooltip`); **`servo_supersedes_dom_paint`** tests (empty URL, `javascript:`, `ftp:`); manual smoke step 19 + A4 row updated. |
 | 2026-05-02 | **A1:** Engine HTML/CSS + `document_url` / `limits` / `policy` canonical in `crates/tonet/src/`; `tonet-engine` is a thin re-export for tests; removed `tonet-engine/src/css|html` and duplicate policy files. |
+| 2026-05-02 | **A2:** `.github/workflows/servo-engine-linux.yml` — best-effort `cargo check -p tonet` on Ubuntu (default `servo-engine`); checklist § Linux / macOS + A2 Linux row reference CI; embed still no-op on non-Windows. |
