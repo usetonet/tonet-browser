@@ -74,6 +74,7 @@ mozangle-for-egldll = { package = "mozangle", version = "0.5.5", optional = true
     "egl",
     "build_dlls",
 ] }
+winres = "0.1"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = [

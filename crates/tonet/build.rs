@@ -6,7 +6,24 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+#[cfg(windows)]
+fn embed_windows_resources() {
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut res = winres::WindowsResource::new();
+    let icon = manifest_dir.join("windows").join("app.ico");
+    if icon.is_file() {
+        println!("cargo:rerun-if-changed={}", icon.display());
+        res.set_icon(icon.to_str().expect("icon path must be UTF-8"));
+    }
+    if let Err(e) = res.compile() {
+        println!("cargo:warning=tonet winres: {e}");
+    }
+}
+
 fn main() {
+    #[cfg(windows)]
+    embed_windows_resources();
+
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let servo_engine = env::var_os("CARGO_FEATURE_SERVO_ENGINE").is_some();
     if target_os != "windows" || !servo_engine {

@@ -9568,6 +9568,7 @@ dependencies = [
  "url",
  "webbrowser",
  "windows-sys 0.59.0",
+ "winres",
 ]
 
 [[package]]

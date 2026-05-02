@@ -78,7 +78,11 @@ jobs:
           $v = ($meta.packages | Where-Object { $_.name -eq "tonet" } | Select-Object -First 1).version
           $dist = Join-Path (Get-Location) "dist"
           New-Item -ItemType Directory -Force -Path $dist | Out-Null
-          Compress-Archive -Path "target\release\tonet.exe" -DestinationPath "$dist\Tonet-$v-windows-x64-portable.zip" -Force
+          Compress-Archive -LiteralPath @(
+            "target\release\tonet.exe",
+            "target\release\libEGL.dll",
+            "target\release\libGLESv2.dll"
+          ) -DestinationPath "$dist\Tonet-$v-windows-x64-portable.zip" -Force
           cargo build --release -p tonet-setup
           Copy-Item "target\release\TonetSetup.exe" "$dist\TonetSetup-x64.exe" -Force
 

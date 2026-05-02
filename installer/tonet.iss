@@ -27,6 +27,8 @@ SolidCompression=yes
 OutputDir=..\dist
 OutputBaseFilename=Tonet-Setup-{#MyAppVersion}-x64
 UninstallDisplayIcon={app}\{#MyAppExeName}
+; Same icon as embedded in tonet.exe (crates/tonet/windows/app.ico)
+SetupIconFile=..\crates\tonet\windows\app.ico
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
@@ -37,6 +39,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "..\target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+; Servo/surfman loads ANGLE from the exe directory (see crates/tonet/build.rs).
+Source: "..\target\release\libEGL.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\target\release\libGLESv2.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Comment: "Navegador Tonet"

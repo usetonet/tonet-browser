@@ -14,3 +14,7 @@ web/landing/.wrangler
 # Entorno local (opcional)
 .env
 .env.*
+
+# Salida local de scripts/cdn (merge prev + version.json antes de subir a R2)
+/prev.json
+/version.json

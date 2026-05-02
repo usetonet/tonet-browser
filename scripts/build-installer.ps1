@@ -68,7 +68,9 @@ Write-Host "MSI generado: $Msi" -ForegroundColor Green
 
 Write-Host "Portable zip + TonetSetup..." -ForegroundColor Cyan
 $PortableZip = Join-Path $Dist "Tonet-$Version-windows-x64-portable.zip"
-Compress-Archive -Path $Exe -DestinationPath $PortableZip -Force
+$DllEgl = Join-Path $Root "target\release\libEGL.dll"
+$DllGles = Join-Path $Root "target\release\libGLESv2.dll"
+Compress-Archive -LiteralPath @($Exe, $DllEgl, $DllGles) -DestinationPath $PortableZip -Force
 cargo build --release -p tonet-setup
 $SetupExe = Join-Path $Root "target\release\TonetSetup.exe"
 $SetupOut = Join-Path $Dist "TonetSetup-x64.exe"

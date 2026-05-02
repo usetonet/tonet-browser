@@ -63,6 +63,16 @@
                     Advertise="yes" />
         </File>
       </Component>
+      <Component Id="CmpTonetLibEGL" Guid="B8C591D2-3456-7890-ABCD-EF1234567892" Win64="yes">
+        <File Id="TonetLibEGL"
+              Source="$(var.SourceDir)\libEGL.dll"
+              KeyPath="yes" />
+      </Component>
+      <Component Id="CmpTonetLibGLESv2" Guid="B8C591D2-3456-7890-ABCD-EF1234567893" Win64="yes">
+        <File Id="TonetLibGLESv2"
+              Source="$(var.SourceDir)\libGLESv2.dll"
+              KeyPath="yes" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
