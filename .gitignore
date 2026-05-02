@@ -2,6 +2,8 @@
 /target
 # Restos del prototipo retirado `crates/vela` (carpeta local / target embebido)
 /crates/vela/
+# Referencias to take (Slint)
+.references-to-take
 
 # Paquetes de instalación generados localmente o en CI
 /dist
