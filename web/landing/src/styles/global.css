@@ -6,6 +6,27 @@
   }
 }
 
+@layer utilities {
+  .text-tonet-link {
+    @apply text-[#5A99FF] underline-offset-2 transition-colors hover:text-[#8A5CFF] hover:underline;
+  }
+}
+
+.btn-tonet {
+  @apply bg-gradient-to-br from-[#5A99FF] to-[#8A5CFF];
+}
+
+.select-tonet {
+  @apply appearance-none rounded-xl border border-white/[0.12] bg-[#0d111c] py-2.5 pl-3.5 pr-10 text-[0.9rem] text-[#e8ecf4] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition focus:border-[rgba(138,92,255,0.5)] focus:ring-2 focus:ring-[rgba(90,153,255,0.28)] min-w-[220px] max-w-full;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239aa3b5' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 1.1rem;
+}
+.select-tonet option {
+  @apply bg-[#0d111c] text-[#e8ecf4];
+}
+
 /* Tables / compare markers used in static compare page markup */
 .ck {
   @apply inline-flex h-[1.4em] w-[1.4em] items-center justify-center text-base leading-none;
@@ -28,7 +49,7 @@
   @apply block;
 }
 .os-tab.active {
-  @apply border-[rgba(79,140,255,0.45)] bg-[rgba(79,140,255,0.15)] text-[#e8ecf4];
+  @apply border-[rgba(90,153,255,0.5)] bg-[rgba(90,153,255,0.14)] text-[#e8ecf4];
 }
 
 .os-tab {
@@ -134,15 +155,15 @@
   @apply mx-auto flex max-w-[900px] flex-col gap-0 px-6 pb-14;
 }
 .roadmap-phase {
-  @apply relative grid gap-5 border-l-[3px] border-[rgba(79,140,255,0.45)] py-6 pl-7;
+  @apply relative grid gap-5 border-l-[3px] border-[rgba(138,92,255,0.42)] py-6 pl-7;
   grid-template-columns: 120px 1fr;
 }
 .roadmap-phase::before {
   content: "";
-  @apply absolute left-[-11px] top-7 size-3.5 rounded-full bg-gradient-to-br from-[#4f8cff] to-[#7c5cff] shadow-[0_0_0_4px_#070a10];
+  @apply absolute left-[-11px] top-7 size-3.5 rounded-full bg-gradient-to-br from-[#5A99FF] to-[#8A5CFF] shadow-[0_0_0_4px_#070a10];
 }
 .roadmap-phase-badge {
-  @apply text-[0.75rem] font-bold uppercase tracking-[0.05em] text-[#4f8cff];
+  @apply text-[0.75rem] font-bold uppercase tracking-[0.05em] text-[#8eb8ff];
 }
 .roadmap-phase h2 {
   @apply mb-2 mt-0 text-xl text-[#e8ecf4];
@@ -171,13 +192,10 @@
   @apply inline-flex items-center justify-center gap-2 rounded-full border-0 px-5 py-3 text-[0.95rem] font-semibold transition active:scale-[0.98];
 }
 .btn-primary {
-  @apply bg-gradient-to-br from-[#4f8cff] to-[#7c5cff] text-white shadow-[0_10px_36px_rgba(79,140,255,0.35)] hover:shadow-[0_12px_42px_rgba(124,92,255,0.4)];
+  @apply bg-gradient-to-br from-[#5A99FF] to-[#8A5CFF] text-white shadow-[0_10px_36px_rgba(90,153,255,0.33)] hover:shadow-[0_12px_42px_rgba(138,92,255,0.38)];
 }
 .btn-ghost {
   @apply border border-white/[0.08] bg-white/[0.04] text-[#e8ecf4];
-}
-.download-cta-orange.btn-primary {
-  @apply bg-gradient-to-br from-[#f45d2a] to-[#ff8a3c] shadow-[0_10px_36px_rgba(244,93,42,0.4)] hover:shadow-[0_12px_42px_rgba(255,138,60,0.5)];
 }
 .pill {
   @apply mb-4 inline-block rounded-full bg-[rgba(61,214,140,0.12)] px-3 py-1.5 text-[0.85rem] font-semibold text-[#3dd68c];
@@ -194,7 +212,7 @@
 .download-channel-label {
   @apply min-w-[120px] text-[0.9rem] font-semibold text-[#9aa3b5];
 }
-.channel-select {
+.channel-select:not(.select-tonet) {
   @apply min-w-[220px] max-w-full rounded-[10px] border border-white/[0.08] bg-white/[0.06] px-3.5 py-2 font-[inherit] text-[0.9rem] text-[#e8ecf4];
 }
 .channel-hint {
@@ -241,7 +259,7 @@
   @apply flex items-center gap-2.5;
 }
 .step-num {
-  @apply inline-flex size-[26px] shrink-0 items-center justify-center rounded-md bg-[rgba(79,140,255,0.2)] text-[0.8rem] font-bold text-[#4f8cff];
+  @apply inline-flex size-[26px] shrink-0 items-center justify-center rounded-md bg-[rgba(90,153,255,0.18)] text-[0.8rem] font-bold text-[#8eb8ff];
 }
 .modal-retry,
 .modal-help {

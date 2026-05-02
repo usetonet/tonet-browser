@@ -12,16 +12,16 @@ import { HomeBoot } from "../components/HomeBoot";
     <section class="relative mx-auto max-w-[1120px] overflow-hidden px-6 pb-14 pt-[88px] text-center">
       <span class="pointer-events-none absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 select-none whitespace-nowrap text-[min(22vw,200px)] font-extrabold lowercase tracking-[-0.06em] text-white/[0.04]" aria-hidden="true">tonet</span>
       <div class="relative z-[1]">
-        <span class="mb-4 inline-block rounded-full bg-[rgba(61,214,140,0.12)] px-3 py-1.5 text-[0.85rem] font-semibold text-[#3dd68c]" id="version-pill">Latest release: …</span>
+        <span class="mb-4 inline-block rounded-full bg-[rgba(90,153,255,0.12)] px-3 py-1.5 text-[0.85rem] font-semibold text-[#8eb8ff]" id="version-pill">Latest release: …</span>
         <h1 class="hero-title-serif font-serif text-[clamp(2.2rem,5vw,3.4rem)] font-bold leading-[1.1] tracking-[-0.03em]" id="hero-title">
           Browse without the weight.<br />Push back on web bloat.
         </h1>
-        <p class="mx-auto mb-8 max-w-[640px] text-xl leading-relaxed text-[#9aa3b5]" id="hero-lead">
+        <p class="mx-auto mb-8 max-w-[640px] text-xl leading-relaxed text-balance text-[#9aa3b5]" id="hero-lead">
           Tonet is built around the Servo rendering engine and a minimal shell—speed, clarity, and intentional limits. Not Blink, WebKit, or CEF — you control what comes in.
         </p>
         <div class="mb-5 flex flex-wrap justify-center gap-3">
           <a
-            class="download-cta-orange inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#f45d2a] to-[#ff8a3c] px-[22px] py-3 text-[0.95rem] font-semibold text-white shadow-[0_10px_36px_rgba(244,93,42,0.4)] transition hover:shadow-[0_12px_42px_rgba(255,138,60,0.5)] active:scale-[0.98]"
+            class="btn-tonet inline-flex items-center justify-center gap-2 rounded-full px-[22px] py-3 text-[0.95rem] font-semibold text-white shadow-[0_10px_36px_rgba(90,153,255,0.38)] transition hover:shadow-[0_12px_42px_rgba(138,92,255,0.42)] active:scale-[0.98]"
             id="hero-download"
             href="/download.html">Download Tonet</a>
           <a
@@ -39,21 +39,21 @@ import { HomeBoot } from "../components/HomeBoot";
             <strong class="text-[0.95rem] text-[#e8ecf4]" id="kpi-2-strong">Windows + Linux</strong>
           </article>
           <article class="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-left">
-            <span class="mb-1 block text-[0.75rem] text-[#9aa3b5]" id="kpi-3-label">Update source</span>
-            <strong class="text-[0.95rem] text-[#e8ecf4]" id="kpi-3-strong">CDN manifest</strong>
+            <span class="mb-1 block text-[0.75rem] text-[#9aa3b5]" id="kpi-3-label">Updates</span>
+            <strong class="text-[0.95rem] text-[#e8ecf4]" id="kpi-3-strong">Manifest URL</strong>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="mx-auto mt-2 max-w-[1120px] px-6 py-14" id="features">
+    <section class="mx-auto mt-2 max-w-[1120px] text-balance px-6 py-14" id="features">
       <h2 class="mb-2.5 text-[1.75rem]" id="features-title">Built to get to the point</h2>
-      <p class="mb-9 max-w-[720px] leading-relaxed text-[#9aa3b5]" id="features-lead">
+      <p class="mb-9 max-w-[720px] leading-relaxed text-balance text-[#9aa3b5]" id="features-lead">
         An honest MVP: network + parser + minimal renderer. Tonet does not try to render today’s industrial web; it tries to make reading and search feel human again.
       </p>
       <div class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[18px]">
         <article class="rounded-[14px] border border-[rgba(79,140,255,0.28)] bg-gradient-to-br from-[rgba(79,140,255,0.14)] to-white/[0.02] p-[22px]">
-          <span class="mb-3 flex text-[#4f8cff]" aria-hidden="true">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
               <path
                 d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"
@@ -68,7 +68,7 @@ import { HomeBoot } from "../components/HomeBoot";
           </p>
         </article>
         <article class="rounded-[14px] border border-[rgba(230,195,92,0.22)] bg-gradient-to-br from-[rgba(230,195,92,0.12)] to-white/[0.02] p-[22px]">
-          <span class="mb-3 flex text-[#4f8cff]" aria-hidden="true">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
               <path d="M8 9h8M8 13h5M8 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
               <rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"></rect>
@@ -80,7 +80,7 @@ import { HomeBoot } from "../components/HomeBoot";
           </p>
         </article>
         <article class="rounded-[14px] border border-[rgba(124,92,255,0.28)] bg-gradient-to-br from-[rgba(124,92,255,0.14)] to-white/[0.02] p-[22px]">
-          <span class="mb-3 flex text-[#4f8cff]" aria-hidden="true">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
               <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
               <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"></circle>
@@ -92,7 +92,7 @@ import { HomeBoot } from "../components/HomeBoot";
           </p>
         </article>
         <article class="rounded-[14px] border border-[rgba(61,214,140,0.22)] bg-gradient-to-br from-[rgba(61,214,140,0.12)] to-white/[0.02] p-[22px]">
-          <span class="mb-3 flex text-[#4f8cff]" aria-hidden="true">
+          <span class="mb-3 flex text-[#5A99FF]" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
               <path
                 d="M12 3c5 3 7 6 7 9a7 7 0 1 1-14 0c0-3 2-6 7-9Z"
@@ -133,7 +133,7 @@ import { HomeBoot } from "../components/HomeBoot";
       </div>
     </section>
 
-    <section class="mx-auto max-w-[1120px] px-6 py-14">
+    <section class="mx-auto max-w-[1120px] text-balance px-6 py-14">
       <h2 class="mb-2.5 text-[1.75rem]" id="diff-section-title">What makes Tonet different</h2>
       <p class="mb-9 max-w-[720px] leading-relaxed text-[#9aa3b5]" id="diff-section-lead">
         Built for users and teams that want explicit control over what runs in the browser, how updates are delivered, and how much complexity enters the runtime.
@@ -162,12 +162,13 @@ import { HomeBoot } from "../components/HomeBoot";
 
     <section class="download-cta-banner mx-auto max-w-[1120px] rounded-[14px] border border-white/[0.08] bg-gradient-to-br from-[rgba(8,12,22,0.95)] to-[rgba(20,26,42,0.88)] px-7 py-9 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
       <h2 class="mb-2.5 text-[1.75rem]" id="home-banner-title">Ready to install?</h2>
-      <p class="mb-6 max-w-[720px] leading-relaxed text-[#9aa3b5]" id="home-banner-lead">
-        Pick your OS, release channel, and format on the dedicated download page—your browser stays on this site while the file downloads.
+      <p class="mb-6 max-w-[720px] leading-relaxed text-balance text-[#9aa3b5]" id="home-banner-lead">
+        Pick your OS, release channel, and format on the dedicated download page—the installer downloads like any normal file.
       </p>
       <div class="flex flex-wrap justify-start gap-3">
         <a
-          class="download-cta-orange inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#f45d2a] to-[#ff8a3c] px-[22px] py-3 text-[0.95rem] font-semibold text-white shadow-[0_10px_36px_rgba(244,93,42,0.4)]"
+          class="btn-tonet inline-flex items-center justify-center gap-2 rounded-full px-[22px] py-3 text-[0.95rem] font-semibold text-white shadow-[0_10px_36px_rgba(90,153,255,0.38)]"
+          id="home-go-download"
           href="/download.html">Go to downloads</a>
       </div>
     </section>
@@ -178,10 +179,10 @@ import { HomeBoot } from "../components/HomeBoot";
         Explore architecture notes, operational guides, and feature planning before you roll Tonet out.
       </p>
       <div class="flex flex-wrap justify-start gap-3">
-        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" href="/guide.html">Using Tonet (plain language)</a>
-        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" href="/docs.html">Technical documentation</a>
-        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" href="/compare.html">Compare browsers</a>
-        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" href="/roadmap.html">Roadmap</a>
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-guide" href="/guide.html">Using Tonet (plain language)</a>
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-docs" href="/docs.html">Technical documentation</a>
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-compare" href="/compare.html">Compare browsers</a>
+        <a class="rounded-full border border-white/[0.08] bg-white/[0.04] px-[22px] py-3 text-[0.95rem] font-semibold text-[#e8ecf4]" id="home-link-roadmap" href="/roadmap.html">Roadmap</a>
       </div>
     </section>
   </main>

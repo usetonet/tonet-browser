@@ -25,7 +25,7 @@ const { title, description, page } = Astro.props;
     <slot name="head" />
   </head>
   <body
-    class="min-h-screen bg-[#070a10] bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(79,140,255,0.18),transparent),radial-gradient(900px_500px_at_90%_0%,rgba(124,92,255,0.15),transparent)] font-sans text-[#e8ecf4] antialiased"
+    class="min-h-screen bg-[#070a10] bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(90,153,255,0.16),transparent),radial-gradient(900px_500px_at_90%_0%,rgba(138,92,255,0.14),transparent)] font-sans text-[#e8ecf4] antialiased"
     data-page={page}
   >
     <SiteNav current={page} client:load />

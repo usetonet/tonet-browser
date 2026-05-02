@@ -8,12 +8,13 @@ import {
 import {
   applyLandingLocale,
   detectedOsLine,
+  getDownloadChannelHints,
   resolveSiteLang,
   versionPillPrefix,
   wireCopyButtons,
   wireLanguageSwitcher,
 } from "../site-i18n";
-import type { DetectedOS } from "../detect-os";
+import { detectOS, type DetectedOS } from "../detect-os";
 
 function syncPrimaryCta(): void {
   const primary = document.getElementById("download-primary") as HTMLAnchorElement | null;
@@ -28,8 +29,7 @@ function syncPrimaryCta(): void {
 function triggerFileDownload(url: string): void {
   const a = document.createElement("a");
   a.href = url;
-  a.rel = "noopener";
-  a.target = "_blank";
+  a.rel = "noopener noreferrer";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -99,6 +99,7 @@ export function DownloadBoot(): null {
     let cancelled = false;
     void loadVersionMeta().then((meta) => {
       if (cancelled) return;
+      const hints = getDownloadChannelHints(lang);
       const releasesFallback = meta?.releasesUrl ?? "https://dl.usetonet.com/";
       const pill = document.getElementById("version-pill");
       if (pill) {
@@ -126,7 +127,7 @@ export function DownloadBoot(): null {
         for (const r of releases) {
           const opt = document.createElement("option");
           opt.value = r.version;
-          opt.textContent = `${r.version}${r.production ? " (stable)" : " (preview)"}`;
+          opt.textContent = `${r.version}${r.production ? ` (${hints.versionStable})` : ` (${hints.versionPreview})`}`;
           versionSelect.appendChild(opt);
         }
       }
@@ -146,10 +147,7 @@ export function DownloadBoot(): null {
           const v = versionSelect?.value;
           const entry = releases.find((r) => r.version === v);
           applyDownloadLinks(entry?.download, releasesFallback);
-          if (channelHint) {
-            channelHint.textContent =
-              "Versioned filenames on the CDN (e.g. Tonet-Setup-x.y.z-x64.exe). Pick the build you need.";
-          }
+          if (channelHint) channelHint.textContent = hints.specific;
           syncPrimaryCta();
           return;
         }
@@ -160,9 +158,7 @@ export function DownloadBoot(): null {
           const d = meta.channels?.development?.download;
           applyDownloadLinks(d, releasesFallback);
           if (channelHint) {
-            channelHint.textContent = devAvailable
-              ? "Preview channel: may include unstable changes. Short filenames (e.g. Tonet-Setup-Preview.exe) track the latest preview."
-              : "No preview release is published on the CDN yet.";
+            channelHint.textContent = devAvailable ? hints.development : hints.developmentNone;
           }
           syncPrimaryCta();
           return;
@@ -170,10 +166,7 @@ export function DownloadBoot(): null {
 
         const d = meta.channels?.stable?.download ?? meta.download;
         applyDownloadLinks(d, releasesFallback);
-        if (channelHint) {
-          channelHint.textContent =
-            "Recommended production builds. Short filenames (Tonet-Setup.exe, tonet_amd64.deb, …) always point at the latest stable release.";
-        }
+        if (channelHint) channelHint.textContent = hints.stable;
         syncPrimaryCta();
       }
 

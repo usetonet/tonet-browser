@@ -10,18 +10,19 @@ import { DocsBoot } from "../components/DocsBoot";
 >
   <div class="docs-shell">
     <aside class="docs-sidebar" aria-label="On this page">
-      <p class="docs-sidebar-title">On this page</p>
+      <p class="docs-sidebar-title" id="docs-sidebar-title">On this page</p>
       <nav>
-        <a href="#docs-overview">Overview</a>
-        <a href="#docs-install-h">Installation</a>
-        <a href="#docs-updates-h">In-browser updates</a>
-        <a href="#docs-sign-h">Authenticode (Windows)</a>
-        <a href="#docs-deb-h">Debian (.deb)</a>
-        <a href="#docs-app-h">AppImage</a>
-        <a href="#docs-cf-h">Deploy landing</a>
-        <a href="#ops-docs">CDN variables</a>
-        <a href="#product-docs">Use cases</a>
-        <a href="#engineering-docs">Engineering</a>
+        <a id="docs-nav-overview" href="#docs-overview">Overview</a>
+        <a id="docs-nav-map" href="#docs-map-section">Documentation map</a>
+        <a id="docs-nav-install" href="#docs-install-h">Installation</a>
+        <a id="docs-nav-updates" href="#docs-updates-h">In-browser updates</a>
+        <a id="docs-nav-sign" href="#docs-sign-h">Authenticode (Windows)</a>
+        <a id="docs-nav-deb" href="#docs-deb-h">Debian (.deb)</a>
+        <a id="docs-nav-app" href="#docs-app-h">AppImage</a>
+        <a id="docs-nav-cf" href="#docs-cf-h">Deploy landing</a>
+        <a id="docs-nav-cdn" href="#ops-docs">CDN variables</a>
+        <a id="docs-nav-product" href="#product-docs">Use cases</a>
+        <a id="docs-nav-eng" href="#engineering-docs">Engineering</a>
       </nav>
     </aside>
 
@@ -30,28 +31,28 @@ import { DocsBoot } from "../components/DocsBoot";
       <p class="lead" id="docs-lead">Guides for users, operators, and contributors — structured like a product docs portal.</p>
 
       <article class="card mb-5" id="docs-overview">
-        <h2 class="mt-0">How this portal is organized</h2>
-        <p class="leading-relaxed text-[#9aa3b5]">
+        <h2 class="mt-0" id="docs-overview-h">How this portal is organized</h2>
+        <p class="leading-relaxed text-[#9aa3b5]" id="docs-overview-p">
           Use the <strong>left outline</strong> (desktop) or jump links below on mobile. Sections follow the usual docs mental model: install → updates → packaging
           → deploy → audience → engineering tracks — similar to Docusaurus / GitBook navigation patterns, without pulling in a second SPA framework.
         </p>
       </article>
 
-      <article class="card mb-5">
-        <h2 class="mt-0">Documentation map</h2>
-        <p class="text-[#9aa3b5]">Deep guides live beside the repo; this page is the entry hub with anchors into each topic.</p>
+      <article class="card mb-5" id="docs-map-section">
+        <h2 class="mt-0" id="docs-map-h">Documentation map</h2>
+        <p class="text-[#9aa3b5]" id="docs-map-p">Deep guides live beside the repo; this page is the entry hub with anchors into each topic.</p>
         <div class="grid">
           <a class="card no-underline hover:opacity-90" href="#product-docs">
-            <h3 class="mt-0">Product and use cases</h3>
-            <p>Target users, deployment scenarios, and comparison framing.</p>
+            <h3 class="mt-0" id="docs-card-prod-h">Product and use cases</h3>
+            <p id="docs-card-prod-p">Target users, deployment scenarios, and comparison framing.</p>
           </a>
           <a class="card no-underline hover:opacity-90" href="#ops-docs">
-            <h3 class="mt-0">Operations and delivery</h3>
-            <p>CDN, release assets, update manifest, and signing flow.</p>
+            <h3 class="mt-0" id="docs-card-ops-h">Operations and delivery</h3>
+            <p id="docs-card-ops-p">CDN, release assets, update manifest, and signing flow.</p>
           </a>
           <a class="card no-underline hover:opacity-90" href="#engineering-docs">
-            <h3 class="mt-0">Engineering</h3>
-            <p>Architecture, implementation phases, and future work tracking.</p>
+            <h3 class="mt-0" id="docs-card-eng-h">Engineering</h3>
+            <p id="docs-card-eng-p">Architecture, implementation phases, and future work tracking.</p>
           </a>
         </div>
       </article>
@@ -59,7 +60,7 @@ import { DocsBoot } from "../components/DocsBoot";
       <article class="card mb-5">
         <h2 class="mt-0" id="docs-install-h">Installation</h2>
         <p id="docs-install-p">
-          See the <a class="text-[#4f8cff] hover:underline" href="/download.html">download page</a>. The landing reads <code class="rounded bg-white/[0.06] px-1"
+          See the <a class="text-tonet-link hover:underline" href="/download.html">download page</a>. The landing reads <code class="rounded bg-white/[0.06] px-1"
             >version.json</code> (built from <code class="rounded bg-white/[0.06] px-1">crates/tonet</code> at build time) and points buttons at CDN filenames. MSI and
           tag-scoped links use versioned paths on the same CDN when published.
         </p>
@@ -115,7 +116,7 @@ signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 Tonet-S
         <h2 class="mt-0" id="docs-app-h">AppImage (Linux)</h2>
         <p id="docs-app-p">
           Shipping a universal AppImage requires bundling GTK/GL dependencies — consider
-          <a class="text-[#4f8cff] hover:underline" href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + the GTK plugin
+          <a class="text-tonet-link hover:underline" href="https://github.com/linuxdeploy/linuxdeploy" target="_blank" rel="noopener">linuxdeploy</a> + the GTK plugin
           once the binary stabilizes. A dedicated workflow may land in a future release.
         </p>
       </article>
@@ -135,8 +136,10 @@ npm run deploy</pre>
       </article>
 
       <article class="card mb-5" id="ops-docs">
-        <h2 class="mt-0">CDN configuration (required variables)</h2>
-        <p class="text-[#9aa3b5]">To stop depending on GitHub releases endpoints, define CDN URLs in the landing build and in Tonet runtime.</p>
+        <h2 class="mt-0" id="docs-cdn-h">CDN configuration (required variables)</h2>
+        <p class="text-[#9aa3b5]" id="docs-cdn-p">
+          To stop depending on GitHub releases endpoints, define CDN URLs in the landing build and in Tonet runtime.
+        </p>
         <div class="code-block pt-11">
           <button type="button" class="copy-btn" data-copy="cdn-env">Copy</button>
           <pre id="cdn-env"># web/landing/.env(.production)
@@ -151,41 +154,43 @@ TONET_DOWNLOADS_PAGE_URL=https://downloads.example.com/</pre>
       </article>
 
       <article class="card mb-5" id="product-docs">
-        <h2 class="mt-0">Use cases and audience</h2>
+        <h2 class="mt-0" id="docs-product-h">Use cases and audience</h2>
         <ul class="leading-relaxed text-[#9aa3b5]">
-          <li>Minimal browsing environments where deterministic behavior matters.</li>
-          <li>Teams that need transparent browser internals and release control.</li>
-          <li>Operators that prefer CDN-governed artifacts and update manifests.</li>
-          <li>Power users who want a focused browser without broad platform noise.</li>
+          <li id="docs-product-l1">Minimal browsing environments where deterministic behavior matters.</li>
+          <li id="docs-product-l2">Teams that need transparent browser internals and release control.</li>
+          <li id="docs-product-l3">Operators that prefer CDN-governed artifacts and update manifests.</li>
+          <li id="docs-product-l4">Power users who want a focused browser without broad platform noise.</li>
         </ul>
       </article>
 
       <article class="card mb-5" id="engineering-docs">
-        <h2 class="mt-0">Implementation and future work</h2>
+        <h2 class="mt-0" id="docs-eng-h">Implementation and future work</h2>
         <ul class="leading-relaxed text-[#9aa3b5]">
-          <li><strong>Current:</strong> Servo integration foundation, policy modules, and CI coverage.</li>
-          <li><strong>Next:</strong> broader web compatibility layers and stronger packaging parity.</li>
-          <li><strong>Planned:</strong> deeper conformance targets, perf budgets, and expanded platform support.</li>
+          <li id="docs-eng-l1"><strong>Current:</strong> Servo integration foundation, policy modules, and CI coverage.</li>
+          <li id="docs-eng-l2"><strong>Next:</strong> broader web compatibility layers and stronger packaging parity.</li>
+          <li id="docs-eng-l3"><strong>Planned:</strong> deeper conformance targets, perf budgets, and expanded platform support.</li>
         </ul>
-        <p class="text-[#9aa3b5]">
+        <p class="text-[#9aa3b5]" id="docs-eng-p">
           For detailed milestones, consult <code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code> and <code
             class="rounded bg-white/[0.06] px-1">docs/SERVO_INTEGRATION_CHECKLIST.md</code>.
         </p>
-        <p class="text-[#9aa3b5]">Structured docs source (MkDocs-style): <code class="rounded bg-white/[0.06] px-1">web/landing/docs-site</code>.</p>
+        <p class="text-[#9aa3b5]" id="docs-eng-p2">
+          Structured docs source (MkDocs-style): <code class="rounded bg-white/[0.06] px-1">web/landing/docs-site</code>.
+        </p>
       </article>
 
       <article class="card">
-        <h2 class="mt-0">Additional pages</h2>
-        <p class="text-[#9aa3b5]">
+        <h2 class="mt-0" id="docs-more-h">Additional pages</h2>
+        <p class="text-[#9aa3b5]" id="docs-more-p">
           Explore:
-          <a class="text-[#4f8cff] hover:underline" href="/guide.html">Using Tonet</a>, <a class="text-[#4f8cff] hover:underline" href="/handbook.html">Handbook</a>, <a
-            class="text-[#4f8cff] hover:underline"
-            href="/compare.html">Compare</a>, and <a class="text-[#4f8cff] hover:underline" href="/roadmap.html">Roadmap</a>.
+          <a class="text-tonet-link hover:underline" href="/guide.html">Using Tonet</a>, <a class="text-tonet-link hover:underline" href="/handbook.html">Handbook</a>, <a
+            class="text-tonet-link hover:underline"
+            href="/compare.html">Compare</a>, and <a class="text-tonet-link hover:underline" href="/roadmap.html">Roadmap</a>.
         </p>
       </article>
 
       <p class="mt-10 text-center text-[#9aa3b5]">
-        <a class="text-[#4f8cff] hover:underline" id="docs-footer-back" href="/">← Back to home</a>
+        <a class="text-tonet-link hover:underline" id="docs-footer-back" href="/">← Back to home</a>
       </p>
     </main>
   </div>

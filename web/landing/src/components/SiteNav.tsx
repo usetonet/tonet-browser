@@ -40,7 +40,7 @@ export default function SiteNav({ current }: Props) {
       <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 px-6 py-3.5">
         <a className="flex items-center gap-2.5 text-lg font-bold text-[#e8ecf4] no-underline hover:opacity-90" href="/">
           <span
-            className="size-8 shrink-0 rounded-[9px] bg-[url('/tonet.svg')] bg-contain bg-center bg-no-repeat shadow-[0_8px_28px_rgba(79,140,255,0.35)]"
+            className="size-8 shrink-0 rounded-[9px] bg-[url('/tonet.svg')] bg-contain bg-center bg-no-repeat shadow-[0_8px_28px_rgba(90,153,255,0.35)]"
             aria-hidden
           />
           <span>Tonet</span>

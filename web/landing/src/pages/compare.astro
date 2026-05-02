@@ -1,18 +1,18 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { LanguageBoot } from "../components/LanguageBoot";
+import { CompareBoot } from "../components/CompareBoot";
 ---
 
 <BaseLayout title="Compare Browsers — Tonet" description="Tonet vs Chrome, Brave, Firefox — factual comparison table." page="compare">
   <div class="compare-wrap">
-    <h1 class="mb-2 text-4xl">Tonet vs mainstream browsers</h1>
-    <p class="compare-lead">
+    <h1 class="mb-2 text-4xl" id="compare-h1">Tonet vs mainstream browsers</h1>
+    <p class="compare-lead" id="compare-lead">
       Tonet is intentionally narrow in scope: a transparent, policy-driven surface built on the <strong>Servo</strong> engine with a custom shell. This page summarizes <strong>documented product facts</strong> today — not benchmark winners — so teams can decide fit quickly.
     </p>
 
     <article class="card mb-5">
-      <h2 class="mt-0">Legend</h2>
-      <p class="lead mb-0">
+      <h2 class="mt-0" id="compare-legend-h">Legend</h2>
+      <p class="lead mb-0" id="compare-legend-p">
         <span class="ck ck-yes" aria-label="yes">✓</span> strong / typical,
         <span class="ck ck-part" aria-label="partial">◐</span> partial or roadmap,
         <span class="ck ck-no" aria-label="no">○</span> not a focus (not necessarily “bad”).
@@ -20,14 +20,14 @@ import { LanguageBoot } from "../components/LanguageBoot";
     </article>
 
     <article class="card mb-6">
-      <h2 class="mt-0">Positioning</h2>
-      <p class="m-0 leading-relaxed text-[#9aa3b5]">
+      <h2 class="mt-0" id="compare-pos-h">Positioning</h2>
+      <p class="m-0 leading-relaxed text-[#9aa3b5]" id="compare-pos-p">
         Chrome and Brave optimize for broad compatibility and massive ecosystem depth. Tonet optimizes for product teams and advanced users who need a controlled browser
         surface with clear internals and deterministic packaging.
       </p>
     </article>
 
-    <h2 class="compare-subhead">Product dimensions</h2>
+    <h2 class="compare-subhead" id="compare-dim-h">Product dimensions</h2>
     <div class="compare-table-wrap">
       <table class="compare-table" aria-label="Browser comparison by dimension">
         <thead>
@@ -41,63 +41,65 @@ import { LanguageBoot } from "../components/LanguageBoot";
         </thead>
         <tbody>
           <tr>
-            <td>Rendering engine (core)</td>
-            <td>Servo (in-process for pages); custom shell — not Blink/WebKit/CEF.</td>
-            <td>Blink (Chromium).</td>
-            <td>Blink (Chromium).</td>
-            <td>Gecko + SpiderMonkey.</td>
+            <td id="cmp-dim-0-0">Rendering engine (core)</td>
+            <td id="cmp-dim-0-1">Servo (in-process for pages); custom shell — not Blink/WebKit/CEF.</td>
+            <td id="cmp-dim-0-2">Blink (Chromium).</td>
+            <td id="cmp-dim-0-3">Blink (Chromium).</td>
+            <td id="cmp-dim-0-4">Gecko + SpiderMonkey.</td>
           </tr>
           <tr>
-            <td>Primary distribution model</td>
-            <td>Self-hosted CDN manifest (<code class="rounded bg-white/[0.06] px-1">version.json</code>) + GitHub releases artifacts.</td>
-            <td>Google update infra + OEM bundles.</td>
-            <td>Brave update channels.</td>
-            <td>Mozilla + distro packages.</td>
+            <td id="cmp-dim-1-0">Primary distribution model</td>
+            <td id="cmp-dim-1-1">
+              Self-hosted CDN manifest (<code class="rounded bg-white/[0.06] px-1">version.json</code>) + GitHub releases artifacts.
+            </td>
+            <td id="cmp-dim-1-2">Google update infra + OEM bundles.</td>
+            <td id="cmp-dim-1-3">Brave update channels.</td>
+            <td id="cmp-dim-1-4">Mozilla + distro packages.</td>
           </tr>
           <tr>
-            <td>Open-source license (browser)</td>
-            <td>GPL-3.0-or-later (repository).</td>
-            <td>Chromium BSD-style + proprietary Chrome additions.</td>
-            <td>MPL/Chromium mix; Brave-owned services.</td>
-            <td>MPL 2.0.</td>
+            <td id="cmp-dim-2-0">Open-source license (browser)</td>
+            <td id="cmp-dim-2-1">GPL-3.0-or-later (repository).</td>
+            <td id="cmp-dim-2-2">Chromium BSD-style + proprietary Chrome additions.</td>
+            <td id="cmp-dim-2-3">MPL/Chromium mix; Brave-owned services.</td>
+            <td id="cmp-dim-2-4">MPL 2.0.</td>
           </tr>
           <tr>
-            <td>Default web compatibility target</td>
-            <td>MVP reading/search stack; strict page-size policy (e.g. 1 MB guard).</td>
-            <td>Full modern web.</td>
-            <td>Full modern web + shields.</td>
-            <td>Full modern web.</td>
+            <td id="cmp-dim-3-0">Default web compatibility target</td>
+            <td id="cmp-dim-3-1">MVP reading/search stack; strict page-size policy (e.g. 1 MB guard).</td>
+            <td id="cmp-dim-3-2">Full modern web.</td>
+            <td id="cmp-dim-3-3">Full modern web + shields.</td>
+            <td id="cmp-dim-3-4">Full modern web.</td>
           </tr>
           <tr>
-            <td>Extension ecosystem</td>
-            <td>Not a goal for MVP (no Web Store parity).</td>
-            <td>Chrome Web Store.</td>
-            <td>Chrome-compatible extensions.</td>
-            <td>Firefox AMO + MV3 transition.</td>
+            <td id="cmp-dim-4-0">Extension ecosystem</td>
+            <td id="cmp-dim-4-1">Not a goal for MVP (no Web Store parity).</td>
+            <td id="cmp-dim-4-2">Chrome Web Store.</td>
+            <td id="cmp-dim-4-3">Chrome-compatible extensions.</td>
+            <td id="cmp-dim-4-4">Firefox AMO + MV3 transition.</td>
           </tr>
           <tr>
-            <td>Update check mechanism (Tonet app)</td>
-            <td>Configurable manifest URL; no GitHub Releases API dependency at runtime.</td>
-            <td>Google updater.</td>
-            <td>Brave updater.</td>
-            <td>Mozilla updater.</td>
+            <td id="cmp-dim-5-0">Update check mechanism (Tonet app)</td>
+            <td id="cmp-dim-5-1">Configurable manifest URL; no GitHub Releases API dependency at runtime.</td>
+            <td id="cmp-dim-5-2">Google updater.</td>
+            <td id="cmp-dim-5-3">Brave updater.</td>
+            <td id="cmp-dim-5-4">Mozilla updater.</td>
           </tr>
           <tr>
-            <td>Typical install size (order of magnitude)</td>
-            <td>Single-digit ×10 MB binary + platform deps (Windows ANGLE DLLs alongside exe).</td>
-            <td>Hundreds of MB installed.</td>
-            <td>Similar to Chromium-class.</td>
-            <td>Hundreds of MB installed.</td>
+            <td id="cmp-dim-6-0">Typical install size (order of magnitude)</td>
+            <td id="cmp-dim-6-1">Single-digit ×10 MB binary + platform deps (Windows ANGLE DLLs alongside exe).</td>
+            <td id="cmp-dim-6-2">Hundreds of MB installed.</td>
+            <td id="cmp-dim-6-3">Similar to Chromium-class.</td>
+            <td id="cmp-dim-6-4">Hundreds of MB installed.</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="compare-note">
+    <p class="compare-note" id="compare-note">
       Rows reflect architecture and delivery choices described in this repository as of the current milestone — not marketing claims or independent benchmarks. Refresh this
-      table when major milestones ship (see <a class="text-[#4f8cff] hover:underline" href="/roadmap.html">Roadmap</a>).
+      table when major milestones ship (see <a class="text-tonet-link hover:underline" href="/roadmap.html">Roadmap</a>).
     </p>
 
-    <h2 class="compare-subhead">Feature matrix</h2>
+    <h2 class="compare-subhead" id="compare-feat-h">Feature matrix</h2>
     <div class="compare-table-wrap">
       <table class="compare-table" aria-label="Browser feature matrix">
         <thead>
@@ -112,7 +114,7 @@ import { LanguageBoot } from "../components/LanguageBoot";
         </thead>
         <tbody>
           <tr>
-            <td class="feat">Broad web compatibility (full “Chrome-tier” surface)</td>
+            <td class="feat" id="cmp-feat-0">Broad web compatibility (full “Chrome-tier” surface)</td>
             <td><span class="ck ck-part" title="Growing via milestones">◐</span></td>
             <td><span class="ck ck-yes" title="Primary strength">✓</span></td>
             <td><span class="ck ck-yes" title="Chromium-class">✓</span></td>
@@ -120,7 +122,7 @@ import { LanguageBoot } from "../components/LanguageBoot";
             <td><span class="ck ck-yes" title="Apple WebKit focus">✓</span></td>
           </tr>
           <tr>
-            <td class="feat">Explicit lightweight / purity budgets</td>
+            <td class="feat" id="cmp-feat-1">Explicit lightweight / purity budgets</td>
             <td><span class="ck ck-yes" title="Core goal">✓</span></td>
             <td><span class="ck ck-no" title="Not the design center">○</span></td>
             <td><span class="ck ck-part" title="Shields + optional extras">◐</span></td>
@@ -128,7 +130,7 @@ import { LanguageBoot } from "../components/LanguageBoot";
             <td><span class="ck ck-no" title="Not emphasized">○</span></td>
           </tr>
           <tr>
-            <td class="feat">Built-in aggressive ad / tracker blocking (default-on)</td>
+            <td class="feat" id="cmp-feat-2">Built-in aggressive ad / tracker blocking (default-on)</td>
             <td><span class="ck ck-part" title="Policy + roadmap">◐</span></td>
             <td><span class="ck ck-no" title="Extensions ecosystem">○</span></td>
             <td><span class="ck ck-yes" title="Shields">✓</span></td>
@@ -136,7 +138,7 @@ import { LanguageBoot } from "../components/LanguageBoot";
             <td><span class="ck ck-part" title="ITP etc.">◐</span></td>
           </tr>
           <tr>
-            <td class="feat">Fully open-source engine stack (auditable end-to-end)</td>
+            <td class="feat" id="cmp-feat-3">Fully open-source engine stack (auditable end-to-end)</td>
             <td><span class="ck ck-yes" title="GPL project + visible pipeline">✓</span></td>
             <td><span class="ck ck-no" title="Chromium open; Chrome adds proprietary pieces">○</span></td>
             <td><span class="ck ck-part" title="Chromium base">◐</span></td>
@@ -144,7 +146,7 @@ import { LanguageBoot } from "../components/LanguageBoot";
             <td><span class="ck ck-no" title="WebKit partly; Safari proprietary">○</span></td>
           </tr>
           <tr>
-            <td class="feat">Operator-controlled CDN artifacts &amp; update manifest</td>
+            <td class="feat" id="cmp-feat-4">Operator-controlled CDN artifacts &amp; update manifest</td>
             <td><span class="ck ck-yes" title="First-class story">✓</span></td>
             <td><span class="ck ck-no" title="Google update infra">○</span></td>
             <td><span class="ck ck-no" title="Vendor-controlled">○</span></td>
@@ -152,7 +154,7 @@ import { LanguageBoot } from "../components/LanguageBoot";
             <td><span class="ck ck-no" title="Apple infra">○</span></td>
           </tr>
           <tr>
-            <td class="feat">Public roadmap &amp; engineering transparency</td>
+            <td class="feat" id="cmp-feat-5">Public roadmap &amp; engineering transparency</td>
             <td><span class="ck ck-yes" title="Published milestones">✓</span></td>
             <td><span class="ck ck-part" title="Some public signals">◐</span></td>
             <td><span class="ck ck-part" title="Open Chromium lineage">◐</span></td>
@@ -164,18 +166,20 @@ import { LanguageBoot } from "../components/LanguageBoot";
     </div>
 
     <article class="card mt-7">
-      <h2 class="mt-0">When Tonet is a strong fit</h2>
+      <h2 class="mt-0" id="compare-fit-h">When Tonet is a strong fit</h2>
       <ul class="leading-relaxed text-[#9aa3b5]">
-        <li>You need audit-friendly internals and deterministic packaging over maximal site compatibility.</li>
-        <li>You prefer CDN-owned artifacts and manifests over opaque auto-update channels.</li>
-        <li>You accept MVP limits today in exchange for an explicit roadmap (<code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code>).</li>
+        <li id="compare-fit-l1">You need audit-friendly internals and deterministic packaging over maximal site compatibility.</li>
+        <li id="compare-fit-l2">You prefer CDN-owned artifacts and manifests over opaque auto-update channels.</li>
+        <li id="compare-fit-l3">
+          You accept MVP limits today in exchange for an explicit roadmap (<code class="rounded bg-white/[0.06] px-1">TONET_VISION.md</code>).
+        </li>
       </ul>
     </article>
   </div>
 
   <p class="mx-auto max-w-[1120px] px-6 pb-10 text-center text-[#9aa3b5]">
-    <a class="text-[#4f8cff] hover:underline" href="/docs.html">Explore full documentation</a>
-    · <a class="text-[#4f8cff] hover:underline" href="/guide.html">Using Tonet</a>
+    <a class="text-tonet-link hover:underline" id="compare-foot-docs" href="/docs.html">Explore full documentation</a>
+    · <a class="text-tonet-link hover:underline" id="compare-foot-guide" href="/guide.html">Using Tonet</a>
   </p>
-  <LanguageBoot client:load />
+  <CompareBoot client:load />
 </BaseLayout>

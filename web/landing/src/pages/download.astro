@@ -17,23 +17,23 @@ import { DownloadBoot } from "../components/DownloadBoot";
         We highlight the option that matches your system. Use the big button to fetch the installer from our CDN—you stay on this page while it downloads.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-primary download-cta-orange" id="download-primary" href="#">Get Tonet</a>
+        <a class="btn btn-primary" id="download-primary" href="#">Get Tonet</a>
       </div>
       <p class="detected-badge" id="os-detected" hidden></p>
     </section>
 
     <div id="download-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-card">
-        <button type="button" class="modal-close" aria-label="Close dialog">×</button>
+        <button type="button" class="modal-close" id="modal-close-btn" aria-label="Close dialog">×</button>
         <h2 id="modal-title">Almost there…</h2>
-        <p class="modal-lead">You’re seconds away from running Tonet. Follow the steps while the installer downloads.</p>
+        <p class="modal-lead" id="modal-lead">You’re seconds away from running Tonet. Follow the steps while the installer downloads.</p>
         <ol class="modal-steps">
-          <li><span class="step-num">1</span> Download Tonet</li>
-          <li><span class="step-num">2</span> Run the installer</li>
-          <li><span class="step-num">3</span> Open Tonet from the shortcut</li>
+          <li><span class="step-num">1</span> <span id="modal-step-1">Download Tonet</span></li>
+          <li><span class="step-num">2</span> <span id="modal-step-2">Run the installer</span></li>
+          <li><span class="step-num">3</span> <span id="modal-step-3">Open Tonet from the shortcut</span></li>
         </ol>
         <p class="modal-retry">
-          If the download didn’t start,
+          <span id="modal-retry-prefix"></span>
           <a href="#" id="modal-retry-link">click here to try again</a>.
         </p>
         <p class="modal-help"><a id="modal-help-link" href="/guide.html">Need help getting started?</a></p>
@@ -41,14 +41,14 @@ import { DownloadBoot } from "../components/DownloadBoot";
     </div>
 
     <section class="section" id="download-options">
-      <h2 class="download-section-h2">All channels &amp; formats</h2>
-      <p class="lead">
+      <h2 class="download-section-h2" id="download-section-title">All channels &amp; formats</h2>
+      <p class="lead" id="download-section-lead">
         Advanced options: pick a release channel, switch OS tabs, or grab MSI / DEB / alternate builds.
       </p>
       <div class="download-channel card" id="download-channel-wrap">
         <div class="download-channel-row">
           <label class="download-channel-label" for="channel-select">Release channel</label>
-          <select id="channel-select" class="channel-select" aria-describedby="channel-hint">
+          <select id="channel-select" class="channel-select select-tonet" aria-describedby="channel-hint">
             <option value="stable">Latest stable (recommended)</option>
             <option value="development">Latest preview / development</option>
             <option value="specific">Specific version…</option>
@@ -56,7 +56,7 @@ import { DownloadBoot } from "../components/DownloadBoot";
         </div>
         <div class="download-channel-row" id="version-row" hidden>
           <label class="download-channel-label" for="version-select">Version</label>
-          <select id="version-select" class="channel-select"></select>
+          <select id="version-select" class="channel-select select-tonet"></select>
         </div>
         <p class="channel-hint" id="channel-hint"></p>
       </div>
