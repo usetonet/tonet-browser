@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 2,
+  "version": "0.2.1",
+  "repo": "usetonet/tonet-browser",
+  "releasesUrl": "https://dl.usetonet.com/",
+  "cdnBaseUrl": "https://dl.usetonet.com",
+  "updateManifestUrl": "https://dl.usetonet.com/version.json",
+  "download": {
+    "windowsSetup": "https://dl.usetonet.com/Tonet-Setup.exe",
+    "linuxSetup": "https://dl.usetonet.com/tonet_amd64.deb",
+    "macSetup": "https://dl.usetonet.com/Tonet-macos.tar.gz",
+    "windowsMsi": "https://dl.usetonet.com/Tonet-x64.msi",
+    "windowsExe": "https://dl.usetonet.com/Tonet-Setup.exe",
+    "windowsPortableZip": "https://dl.usetonet.com/Tonet-windows-x64-portable.zip",
+    "deb": "https://dl.usetonet.com/tonet_amd64.deb",
+    "macTarball": "https://dl.usetonet.com/Tonet-macos.tar.gz"
+  },
+  "channels": {
+    "stable": {
+      "version": "0.2.1",
+      "production": true,
+      "recommended": true,
+      "download": {
+        "windowsSetup": "https://dl.usetonet.com/Tonet-Setup.exe",
+        "linuxSetup": "https://dl.usetonet.com/tonet_amd64.deb",
+        "macSetup": "https://dl.usetonet.com/Tonet-macos.tar.gz",
+        "windowsMsi": "https://dl.usetonet.com/Tonet-x64.msi",
+        "windowsExe": "https://dl.usetonet.com/Tonet-Setup.exe",
+        "windowsPortableZip": "https://dl.usetonet.com/Tonet-windows-x64-portable.zip",
+        "deb": "https://dl.usetonet.com/tonet_amd64.deb",
+        "macTarball": "https://dl.usetonet.com/Tonet-macos.tar.gz"
+      }
+    },
+    "development": {
+      "version": "0.2.3",
+      "production": false,
+      "recommended": false,
+      "download": {
+        "windowsSetup": "https://dl.usetonet.com/Tonet-Setup-Preview.exe",
+        "linuxSetup": "https://dl.usetonet.com/tonet_amd64-preview.deb",
+        "macSetup": "https://dl.usetonet.com/Tonet-macos-preview.tar.gz",
+        "windowsMsi": "https://dl.usetonet.com/Tonet-x64-preview.msi",
+        "windowsExe": "https://dl.usetonet.com/Tonet-Setup-Preview.exe",
+        "windowsPortableZip": "https://dl.usetonet.com/Tonet-windows-x64-portable-preview.zip",
+        "deb": "https://dl.usetonet.com/tonet_amd64-preview.deb",
+        "macTarball": "https://dl.usetonet.com/Tonet-macos-preview.tar.gz"
+      }
+    }
+  },
+  "releases": [
+    {
+      "version": "0.2.3",
+      "production": false,
+      "download": {
+        "windowsSetup": "https://dl.usetonet.com/Tonet-Setup-0.2.3-x64.exe",
+        "linuxSetup": "https://dl.usetonet.com/tonet_0.2.3_amd64.deb",
+        "macSetup": "https://dl.usetonet.com/Tonet-0.2.3-macos.tar.gz",
+        "windowsMsi": "https://dl.usetonet.com/Tonet-0.2.3-x64.msi",
+        "windowsExe": "https://dl.usetonet.com/Tonet-Setup-0.2.3-x64.exe",
+        "windowsPortableZip": "https://dl.usetonet.com/Tonet-0.2.3-windows-x64-portable.zip",
+        "deb": "https://dl.usetonet.com/tonet_0.2.3_amd64.deb",
+        "macTarball": "https://dl.usetonet.com/Tonet-0.2.3-macos.tar.gz"
+      }
+    },
+    {
+      "version": "0.2.2",
+      "production": false,
+      "download": {
+        "windowsSetup": "https://dl.usetonet.com/Tonet-Setup-0.2.2-x64.exe",
+        "linuxSetup": "https://dl.usetonet.com/tonet_0.2.2_amd64.deb",
+        "macSetup": "https://dl.usetonet.com/Tonet-0.2.2-macos.tar.gz",
+        "windowsMsi": "https://dl.usetonet.com/Tonet-0.2.2-x64.msi",
+        "windowsExe": "https://dl.usetonet.com/Tonet-Setup-0.2.2-x64.exe",
+        "windowsPortableZip": "https://dl.usetonet.com/Tonet-0.2.2-windows-x64-portable.zip",
+        "deb": "https://dl.usetonet.com/tonet_0.2.2_amd64.deb",
+        "macTarball": "https://dl.usetonet.com/Tonet-0.2.2-macos.tar.gz"
+      }
+    },
+    {
+      "version": "0.2.1",
+      "production": true,
+      "download": {
+        "windowsSetup": "https://dl.usetonet.com/Tonet-Setup-0.2.1-x64.exe",
+        "linuxSetup": "https://dl.usetonet.com/tonet_0.2.1_amd64.deb",
+        "macSetup": "https://dl.usetonet.com/Tonet-0.2.1-macos.tar.gz",
+        "windowsMsi": "https://dl.usetonet.com/Tonet-0.2.1-x64.msi",
+        "windowsExe": "https://dl.usetonet.com/Tonet-Setup-0.2.1-x64.exe",
+        "windowsPortableZip": "https://dl.usetonet.com/Tonet-0.2.1-windows-x64-portable.zip",
+        "deb": "https://dl.usetonet.com/tonet_0.2.1_amd64.deb",
+        "macTarball": "https://dl.usetonet.com/Tonet-0.2.1-macos.tar.gz"
+      }
+    }
+  ]
+}

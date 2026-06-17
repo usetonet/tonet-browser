@@ -1,6 +1,6 @@
 [package]
 name = "tonet-setup"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 description = "Tonet web installer — downloads and installs the latest release"
 authors = ["Tonet Contributors"]
