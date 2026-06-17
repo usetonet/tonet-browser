@@ -1,4 +1,4 @@
-//! Resolve latest Tonet release assets from GitHub.
+//! Resolve download URLs from GitHub Releases, with CDN manifest fallback.
 
 use regex::Regex;
 use serde::Deserialize;
@@ -6,6 +6,7 @@ use thiserror::Error;
 
 const DEFAULT_OWNER: &str = "usetonet";
 const DEFAULT_REPO: &str = "tonet-browser";
+const DEFAULT_CDN_BASE: &str = "https://dl.usetonet.com";
 
 #[derive(Debug, Error)]
 pub enum ReleaseError {
@@ -13,7 +14,7 @@ pub enum ReleaseError {
     Http(String),
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
-    #[error("No suitable asset found for this platform in the latest release")]
+    #[error("No suitable download URL for this platform")]
     NoAsset,
 }
 
@@ -27,41 +28,62 @@ pub struct GhRelease {
 pub struct GhAsset {
     pub name: String,
     pub browser_download_url: String,
-    #[allow(dead_code)]
-    pub size: u64,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
-pub struct ResolvedAssets {
-    pub tag: String,
-    /// Parsed semver from `tag_name` (without leading `v`).
+pub struct PlatformUrls {
     pub version: String,
-    /// Windows MSI (per-machine installer).
-    pub windows_msi: Option<GhAsset>,
-    /// Windows portable zip (single `tonet.exe`).
-    pub windows_portable_zip: Option<GhAsset>,
-    /// Linux .deb package.
-    pub linux_deb: Option<GhAsset>,
-    /// macOS tarball with `tonet` binary.
-    pub macos_tgz: Option<GhAsset>,
+    pub windows_portable_zip: Option<String>,
+    pub linux_deb: Option<String>,
+    pub macos_tgz: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CdnManifest {
+    version: String,
+    #[serde(default)]
+    channels: Option<CdnChannels>,
+    #[serde(default)]
+    download: Option<CdnDownloadBlock>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CdnChannels {
+    #[serde(default)]
+    stable: Option<CdnChannel>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CdnChannel {
+    version: String,
+    download: CdnDownloadBlock,
+}
+
+#[derive(Debug, Deserialize)]
+struct CdnDownloadBlock {
+    #[serde(rename = "windowsPortableZip")]
+    windows_portable_zip: Option<String>,
+    deb: Option<String>,
+    #[serde(rename = "macTarball")]
+    mac_tarball: Option<String>,
 }
 
 fn strip_version_tag(tag: &str) -> String {
     tag.trim_start_matches('v').to_string()
 }
 
+fn http_client() -> Result<reqwest::blocking::Client, ReleaseError> {
+    reqwest::blocking::Client::builder()
+        .user_agent("TonetSetup/2.0 (https://usetonet.com)")
+        .build()
+        .map_err(|e| ReleaseError::Http(e.to_string()))
+}
+
 pub fn fetch_latest_release() -> Result<GhRelease, ReleaseError> {
     let owner = std::env::var("TONET_RELEASE_OWNER").unwrap_or_else(|_| DEFAULT_OWNER.into());
     let repo = std::env::var("TONET_RELEASE_REPO").unwrap_or_else(|_| DEFAULT_REPO.into());
-    let url = format!(
-        "https://api.github.com/repos/{owner}/{repo}/releases/latest"
-    );
-    let client = reqwest::blocking::Client::builder()
-        .user_agent("TonetSetup/1.0 (https://usetonet.com)")
-        .build()
-        .map_err(|e| ReleaseError::Http(e.to_string()))?;
-
+    let url = format!("https://api.github.com/repos/{owner}/{repo}/releases/latest");
+    let client = http_client()?;
     let resp = client
         .get(&url)
         .send()
@@ -79,7 +101,7 @@ pub fn fetch_latest_release() -> Result<GhRelease, ReleaseError> {
     Ok(serde_json::from_str(&body)?)
 }
 
-pub fn resolve_assets(release: &GhRelease) -> Result<ResolvedAssets, ReleaseError> {
+pub fn resolve_assets_from_github(release: &GhRelease) -> Result<PlatformUrls, ReleaseError> {
     let version = strip_version_tag(&release.tag_name);
     let msi_re = Regex::new(r"^Tonet-[0-9]+\.[0-9]+\.[0-9]+-x64\.msi$").expect("regex");
     let zip_re =
@@ -87,37 +109,93 @@ pub fn resolve_assets(release: &GhRelease) -> Result<ResolvedAssets, ReleaseErro
     let deb_re = Regex::new(r"^tonet_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$").expect("regex");
     let mac_re = Regex::new(r"^Tonet-[0-9]+\.[0-9]+\.[0-9]+-macos\.tar\.gz$").expect("regex");
 
-    let mut windows_msi = None;
     let mut windows_portable_zip = None;
     let mut linux_deb = None;
     let mut macos_tgz = None;
 
     for a in &release.assets {
-        if msi_re.is_match(&a.name) {
-            windows_msi = Some(a.clone());
-        } else if zip_re.is_match(&a.name) {
-            windows_portable_zip = Some(a.clone());
+        if zip_re.is_match(&a.name) {
+            windows_portable_zip = Some(a.browser_download_url.clone());
         } else if deb_re.is_match(&a.name) {
-            linux_deb = Some(a.clone());
+            linux_deb = Some(a.browser_download_url.clone());
         } else if mac_re.is_match(&a.name) {
-            macos_tgz = Some(a.clone());
+            macos_tgz = Some(a.browser_download_url.clone());
+        } else if msi_re.is_match(&a.name) {
+            // MSI is for offline Inno flow only.
         }
     }
 
-    let has_any = windows_msi.is_some()
-        || windows_portable_zip.is_some()
-        || linux_deb.is_some()
-        || macos_tgz.is_some();
-    if !has_any {
+    if windows_portable_zip.is_none() && linux_deb.is_none() && macos_tgz.is_none() {
         return Err(ReleaseError::NoAsset);
     }
 
-    Ok(ResolvedAssets {
-        tag: release.tag_name.clone(),
+    Ok(PlatformUrls {
         version,
-        windows_msi,
         windows_portable_zip,
         linux_deb,
         macos_tgz,
     })
+}
+
+fn cdn_base_url() -> String {
+    std::env::var("TONET_CDN_BASE_URL").unwrap_or_else(|_| DEFAULT_CDN_BASE.into())
+}
+
+pub fn fetch_cdn_urls() -> Result<PlatformUrls, ReleaseError> {
+    let base = cdn_base_url();
+    let url = format!("{base}/version.json");
+    let client = http_client()?;
+    let resp = client
+        .get(&url)
+        .send()
+        .map_err(|e| ReleaseError::Http(e.to_string()))?;
+    if !resp.status().is_success() {
+        return Err(ReleaseError::Http(format!(
+            "CDN manifest {} {}",
+            resp.status(),
+            resp.text().unwrap_or_default()
+        )));
+    }
+    let body = resp
+        .text()
+        .map_err(|e| ReleaseError::Http(e.to_string()))?;
+    let manifest: CdnManifest = serde_json::from_str(&body)?;
+
+    let (version, block) = if let Some(stable) = manifest.channels.and_then(|c| c.stable) {
+        (stable.version, stable.download)
+    } else if let Some(dl) = manifest.download {
+        (manifest.version, dl)
+    } else {
+        return Err(ReleaseError::NoAsset);
+    };
+
+    let mut urls = PlatformUrls {
+        version,
+        windows_portable_zip: block.windows_portable_zip,
+        linux_deb: block.deb,
+        macos_tgz: block.mac_tarball,
+    };
+
+    // Last-resort stable short filenames if manifest omits nested fields.
+    if urls.windows_portable_zip.is_none() {
+        urls.windows_portable_zip = Some(format!("{base}/Tonet-windows-x64-portable.zip"));
+    }
+    if urls.linux_deb.is_none() {
+        urls.linux_deb = Some(format!("{base}/tonet_amd64.deb"));
+    }
+    if urls.macos_tgz.is_none() {
+        urls.macos_tgz = Some(format!("{base}/Tonet-macos.tar.gz"));
+    }
+
+    Ok(urls)
+}
+
+/// GitHub first; if it fails, use `https://dl.usetonet.com/version.json`.
+pub fn resolve_download_urls() -> Result<PlatformUrls, ReleaseError> {
+    match fetch_latest_release().and_then(|r| resolve_assets_from_github(&r)) {
+        Ok(urls) => Ok(urls),
+        Err(gh_err) => fetch_cdn_urls().map_err(|cdn_err| {
+            ReleaseError::Http(format!("GitHub: {gh_err}; CDN: {cdn_err}"))
+        }),
+    }
 }
