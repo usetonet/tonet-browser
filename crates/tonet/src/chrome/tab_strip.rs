@@ -11,7 +11,7 @@ use crate::theme;
 use super::caption::{apply_drag_or_maximize, show_window_caption_controls, CAPTION_BTN};
 use super::ids::{new_tab_button, tab_strip_tab};
 
-const TAB_ROW_H: f32 = 33.0;
+const TAB_ROW_H: f32 = 38.0;
 
 #[derive(Default)]
 pub struct TabBarResult {
@@ -70,12 +70,12 @@ fn draw_tab(
                     ui.spacing_mut().item_spacing.x = theme::SP;
 
                     if favicon_uri.is_empty() {
-                        let (_, r) = ui.allocate_space(Vec2::splat(16.0));
+                        let (_, r) = ui.allocate_space(Vec2::splat(18.0));
                         favicon_center = r.center();
                     } else {
                         let resp = ui.add(
                             egui::Image::from_uri(favicon_uri)
-                                .max_size(Vec2::splat(16.0))
+                                .max_size(Vec2::splat(18.0))
                                 .rounding(2.0),
                         );
                         favicon_center = resp.rect.center();
@@ -87,12 +87,12 @@ fn draw_tab(
                         } else {
                             theme::tab_text_muted()
                         };
-                        let close_w = if show_close { 18.0 + theme::SP } else { 0.0 };
+                        let close_w = if show_close { 20.0 + theme::SP } else { 0.0 };
                         ui.scope(|ui| {
                             ui.set_max_width((ui.available_width() - close_w).max(0.0));
                             let resp = ui.add(
                                 egui::Label::new(
-                                    RichText::new(title).size(13.0).color(text_color),
+                                    RichText::new(title).size(14.5).color(text_color),
                                 )
                                 .selectable(false)
                                 .truncate()
@@ -106,10 +106,10 @@ fn draw_tab(
 
                     if show_close {
                         let close = ui.add_sized(
-                            Vec2::splat(18.0),
+                            Vec2::splat(20.0),
                             egui::Button::new(
                                 RichText::new("×")
-                                    .size(14.0)
+                                    .size(15.0)
                                     .color(theme::tab_text_muted()),
                             )
                             .frame(false),
@@ -267,7 +267,7 @@ pub fn show_tab_bar(
                         ui.add(
                             egui::Button::new(
                                 RichText::new("+")
-                                    .size(18.0)
+                                    .size(20.0)
                                     .color(theme::tab_text_muted()),
                             )
                             .frame(false),

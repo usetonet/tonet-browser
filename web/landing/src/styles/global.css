@@ -202,6 +202,18 @@
 .pill {
   @apply mb-4 inline-block rounded-full bg-[rgba(61,214,140,0.12)] px-3 py-1.5 text-[0.85rem] font-semibold text-[#3dd68c];
 }
+.pill-alpha {
+  @apply bg-[rgba(201,162,74,0.16)] text-[#e8c56a];
+}
+.download-hero-pills {
+  @apply mb-2 flex flex-wrap items-center justify-center gap-2;
+}
+.download-hero-pills .pill {
+  @apply mb-0;
+}
+.alpha-notice {
+  @apply mx-auto mb-5 max-w-[640px] text-balance text-[0.92rem] leading-relaxed text-[#c9a24a];
+}
 .hero-actions {
   @apply mb-5 flex flex-wrap justify-center gap-3;
 }

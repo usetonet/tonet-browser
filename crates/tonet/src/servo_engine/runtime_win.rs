@@ -30,8 +30,10 @@ use servo::{
     FilePicker, InputEvent, Key, KeyState, KeyboardEvent, LoadStatus, Location, Modifiers, MouseButton,
     MouseButtonAction, MouseButtonEvent, MouseLeftViewportEvent, MouseMoveEvent, NamedKey, PermissionFeature,
     PermissionRequest, RenderingContext, RgbColor, SelectElement, SelectElementOptionOrOptgroup, Servo, ServoBuilder,
-    SimpleDialog, WebResourceLoad, WebResourceResponse, WebView, WebViewBuilder, WebViewDelegate, WebViewPoint,
-    WheelDelta, WheelEvent, WheelMode, WindowRenderingContext,
+    JSValue, SimpleDialog, WebResourceLoad, WebResourceResponse, WebView, WebViewBuilder, WebViewDelegate,
+    WebViewPoint,
+    DeviceVector2D, Scroll, WebViewVector, WheelDelta, WheelEvent, WheelMode,
+    WindowRenderingContext,
 };
 use servo::ImeEvent as ServoImeEvent;
 use url::Url;
@@ -268,6 +270,10 @@ struct TonetServoWebViewDelegate {
     auth_window_open: Rc<Cell<bool>>,
     notification_toast: Rc<RefCell<Option<ServoWebNotificationToast>>>,
     console_pending: Rc<RefCell<VecDeque<(ConsoleLogLevel, String)>>>,
+    network_log: Rc<RefCell<VecDeque<super::embedder_devtools::ServoNetworkEntry>>>,
+    dom_snapshot_json: Rc<RefCell<Option<String>>>,
+    dom_snapshot_error: Rc<RefCell<Option<String>>>,
+    dom_snapshot_inflight: Rc<Cell<bool>>,
     background_download_done: Arc<Mutex<Vec<background_download::CompletedBackgroundDownload>>>,
     tonet_scheme_state: Arc<Mutex<tonet_scheme_html::TonetSchemeSharedState>>,
 }
@@ -536,6 +542,13 @@ impl WebViewDelegate for TonetServoWebViewDelegate {
 
     fn load_web_resource(&self, _webview: WebView, load: WebResourceLoad) {
         let req = load.request();
+        let net_id = super::embedder_devtools::append_network_entry(
+            &mut self.network_log.borrow_mut(),
+            &req.method,
+            &req.url,
+            req.is_for_main_frame,
+            super::embedder_devtools::NetworkEntryStatus::Pending,
+        );
         if req.url.scheme() == "tonet" && req.method == Method::GET {
             let bytes = self
                 .tonet_scheme_state
@@ -556,6 +569,11 @@ impl WebViewDelegate for TonetServoWebViewDelegate {
             let mut intercepted = load.intercept(resp);
             intercepted.send_body_data(bytes);
             intercepted.finish();
+            super::embedder_devtools::patch_network_status(
+                &mut self.network_log.borrow_mut(),
+                net_id,
+                super::embedder_devtools::NetworkEntryStatus::Intercepted,
+            );
             self.needs_paint.set(true);
             self.egui_ctx.request_repaint();
             return;
@@ -572,12 +590,22 @@ impl WebViewDelegate for TonetServoWebViewDelegate {
             req.is_redirect,
         ) && background_download::head_suggests_intercept_binary_get(req.url.as_str()));
         if !intercept {
+            super::embedder_devtools::patch_network_status(
+                &mut self.network_log.borrow_mut(),
+                net_id,
+                super::embedder_devtools::NetworkEntryStatus::Sent,
+            );
             return;
         }
         let url_s = req.url.to_string();
         let done = self.background_download_done.clone();
         let resp = WebResourceResponse::new(req.url.clone()).status_code(StatusCode::NO_CONTENT);
         drop(load.intercept(resp));
+        super::embedder_devtools::patch_network_status(
+            &mut self.network_log.borrow_mut(),
+            net_id,
+            super::embedder_devtools::NetworkEntryStatus::Intercepted,
+        );
         self.needs_paint.set(true);
         self.egui_ctx.request_repaint();
         thread::spawn(move || {
@@ -1253,6 +1281,100 @@ fn egui_key_to_servo_key(key: egui::Key) -> Option<Key> {
     })
 }
 
+/// Client position for Servo input when the pointer is over the page viewport (not only while dragging).
+#[inline]
+pub(crate) fn servo_embed_pointer_pos(pointer: &egui::PointerState, content: egui::Rect) -> Option<egui::Pos2> {
+    pointer
+        .interact_pos()
+        .or(pointer.hover_pos())
+        .or(pointer.latest_pos())
+        .filter(|p| content.contains(*p))
+}
+
+#[inline]
+pub(crate) fn servo_embed_pointer_over_rect(pointer: &egui::PointerState, content: egui::Rect) -> bool {
+    servo_embed_pointer_pos(pointer, content).is_some()
+}
+
+/// Feed Servo wheel events from egui (matches `servo` `examples/winit_minimal` scaling).
+fn servo_embed_apply_wheel_events(
+    webview: &WebView,
+    input: &egui::InputState,
+    wp: WebViewPoint,
+    scroll_thumb_ratio: &Cell<f32>,
+) -> bool {
+    let mut any = false;
+    for ev in &input.events {
+        let egui::Event::MouseWheel { delta, unit, .. } = ev else {
+            continue;
+        };
+        let (dx, dy, mode) = match unit {
+            egui::MouseWheelUnit::Line => (
+                (delta.x as f64) * 76.0,
+                (delta.y as f64) * 76.0,
+                WheelMode::DeltaLine,
+            ),
+            egui::MouseWheelUnit::Point => (delta.x as f64, delta.y as f64, WheelMode::DeltaPixel),
+            egui::MouseWheelUnit::Page => (
+                (delta.x as f64) * 400.0,
+                (delta.y as f64) * 400.0,
+                WheelMode::DeltaLine,
+            ),
+        };
+        if dx == 0.0 && dy == 0.0 {
+            continue;
+        }
+        webview.notify_input_event(InputEvent::Wheel(WheelEvent::new(
+            WheelDelta {
+                x: dx,
+                y: dy,
+                z: 0.0,
+                mode,
+            },
+            wp,
+        )));
+        let bump = (-(dy as f32) / 1200.0).clamp(-0.12, 0.12);
+        let r = (scroll_thumb_ratio.get() + bump).clamp(0.0, 1.0);
+        scroll_thumb_ratio.set(r);
+        any = true;
+    }
+    if !any && input.smooth_scroll_delta != egui::Vec2::ZERO {
+        let d = input.smooth_scroll_delta;
+        let dy = d.y as f64;
+        let dx = d.x as f64;
+        webview.notify_input_event(InputEvent::Wheel(WheelEvent::new(
+            WheelDelta {
+                x: dx,
+                y: dy,
+                z: 0.0,
+                mode: WheelMode::DeltaPixel,
+            },
+            wp,
+        )));
+        let bump = (-d.y / 800.0).clamp(-0.08, 0.08);
+        scroll_thumb_ratio
+            .set((scroll_thumb_ratio.get() + bump).clamp(0.0, 1.0));
+        any = true;
+    }
+    any
+}
+
+#[inline]
+fn egui_key_is_page_scroll_navigation(key: egui::Key) -> bool {
+    matches!(
+        key,
+        egui::Key::ArrowUp
+            | egui::Key::ArrowDown
+            | egui::Key::ArrowLeft
+            | egui::Key::ArrowRight
+            | egui::Key::PageUp
+            | egui::Key::PageDown
+            | egui::Key::Home
+            | egui::Key::End
+            | egui::Key::Space
+    )
+}
+
 #[inline]
 fn egui_key_should_forward_as_key_event(key: egui::Key, m: &egui::Modifiers) -> bool {
     if m.ctrl || m.command || m.alt {
@@ -1308,7 +1430,7 @@ pub struct ServoWinHost {
     slint_gpu: Option<Rc<GPURenderingContext>>,
     /// Latest Servo framebuffer for egui (`Slint`-style compositing without D3D11↔wgpu interop).
     slint_egui_frame: RefCell<Option<egui::ColorImage>>,
-    servo: Servo,
+    servo: Rc<Servo>,
     last_tab_url: String,
     last_client: Option<(u32, u32)>,
     last_ppp: f32,
@@ -1347,11 +1469,26 @@ pub struct ServoWinHost {
     pending_open_link_new_tonet_tab: RefCell<Option<String>>,
     notification_toast: Rc<RefCell<Option<ServoWebNotificationToast>>>,
     console_pending: Rc<RefCell<VecDeque<(ConsoleLogLevel, String)>>>,
+    network_log: Rc<RefCell<VecDeque<super::embedder_devtools::ServoNetworkEntry>>>,
+    dom_snapshot_json: Rc<RefCell<Option<String>>>,
+    dom_snapshot_error: Rc<RefCell<Option<String>>>,
+    dom_snapshot_inflight: Rc<Cell<bool>>,
     background_download_done: Arc<Mutex<Vec<background_download::CompletedBackgroundDownload>>>,
     /// When the active tab is not `http(s)` but experimental viewport stays on, spin Servo less often.
     idle_spin_counter: u8,
     /// Last laid-out Servo content rect in egui space (Slint embed: map context menu, etc.).
     last_content_rect_egui: Cell<Option<egui::Rect>>,
+    /// Heuristic 0..1 thumb position for the shell scrollbar gutter (Servo has no cheap scroll query).
+    scroll_thumb_ratio: Cell<f32>,
+}
+
+/// Single process-wide Servo instance (`servo_config::Opts` initializes once).
+pub fn build_shared_servo(ctx: &egui::Context) -> Servo {
+    let servo = ServoBuilder::default()
+        .event_loop_waker(Box::new(EguiRepaintWaker(ctx.clone())))
+        .build();
+    servo.setup_logging();
+    servo
 }
 
 impl ServoWinHost {
@@ -1362,12 +1499,21 @@ impl ServoWinHost {
         content_rect: Option<egui::Rect>,
         ppp: f32,
         tonet_scheme_state: Arc<Mutex<tonet_scheme_html::TonetSchemeSharedState>>,
+        servo: Rc<Servo>,
     ) -> Result<Self, ()> {
         let owner_isize = win32_hwnd_from_frame(frame).ok_or(())?;
         let owner: HWND = owner_isize as *mut core::ffi::c_void;
 
         if !embed_uses_win32_popup() {
-            return Self::try_new_slint_gpu(ctx, tab_url, content_rect, ppp, owner, tonet_scheme_state);
+            return Self::try_new_slint_gpu(
+                ctx,
+                tab_url,
+                content_rect,
+                ppp,
+                owner,
+                tonet_scheme_state,
+                servo,
+            );
         }
 
         let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
@@ -1447,11 +1593,6 @@ impl ServoWinHost {
 
         let _ = rendering_context.make_current();
 
-        let servo = ServoBuilder::default()
-            .event_loop_waker(Box::new(EguiRepaintWaker(ctx.clone())))
-            .build();
-        servo.setup_logging();
-
         let needs_paint = Rc::new(Cell::new(true));
         let dialog_pending = Rc::new(RefCell::new(None));
         let prompt_draft = Rc::new(RefCell::new(String::new()));
@@ -1476,6 +1617,10 @@ impl ServoWinHost {
         let auth_window_open = Rc::new(Cell::new(true));
         let notification_toast = Rc::new(RefCell::new(None));
         let console_pending = Rc::new(RefCell::new(VecDeque::new()));
+        let network_log = Rc::new(RefCell::new(VecDeque::new()));
+        let dom_snapshot_json = Rc::new(RefCell::new(None));
+        let dom_snapshot_error = Rc::new(RefCell::new(None));
+        let dom_snapshot_inflight = Rc::new(Cell::new(false));
         let background_download_done = Arc::new(Mutex::new(Vec::new()));
         let start_url = initial_nav_url(tab_url);
         let tonet_scheme_state_delegate = Arc::clone(&tonet_scheme_state);
@@ -1505,11 +1650,15 @@ impl ServoWinHost {
             auth_window_open: auth_window_open.clone(),
             notification_toast: notification_toast.clone(),
             console_pending: console_pending.clone(),
+            network_log: network_log.clone(),
+            dom_snapshot_json: dom_snapshot_json.clone(),
+            dom_snapshot_error: dom_snapshot_error.clone(),
+            dom_snapshot_inflight: dom_snapshot_inflight.clone(),
             background_download_done: background_download_done.clone(),
             tonet_scheme_state: tonet_scheme_state_delegate,
         });
 
-        let webview = WebViewBuilder::new(&servo, rendering_context.clone())
+        let webview = WebViewBuilder::new(servo.as_ref(), rendering_context.clone())
             .url(start_url.clone())
             .hidpi_scale_factor(Scale::new(ppp))
             .delegate(delegate)
@@ -1539,7 +1688,7 @@ impl ServoWinHost {
             rendering_context: Some(rendering_context),
             slint_gpu: None,
             slint_egui_frame: RefCell::new(None),
-            servo,
+            servo: Rc::clone(&servo),
             last_tab_url: start_url.as_str().to_owned(),
             last_client: Some((cw, ch)),
             last_ppp: ppp,
@@ -1573,9 +1722,14 @@ impl ServoWinHost {
             pending_open_link_new_tonet_tab: RefCell::new(None),
             notification_toast,
             console_pending,
+            network_log,
+            dom_snapshot_json,
+            dom_snapshot_error,
+            dom_snapshot_inflight,
             background_download_done,
             idle_spin_counter: 0,
             last_content_rect_egui: Cell::new(None),
+            scroll_thumb_ratio: Cell::new(0.0),
         })
     }
 
@@ -1587,6 +1741,7 @@ impl ServoWinHost {
         ppp: f32,
         owner: HWND,
         tonet_scheme_state: Arc<Mutex<tonet_scheme_html::TonetSchemeSharedState>>,
+        servo: Rc<Servo>,
     ) -> Result<Self, ()> {
         let ppp = ppp.max(0.01);
         let (cw, ch) = content_rect
@@ -1601,11 +1756,6 @@ impl ServoWinHost {
         let _ = gpu.make_current();
 
         let surf: Rc<dyn RenderingContext> = gpu.clone();
-
-        let servo = ServoBuilder::default()
-            .event_loop_waker(Box::new(EguiRepaintWaker(ctx.clone())))
-            .build();
-        servo.setup_logging();
 
         let needs_paint = Rc::new(Cell::new(true));
         let dialog_pending = Rc::new(RefCell::new(None));
@@ -1631,6 +1781,10 @@ impl ServoWinHost {
         let auth_window_open = Rc::new(Cell::new(true));
         let notification_toast = Rc::new(RefCell::new(None));
         let console_pending = Rc::new(RefCell::new(VecDeque::new()));
+        let network_log = Rc::new(RefCell::new(VecDeque::new()));
+        let dom_snapshot_json = Rc::new(RefCell::new(None));
+        let dom_snapshot_error = Rc::new(RefCell::new(None));
+        let dom_snapshot_inflight = Rc::new(Cell::new(false));
         let background_download_done = Arc::new(Mutex::new(Vec::new()));
         let start_url = initial_nav_url(tab_url);
         let tonet_scheme_state_delegate = Arc::clone(&tonet_scheme_state);
@@ -1660,11 +1814,15 @@ impl ServoWinHost {
             auth_window_open: auth_window_open.clone(),
             notification_toast: notification_toast.clone(),
             console_pending: console_pending.clone(),
+            network_log: network_log.clone(),
+            dom_snapshot_json: dom_snapshot_json.clone(),
+            dom_snapshot_error: dom_snapshot_error.clone(),
+            dom_snapshot_inflight: dom_snapshot_inflight.clone(),
             background_download_done: background_download_done.clone(),
             tonet_scheme_state: tonet_scheme_state_delegate,
         });
 
-        let webview = WebViewBuilder::new(&servo, surf)
+        let webview = WebViewBuilder::new(servo.as_ref(), surf)
             .url(start_url.clone())
             .hidpi_scale_factor(Scale::new(ppp))
             .delegate(delegate)
@@ -1690,7 +1848,7 @@ impl ServoWinHost {
             rendering_context: None,
             slint_gpu: Some(gpu),
             slint_egui_frame: RefCell::new(None),
-            servo,
+            servo: Rc::clone(&servo),
             last_tab_url: start_url.as_str().to_owned(),
             last_client: Some((cw, ch)),
             last_ppp: ppp,
@@ -1724,10 +1882,112 @@ impl ServoWinHost {
             pending_open_link_new_tonet_tab: RefCell::new(None),
             notification_toast,
             console_pending,
+            network_log,
+            dom_snapshot_json,
+            dom_snapshot_error,
+            dom_snapshot_inflight,
             background_download_done,
             idle_spin_counter: 0,
             last_content_rect_egui: Cell::new(None),
+            scroll_thumb_ratio: Cell::new(0.0),
         })
+    }
+
+    pub fn navigate_url(&mut self, tab_url: &str, reload: bool) {
+        let next = initial_nav_url(tab_url);
+        let next_s = next.to_string();
+        if reload || self.last_tab_url != next_s {
+            self.input.webview.load(next);
+            self.last_tab_url = next_s;
+            self.scroll_thumb_ratio.set(0.0);
+            self.network_log.borrow_mut().clear();
+            *self.dom_snapshot_json.borrow_mut() = None;
+            self.dom_snapshot_error.borrow_mut().take();
+            self.dom_snapshot_inflight.set(false);
+            self.input.needs_paint.set(true);
+        }
+    }
+
+    pub fn request_dom_snapshot(&self) {
+        if self.dom_snapshot_inflight.get() {
+            return;
+        }
+        self.dom_snapshot_inflight.set(true);
+        self.dom_snapshot_error.borrow_mut().take();
+        let json_slot = Rc::clone(&self.dom_snapshot_json);
+        let err_slot = Rc::clone(&self.dom_snapshot_error);
+        let inflight = Rc::clone(&self.dom_snapshot_inflight);
+        let needs = Rc::clone(&self.input.needs_paint);
+        let egui_ctx = self.input.ctx.clone();
+        self.input.webview.evaluate_javascript(
+            super::embedder_devtools::DOM_SNAPSHOT_SCRIPT,
+            move |result| {
+                inflight.set(false);
+                match result {
+                    Ok(JSValue::String(s)) => {
+                        *json_slot.borrow_mut() = Some(s);
+                    }
+                    Ok(_) => {
+                        *err_slot.borrow_mut() =
+                            Some("Unexpected JavaScript return type.".to_string());
+                    }
+                    Err(e) => {
+                        *err_slot.borrow_mut() = Some(format!("{e:?}"));
+                    }
+                }
+                needs.set(true);
+                egui_ctx.request_repaint();
+            },
+        );
+    }
+
+    pub fn clear_network_log(&self) {
+        self.network_log.borrow_mut().clear();
+    }
+
+    pub fn dom_snapshot_inflight(&self) -> bool {
+        self.dom_snapshot_inflight.get()
+    }
+
+    pub fn idle_spin(&mut self) {
+        // Servo event loop is spun once per frame in [`super::ServoViewportRuntime::tick`].
+    }
+
+    pub fn scroll_thumb_ratio(&self) -> f32 {
+        self.scroll_thumb_ratio.get()
+    }
+
+    pub fn set_scroll_thumb_ratio(&self, ratio: f32) {
+        self.scroll_thumb_ratio.set(ratio.clamp(0.0, 1.0));
+    }
+
+    pub fn scroll_by_pixels(
+        &self,
+        dx_px: f32,
+        dy_px: f32,
+        content: egui::Rect,
+        ppp: f32,
+        pointer_hint: Option<egui::Pos2>,
+    ) {
+        let ppp = ppp.max(0.01);
+        let pos = pointer_hint
+            .filter(|p| content.contains(*p))
+            .unwrap_or_else(|| content.center());
+        let lp = (pos - content.min) * ppp;
+        let wp = WebViewPoint::from(DevicePoint::new(lp.x, lp.y));
+        self.input.webview.notify_scroll_event(
+            Scroll::Delta(WebViewVector::Device(DeviceVector2D::new(
+                dx_px as f32,
+                dy_px as f32,
+            ))),
+            wp,
+        );
+        if dy_px != 0.0 {
+            let bump = (dy_px / 600.0).clamp(-0.15, 0.15);
+            self.scroll_thumb_ratio
+                .set((self.scroll_thumb_ratio.get() + bump).clamp(0.0, 1.0));
+        }
+        self.input.needs_paint.set(true);
     }
 
     pub(crate) fn take_pending_open_link_new_tonet_tab(&self) -> Option<String> {
@@ -2685,17 +2945,42 @@ impl ServoWinHost {
     /// Drain egui keyboard events and send them to Servo. Call early in the frame (before chrome
     /// TextEdits) while [`Self::page_captures_keyboard`] is true.
     /// Returns whether any event was sent (caller may [`Self::spin_event_loop`]).
+    /// Arrow / Page / Home / End / Space while the pointer is over the page (no click required).
+    pub(crate) fn forward_egui_keyboard_navigation_hover(&self, ctx: &egui::Context) -> bool {
+        if self.input.page_captures_keyboard.get() {
+            return false;
+        }
+        self.forward_egui_keyboard_filtered(
+            ctx,
+            |key, _| egui_key_is_page_scroll_navigation(key),
+            false,
+        )
+    }
+
     pub(crate) fn forward_egui_keyboard(&self, ctx: &egui::Context) -> bool {
         if !self.input.page_captures_keyboard.get() {
             return false;
         }
+        self.forward_egui_keyboard_filtered(ctx, egui_key_should_forward_as_key_event, true)
+    }
+
+    pub(crate) fn last_content_rect_egui(&self) -> Option<egui::Rect> {
+        self.last_content_rect_egui.get()
+    }
+
+    fn forward_egui_keyboard_filtered(
+        &self,
+        ctx: &egui::Context,
+        allow_key: impl Fn(egui::Key, &egui::Modifiers) -> bool,
+        forward_text: bool,
+    ) -> bool {
         let mut any = false;
         ctx.input_mut(|input| {
             let mut kept = Vec::new();
             let drained = std::mem::take(&mut input.events);
             for ev in drained {
                 match ev {
-                    egui::Event::Text(s) if !s.is_empty() => {
+                    egui::Event::Text(s) if forward_text && !s.is_empty() => {
                         any = true;
                         let mods = servo_modifiers(&input.modifiers);
                         for ch in s.chars() {
@@ -2752,7 +3037,7 @@ impl ServoWinHost {
                             });
                             continue;
                         }
-                        if !egui_key_should_forward_as_key_event(key, &modifiers) {
+                        if !allow_key(key, &modifiers) {
                             continue;
                         }
                         let Some(skey) = egui_key_to_servo_key(key) else {
@@ -2832,7 +3117,8 @@ impl ServoWinHost {
         let snap = self.shell_snapshot.borrow().clone();
         tab.servo_chrome_nav = Some((snap.can_go_back, snap.can_go_forward));
         tab.servo_document_title = snap.title.clone();
-        tab.loading = snap.load_status != LoadStatus::Complete;
+        // Shell does not show a blocking loading panel for Servo; chrome may use load status later.
+        tab.loading = false;
         if !ctx.memory(|m| m.has_focus(omnibox_id())) {
             if let Some(ref u) = snap.committed_url {
                 let u = u.trim();
@@ -2843,6 +3129,10 @@ impl ServoWinHost {
         }
 
         let complete = snap.load_status == LoadStatus::Complete;
+        if !complete {
+            tab.servo_dom_root = None;
+            tab.servo_dom_error = None;
+        }
         let was_complete = self.prev_shell_complete.get();
         let committed_trim = snap
             .committed_url
@@ -2891,6 +3181,32 @@ impl ServoWinHost {
             for (lvl, msg) in pending {
                 tab.push_servo_console_line(map_console_level(lvl), msg);
             }
+        }
+
+        let net: Vec<_> = self.network_log.borrow_mut().drain(..).collect();
+        if !net.is_empty() {
+            ctx.request_repaint();
+            tab.servo_network_log.extend(net);
+            const CAP: usize = 600;
+            if tab.servo_network_log.len() > CAP {
+                let drop = tab.servo_network_log.len() - CAP;
+                tab.servo_network_log.drain(0..drop);
+            }
+        }
+
+        if let Some(json) = self.dom_snapshot_json.borrow_mut().take() {
+            match super::embedder_devtools::parse_dom_snapshot_json(&json) {
+                Ok(root) => {
+                    tab.servo_dom_root = Some(root);
+                    tab.servo_dom_error = None;
+                }
+                Err(e) => tab.servo_dom_error = Some(e),
+            }
+            ctx.request_repaint();
+        }
+        if let Some(err) = self.dom_snapshot_error.borrow_mut().take() {
+            tab.servo_dom_error = Some(err);
+            ctx.request_repaint();
         }
 
         if let Ok(mut q) = self.background_download_done.lock() {
@@ -2958,23 +3274,61 @@ impl ServoWinHost {
     }
 
     /// Pointer / scroll from egui for Slint-style embed (Win32 path uses `WNDPROC` instead).
-    pub(crate) fn feed_egui_servo_embed_input(&self, ctx: &egui::Context, content: egui::Rect, ppp: f32) {
+    pub(crate) fn feed_egui_servo_embed_input(
+        &self,
+        ctx: &egui::Context,
+        content: egui::Rect,
+        ppp: f32,
+        pointer_hint: Option<egui::Pos2>,
+    ) {
         if self.embed_win32_popup || self.slint_gpu.is_none() {
             return;
         }
         let ppp = ppp.max(0.01);
-        let (interact, scroll, primary_down, primary_up, secondary_down, secondary_up) =
+        let (pos, wheel_moved, primary_down, primary_up, secondary_down, secondary_up) =
             ctx.input(|i| {
+                let pos = pointer_hint
+                    .filter(|p| content.contains(*p))
+                    .or_else(|| servo_embed_pointer_pos(&i.pointer, content));
+                let wp_center = {
+                    let c = content.center();
+                    let lp = (c - content.min) * ppp;
+                    WebViewPoint::from(DevicePoint::new(lp.x, lp.y))
+                };
+                let wheel_moved = if let Some(p) = pos {
+                    let lp = (p - content.min) * ppp;
+                    let wp = WebViewPoint::from(DevicePoint::new(lp.x, lp.y));
+                    servo_embed_apply_wheel_events(
+                        &self.input.webview,
+                        i,
+                        wp,
+                        &self.scroll_thumb_ratio,
+                    )
+                } else {
+                    servo_embed_apply_wheel_events(
+                        &self.input.webview,
+                        i,
+                        wp_center,
+                        &self.scroll_thumb_ratio,
+                    )
+                };
                 (
-                    i.pointer.interact_pos(),
-                    i.smooth_scroll_delta,
+                    pos,
+                    wheel_moved,
                     i.pointer.primary_pressed(),
                     i.pointer.primary_released(),
                     i.pointer.secondary_pressed(),
                     i.pointer.secondary_released(),
                 )
             });
-        let Some(pos) = interact.filter(|p| content.contains(*p)) else {
+        let Some(pos) = pos else {
+            if !wheel_moved {
+                return;
+            }
+            // Wheel over gutter / edge: already forwarded at viewport center.
+            if wheel_moved {
+                self.input.needs_paint.set(true);
+            }
             return;
         };
         let lp = (pos - content.min) * ppp;
@@ -2983,19 +3337,6 @@ impl ServoWinHost {
         self.input
             .webview
             .notify_input_event(InputEvent::MouseMove(MouseMoveEvent::new(wp)));
-        if scroll.x != 0.0 || scroll.y != 0.0 {
-            let dy = -scroll.y * 40.0;
-            let dx = -scroll.x * 40.0;
-            self.input.webview.notify_input_event(InputEvent::Wheel(WheelEvent::new(
-                WheelDelta {
-                    x: dx as f64,
-                    y: dy as f64,
-                    z: 0.0,
-                    mode: WheelMode::DeltaLine,
-                },
-                wp,
-            )));
-        }
         if primary_down {
             self.input.page_captures_keyboard.set(true);
             self.input
@@ -3030,14 +3371,14 @@ impl ServoWinHost {
                 wp,
             )));
         }
-        if primary_down || scroll != egui::Vec2::ZERO || secondary_down {
+        if primary_down || wheel_moved || secondary_down {
             self.input.needs_paint.set(true);
         }
     }
 
     pub fn tick(
         &mut self,
-        tab_url: &str,
+        _tab_url: &str,
         content_rect: Option<egui::Rect>,
         ppp: f32,
         ctx: &egui::Context,
@@ -3154,17 +3495,6 @@ impl ServoWinHost {
             self.input.webview.set_hidpi_scale_factor(Scale::new(ppp));
             self.last_ppp = ppp;
             self.input.needs_paint.set(true);
-        }
-
-        // While the user edits the omnibox, do not push partial URLs into Servo each frame.
-        if !ctx.memory(|m| m.has_focus(omnibox_id())) {
-            let next = initial_nav_url(tab_url);
-            let next_s = next.to_string();
-            if next_s != self.last_tab_url {
-                self.input.webview.load(next);
-                self.last_tab_url = next_s;
-                self.input.needs_paint.set(true);
-            }
         }
 
         *self.shell_snapshot.borrow_mut() = ServoShellSnapshot::capture_from(&self.input.webview);

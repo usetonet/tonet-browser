@@ -1,6 +1,9 @@
 //! One browser tab: address, history, DOM, and in-flight fetch state.
 
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::mpsc;
+
+static NEXT_TAB_ID: AtomicU32 = AtomicU32::new(1);
 
 use crate::css::{CssToken, ParsedQualifiedRule, SimpleQualifiedRule};
 
@@ -34,6 +37,8 @@ pub struct HistoryEntry {
 pub const DEFAULT_HOME_URL: &str = "";
 
 pub struct Tab {
+    /// Stable id for Servo session lookup (survives tab strip reorder).
+    pub id: u32,
     /// If set after rendering the page, navigate to this URL on the next frame.
     pub pending_link_navigation: Option<String>,
     pub url_input: String,
@@ -78,6 +83,20 @@ pub struct Tab {
     /// Recent `console.*` output from the Servo `WebView` (active tab only; drained from the host each frame).
     #[cfg(all(feature = "servo-engine", windows))]
     pub servo_console: Vec<(ServoConsoleLevel, String)>,
+    /// Bottom console strip (F12 / Ctrl+Shift+I), like browser DevTools.
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub dev_tools_open: bool,
+    /// HTTP(S) resource loads observed via Servo `load_web_resource`.
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub servo_network_log: Vec<crate::servo_engine::embedder_devtools::ServoNetworkEntry>,
+    /// Last DOM tree snapshot for the Elements panel.
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub servo_dom_root: Option<crate::servo_engine::embedder_devtools::ServoDomTreeNode>,
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub servo_dom_error: Option<String>,
+    /// Explicit Servo navigation for this tab (`url`, `reload`); consumed by the viewport runtime each frame.
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub servo_pending_load: Option<(String, bool)>,
 }
 
 /// [`servo::ConsoleLogLevel`] mirrored here so `Tab` does not depend on the optional `servo` crate.
@@ -111,6 +130,7 @@ impl Tab {
         let url = url.into();
         let is_empty = url.is_empty();
         Self {
+            id: NEXT_TAB_ID.fetch_add(1, Ordering::Relaxed),
             pending_link_navigation: None,
             url_input: url,
             loading: false,
@@ -135,6 +155,16 @@ impl Tab {
             servo_chrome_nav: None,
             #[cfg(all(feature = "servo-engine", windows))]
             servo_console: Vec::new(),
+            #[cfg(all(feature = "servo-engine", windows))]
+            dev_tools_open: false,
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_network_log: Vec::new(),
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_dom_root: None,
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_dom_error: None,
+            #[cfg(all(feature = "servo-engine", windows))]
+            servo_pending_load: None,
         }
     }
 

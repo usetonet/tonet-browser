@@ -5,9 +5,15 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+#[cfg(windows)]
+use std::thread;
+#[cfg(windows)]
+use std::time::Duration;
 
 use thiserror::Error;
 
+#[cfg(windows)]
+use crate::windows_util::hidden_powershell;
 #[cfg(windows)]
 use zip::ZipArchive;
 
@@ -34,37 +40,88 @@ fn temp_dir() -> PathBuf {
     std::env::temp_dir().join("tonet-setup")
 }
 
-/// Extract `tonet.exe` from our portable zip into `dest_dir` (created if missing).
+/// Stop a running Tonet session so files in `dest_dir` can be replaced.
 #[cfg(windows)]
-pub fn install_windows_portable_zip(zip_path: &Path, dest_dir: &Path) -> Result<PathBuf, InstallError> {
+pub fn stop_running_tonet() {
+    let _ = hidden_powershell(
+        "Get-Process -Name tonet -ErrorAction SilentlyContinue | Stop-Process -Force",
+    );
+    thread::sleep(Duration::from_millis(400));
+}
+
+#[cfg(windows)]
+fn copy_with_retry(from: &Path, to: &Path, attempts: u32) -> Result<(), InstallError> {
+    if from == to {
+        return Ok(());
+    }
+    if to.exists() {
+        let _ = fs::remove_file(to);
+    }
+    let mut last_err = None;
+    for _ in 0..attempts {
+        match fs::copy(from, to) {
+            Ok(_) => return Ok(()),
+            Err(e) => {
+                last_err = Some(e);
+                thread::sleep(Duration::from_millis(350));
+            }
+        }
+    }
+    Err(last_err.unwrap().into())
+}
+
+/// Extract the portable Windows zip (`tonet.exe` + ANGLE DLLs) into `dest_dir`.
+#[cfg(windows)]
+pub fn install_windows_portable_zip(
+    zip_path: &Path,
+    dest_dir: &Path,
+    mut on_extract_progress: impl FnMut(f32),
+) -> Result<PathBuf, InstallError> {
+    stop_running_tonet();
     fs::create_dir_all(dest_dir)?;
     let f = fs::File::open(zip_path)?;
     let mut archive = ZipArchive::new(f).map_err(|e| InstallError::Zip(e.to_string()))?;
-    let mut found: Option<Vec<u8>> = None;
+    let total = archive.len().max(1);
+    let mut exe_path: Option<PathBuf> = None;
+
     for i in 0..archive.len() {
         let mut file = archive.by_index(i).map_err(|e| InstallError::Zip(e.to_string()))?;
-        let name = file.name().replace('\\', "/");
-        let base = Path::new(&name)
+        let raw_name = file.name().replace('\\', "/");
+        if file.is_dir() {
+            on_extract_progress((i + 1) as f32 / total as f32);
+            continue;
+        }
+        let base = Path::new(&raw_name)
             .file_name()
             .and_then(|s| s.to_str())
             .unwrap_or("");
-        if base.eq_ignore_ascii_case("tonet.exe") {
-            let mut buf = Vec::new();
-            file.read_to_end(&mut buf)?;
-            found = Some(buf);
-            break;
+        if base.is_empty() {
+            on_extract_progress((i + 1) as f32 / total as f32);
+            continue;
         }
+        let out = dest_dir.join(base);
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf)?;
+        if let Some(parent) = out.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        if out.exists() {
+            let _ = fs::remove_file(&out);
+        }
+        let mut out_file = fs::File::create(&out)?;
+        out_file.write_all(&buf)?;
+        if base.eq_ignore_ascii_case("tonet.exe") {
+            exe_path = Some(out);
+        }
+        on_extract_progress((i + 1) as f32 / total as f32);
     }
-    let bytes = found.ok_or(InstallError::MissingExeInZip)?;
-    let exe = dest_dir.join("tonet.exe");
-    let mut out = fs::File::create(&exe)?;
-    out.write_all(&bytes)?;
-    drop(out);
-    Ok(exe)
+
+    exe_path.ok_or(InstallError::MissingExeInZip)
 }
 
-/// Run MSI silently. Requires sufficient privileges for a per-machine package.
+/// Run MSI silently (used by enterprise/offline flows; web stub uses the portable zip).
 #[cfg(windows)]
+#[allow(dead_code)]
 pub fn install_windows_msi(msi_path: &Path) -> Result<(), InstallError> {
     let status = Command::new("msiexec.exe")
         .args([
@@ -83,26 +140,67 @@ pub fn install_windows_msi(msi_path: &Path) -> Result<(), InstallError> {
     }
 }
 
-/// Create a `.lnk` on the current user's desktop pointing to `target_exe`.
+/// Write branding icon, uninstaller copy, registry entry, and desktop shortcut.
 #[cfg(windows)]
-pub fn create_desktop_shortcut(target_exe: &Path) -> Result<(), InstallError> {
-    let target = target_exe.to_string_lossy().replace('\'', "''");
+pub fn finalize_windows_install(
+    dest_dir: &Path,
+    exe_path: &Path,
+    version: &str,
+) -> Result<(), InstallError> {
+    let ico_path = dest_dir.join("app.ico");
+    fs::write(&ico_path, crate::branding::APP_ICO)?;
+
+    let uninstall_exe = dest_dir.join("Uninstall Tonet.exe");
+    let self_exe = std::env::current_exe()?;
+    copy_with_retry(&self_exe, &uninstall_exe, 5)?;
+
+    crate::uninstall::register_uninstall_registry(dest_dir, &uninstall_exe, version, &ico_path)?;
+    crate::install_state::write_version_file(dest_dir, version)?;
+    create_windows_shortcuts(exe_path, &ico_path)?;
+    Ok(())
+}
+
+/// Desktop + Start menu shortcuts (Start menu = listed in the Windows Start screen / app list).
+#[cfg(windows)]
+pub fn create_windows_shortcuts(target_exe: &Path, icon_path: &Path) -> Result<(), InstallError> {
+    create_shortcut_at_folder("Desktop", target_exe, icon_path)?;
+    create_shortcut_at_folder("Programs", target_exe, icon_path)?;
+    Ok(())
+}
+
+#[cfg(windows)]
+fn create_shortcut_at_folder(
+    shell_folder: &str,
+    target_exe: &Path,
+    icon_path: &Path,
+) -> Result<(), InstallError> {
+    let target = ps_escape_single(target_exe);
+    let icon = ps_escape_single(icon_path);
+    let folder = ps_escape_single_str(shell_folder);
     let ps = format!(
-        r#"$s = New-Object -ComObject WScript.Shell; $p = [Environment]::GetFolderPath('Desktop'); $l = Join-Path $p 'Tonet.lnk'; $k = $s.CreateShortcut($l); $k.TargetPath = '{target}'; $k.WorkingDirectory = Split-Path -Parent '{target}'; $k.Save()"#
+        r#"$s = New-Object -ComObject WScript.Shell; $p = [Environment]::GetFolderPath('{folder}'); $l = Join-Path $p 'Tonet.lnk'; $k = $s.CreateShortcut($l); $k.TargetPath = '{target}'; $k.WorkingDirectory = Split-Path -Parent '{target}'; $k.IconLocation = '{icon},0'; $k.Description = 'Tonet'; $k.Save()"#
     );
-    let status = Command::new("powershell.exe")
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &ps])
-        .status()?;
+    let status = hidden_powershell(&ps)?;
     if !status.success() {
-        return Err(InstallError::Msg(
-            "Could not create desktop shortcut (PowerShell)".into(),
-        ));
+        return Err(InstallError::Msg(format!(
+            "Could not create shortcut in {shell_folder}."
+        )));
     }
     Ok(())
 }
 
+#[cfg(windows)]
+fn ps_escape_single(path: &Path) -> String {
+    path.to_string_lossy().replace('\'', "''")
+}
+
+#[cfg(windows)]
+fn ps_escape_single_str(value: &str) -> String {
+    value.replace('\'', "''")
+}
+
 #[cfg(not(windows))]
-pub fn create_desktop_shortcut(_target_exe: &Path) -> Result<(), InstallError> {
+pub fn create_windows_shortcuts(_target_exe: &Path, _icon_path: &Path) -> Result<(), InstallError> {
     Ok(())
 }
 

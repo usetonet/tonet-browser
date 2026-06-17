@@ -81,7 +81,8 @@ jobs:
           Compress-Archive -LiteralPath @(
             "target\release\tonet.exe",
             "target\release\libEGL.dll",
-            "target\release\libGLESv2.dll"
+            "target\release\libGLESv2.dll",
+            "crates\tonet\windows\app.ico"
           ) -DestinationPath "$dist\Tonet-$v-windows-x64-portable.zip" -Force
           cargo build --release -p tonet-setup
           Copy-Item "target\release\TonetSetup.exe" "$dist\TonetSetup-x64.exe" -Force

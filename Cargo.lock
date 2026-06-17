@@ -9539,7 +9539,7 @@ dependencies = [
 
 [[package]]
 name = "tonet"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -9580,16 +9580,18 @@ dependencies = [
 
 [[package]]
 name = "tonet-setup"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "dirs",
  "eframe",
  "egui",
+ "egui_extras",
  "regex",
  "reqwest",
  "rustls",
  "serde",
  "serde_json",
+ "sys-locale",
  "thiserror 2.0.18",
  "winres",
  "zip",

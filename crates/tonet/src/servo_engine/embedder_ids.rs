@@ -47,6 +47,12 @@ pub fn page_console_strip() -> Id {
     Id::new("tonet_servo_page_console")
 }
 
+/// Hit-test layer for Servo pointer / wheel forwarding in the egui embed path (`app` CentralPanel).
+#[inline]
+pub fn page_viewport_input() -> Id {
+    Id::new("tonet_servo_page_viewport_input")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
