@@ -1022,13 +1022,348 @@ pub fn servo_notification_dismiss(loc: Locale) -> &'static str {
 }
 
 #[cfg(all(feature = "servo-engine", windows))]
-pub fn servo_page_console_header(loc: Locale) -> &'static str {
+pub fn devtools_panel_header(loc: Locale) -> &'static str {
     match loc {
-        Locale::Es => "Consola de la página (Servo)",
-        Locale::De => "Seitenkonsole (Servo)",
-        Locale::Fr => "Console de la page (Servo)",
-        Locale::En => "Page console (Servo)",
+        Locale::Es => "Herramientas de desarrollo",
+        Locale::De => "Entwicklertools",
+        Locale::Fr => "Outils de développement",
+        Locale::En => "Developer tools",
     }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_console_empty(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Sin mensajes de consola.",
+        Locale::De => "Keine Konsolenmeldungen.",
+        Locale::Fr => "Aucun message console.",
+        Locale::En => "No console messages.",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_console(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Consola",
+        Locale::De => "Konsole",
+        Locale::Fr => "Console",
+        Locale::En => "Console",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_elements(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Elementos",
+        Locale::De => "Elemente",
+        Locale::Fr => "Éléments",
+        Locale::En => "Elements",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_sources(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Fuentes",
+        Locale::De => "Quellen",
+        Locale::Fr => "Sources",
+        Locale::En => "Sources",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_network(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Red",
+        Locale::De => "Netzwerk",
+        Locale::Fr => "Réseau",
+        Locale::En => "Network",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_performance(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Rendimiento",
+        Locale::De => "Leistung",
+        Locale::Fr => "Performances",
+        Locale::En => "Performance",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_memory(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Memoria",
+        Locale::De => "Speicher",
+        Locale::Fr => "Mémoire",
+        Locale::En => "Memory",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_application(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Aplicación",
+        Locale::De => "Anwendung",
+        Locale::Fr => "Application",
+        Locale::En => "Application",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_tab_security(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Seguridad",
+        Locale::De => "Sicherheit",
+        Locale::Fr => "Sécurité",
+        Locale::En => "Security",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_drawer_network_conditions(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Condiciones de red",
+        Locale::De => "Netzwerkbedingungen",
+        Locale::Fr => "Conditions réseau",
+        Locale::En => "Network conditions",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_drawer_whats_new(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Novedades",
+        Locale::De => "Neuigkeiten",
+        Locale::Fr => "Nouveautés",
+        Locale::En => "What's new",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_drawer_issues(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Problemas",
+        Locale::De => "Probleme",
+        Locale::Fr => "Anomalies",
+        Locale::En => "Issues",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_panel_coming_soon(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Este panel estará disponible en una próxima versión.",
+        Locale::De => "Dieses Panel ist in einer künftigen Version verfügbar.",
+        Locale::Fr => "Ce panneau sera disponible dans une prochaine version.",
+        Locale::En => "This panel will be available in a future release.",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_panel_coming_soon_detail(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Tonet integrará inspector DOM, red, rendimiento y depuración como en Chrome o Firefox.",
+        Locale::De => "Tonet wird DOM-Inspektor, Netzwerk, Leistung und Debugger wie in Chrome oder Firefox integrieren.",
+        Locale::Fr => "Tonet intégrera inspecteur DOM, réseau, performances et débogage comme Chrome ou Firefox.",
+        Locale::En => "Tonet will integrate DOM inspector, network, performance, and debugging like Chrome or Firefox.",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_console_filter(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Filtrar",
+        Locale::De => "Filtern",
+        Locale::Fr => "Filtrer",
+        Locale::En => "Filter",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_inspect_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Seleccionar elemento (próximamente)",
+        Locale::De => "Element auswählen (demnächst)",
+        Locale::Fr => "Sélectionner un élément (bientôt)",
+        Locale::En => "Select element (coming soon)",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_device_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Modo dispositivo (próximamente)",
+        Locale::De => "Gerätemodus (demnächst)",
+        Locale::Fr => "Mode appareil (bientôt)",
+        Locale::En => "Device mode (coming soon)",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_menu_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Menú de herramientas de desarrollo",
+        Locale::De => "Entwicklertools-Menü",
+        Locale::Fr => "Menu outils de développement",
+        Locale::En => "Developer tools menu",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_dock_right(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Acoplar a la derecha",
+        Locale::De => "Rechts andocken",
+        Locale::Fr => "Ancrer à droite",
+        Locale::En => "Dock to right",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_dock_bottom(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Acoplar abajo",
+        Locale::De => "Unten andocken",
+        Locale::Fr => "Ancrer en bas",
+        Locale::En => "Dock to bottom",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_toggle_drawer(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Mostrar u ocultar cajón inferior",
+        Locale::De => "Untere Leiste ein-/ausblenden",
+        Locale::Fr => "Afficher/masquer le tiroir",
+        Locale::En => "Toggle bottom drawer",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_close_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cerrar herramientas de desarrollo (F12)",
+        Locale::De => "Entwicklertools schließen (F12)",
+        Locale::Fr => "Fermer les outils (F12)",
+        Locale::En => "Close developer tools (F12)",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_settings_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Ajustes de herramientas (próximamente)",
+        Locale::De => "Tool-Einstellungen (demnächst)",
+        Locale::Fr => "Paramètres des outils (bientôt)",
+        Locale::En => "Tool settings (coming soon)",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_elements_refresh(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Actualizar árbol",
+        Locale::De => "Baum aktualisieren",
+        Locale::Fr => "Actualiser l’arbre",
+        Locale::En => "Refresh tree",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_elements_loading(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Leyendo DOM…",
+        Locale::De => "DOM wird gelesen…",
+        Locale::Fr => "Lecture du DOM…",
+        Locale::En => "Reading DOM…",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_elements_empty(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Sin árbol DOM. Pulsa «Actualizar árbol».",
+        Locale::De => "Kein DOM-Baum. «Baum aktualisieren» drücken.",
+        Locale::Fr => "Pas d’arbre DOM. Cliquez sur « Actualiser l’arbre ».",
+        Locale::En => "No DOM tree. Press «Refresh tree».",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_network_hint(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Peticiones vistas por Servo (sin códigos HTTP aún).",
+        Locale::De => "Von Servo erfasste Anfragen (noch ohne HTTP-Statuscodes).",
+        Locale::Fr => "Requêtes vues par Servo (pas encore de codes HTTP).",
+        Locale::En => "Requests seen by Servo (HTTP status codes not yet available).",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_network_empty(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Aún no hay peticiones de red.",
+        Locale::De => "Noch keine Netzwerkanfragen.",
+        Locale::Fr => "Aucune requête réseau pour l’instant.",
+        Locale::En => "No network requests yet.",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_network_col_name(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Nombre",
+        Locale::De => "Name",
+        Locale::Fr => "Nom",
+        Locale::En => "Name",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_network_col_method(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Método",
+        Locale::De => "Methode",
+        Locale::Fr => "Méthode",
+        Locale::En => "Method",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_network_col_type(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Tipo",
+        Locale::De => "Typ",
+        Locale::Fr => "Type",
+        Locale::En => "Type",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_network_col_status(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Estado",
+        Locale::De => "Status",
+        Locale::Fr => "État",
+        Locale::En => "Status",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn devtools_cycle_dock_tooltip(loc: Locale) -> &'static str {
+    match loc {
+        Locale::Es => "Cambiar acoplamiento (derecha / abajo)",
+        Locale::De => "Andocken wechseln (rechts / unten)",
+        Locale::Fr => "Changer l’ancrage (droite / bas)",
+        Locale::En => "Cycle dock side (right / bottom)",
+    }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+pub fn servo_page_console_header(loc: Locale) -> &'static str {
+    devtools_panel_header(loc)
 }
 
 #[cfg(all(feature = "servo-engine", windows))]

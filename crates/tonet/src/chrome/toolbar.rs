@@ -18,7 +18,7 @@ use super::ids::{
     omnibox_history_popup_layer, omnibox_history_scroll,
 };
 
-const TOOLBAR_H: f32 = 38.0;
+const TOOLBAR_H: f32 = 44.0;
 
 fn omnibox_history_sel_id() -> egui::Id {
     omnibox_id().with("visit_history_kb_row")
@@ -114,7 +114,7 @@ pub fn show_chrome_toolbar(
             ui,
             chrome_back(),
             "<",
-            16.0,
+            18.0,
             nav_color(can_back),
             can_back,
         )
@@ -128,7 +128,7 @@ pub fn show_chrome_toolbar(
             ui,
             chrome_forward(),
             ">",
-            16.0,
+            18.0,
             nav_color(can_forward),
             can_forward,
         )
@@ -162,7 +162,7 @@ pub fn show_chrome_toolbar(
             ui,
             chrome_reload(),
             "↻",
-            16.0,
+            18.0,
             theme::nav_glyph(),
             true,
         )
@@ -215,7 +215,7 @@ pub fn show_chrome_toolbar(
                                     ui.spacing_mut().item_spacing.x = theme::SP2;
                                     ui.label(
                                         RichText::new(chip_icon)
-                                            .size(14.0)
+                                            .size(15.0)
                                             .color(theme::chip()),
                                     )
                                     .on_hover_text(chip_tip);
@@ -331,19 +331,19 @@ pub fn show_chrome_toolbar(
         // ── Right: icon group ───────────────────────────────────
         ui.spacing_mut().item_spacing.x = theme::SP;
 
-        let _ = chrome_button(ui, chrome_tool_1(), "☆", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, chrome_tool_2(), "◯", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, chrome_tool_3(), "⊛", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, chrome_tool_4(), "⤓", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, chrome_tool_5(), "↺", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, chrome_tool_6(), "⊞", 16.0, theme::tool_icon(), true);
-        let _ = chrome_button(ui, chrome_tool_7(), "◎", 16.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_1(), "☆", 18.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_2(), "◯", 18.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_3(), "⊛", 18.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_4(), "⤓", 18.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_5(), "↺", 18.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_6(), "⊞", 18.0, theme::tool_icon(), true);
+        let _ = chrome_button(ui, chrome_tool_7(), "◎", 18.0, theme::tool_icon(), true);
 
         if chrome_button(
             ui,
             chrome_menu(),
             "☰",
-            16.0,
+            18.0,
             theme::tool_icon(),
             true,
         )

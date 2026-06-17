@@ -32,17 +32,6 @@ use crate::css::{
     tokenize_stylesheet_bundle,
 };
 
-#[cfg(all(feature = "servo-engine", windows))]
-fn servo_console_line_color(level: crate::tab::ServoConsoleLevel) -> Color32 {
-    use crate::tab::ServoConsoleLevel as L;
-    match level {
-        L::Error => theme::error_title(),
-        L::Warn => Color32::from_rgb(230, 178, 92),
-        L::Info | L::Log => theme::accent(),
-        L::Debug | L::Trace => theme::loading_muted(),
-    }
-}
-
 fn url_encode_query(query: &str) -> String {
     let mut encoded = String::with_capacity(query.len() * 3);
     for byte in query.bytes() {
@@ -91,6 +80,32 @@ fn consume_non_repeat(ctx: &egui::Context, key: egui::Key, need_command: bool) -
                     modifiers,
                     ..
                 } if *k == key && (!need_command || modifiers.command)
+            )
+        });
+        if let Some(idx) = pos {
+            input.events.remove(idx);
+            true
+        } else {
+            false
+        }
+    })
+}
+
+/// F12 or Ctrl+Shift+I — toggle DevTools console strip (do not forward to the page).
+#[cfg(all(feature = "servo-engine", windows))]
+fn consume_devtools_toggle(ctx: &egui::Context) -> bool {
+    ctx.input_mut(|input| {
+        let pos = input.events.iter().position(|e| {
+            matches!(
+                e,
+                egui::Event::Key {
+                    key,
+                    pressed: true,
+                    repeat: false,
+                    modifiers,
+                    ..
+                } if (*key == egui::Key::F12)
+                    || (*key == egui::Key::I && modifiers.command && modifiers.shift)
             )
         });
         if let Some(idx) = pos {
@@ -229,9 +244,90 @@ pub struct TonetApp {
     /// on a chrome click before `forward_captured_keyboard` runs.
     #[cfg(all(feature = "servo-engine", windows))]
     servo_prev_content_rect: Option<egui::Rect>,
+
+    /// URLs from recently closed tabs (LIFO) for Ctrl+Shift+T.
+    closed_tabs: Vec<String>,
+
+    /// DevTools dock and layout (F12 / Ctrl+Shift+I).
+    #[cfg(all(feature = "servo-engine", windows))]
+    devtools_dock: crate::devtools::DevToolsDock,
+    #[cfg(all(feature = "servo-engine", windows))]
+    devtools_split: f32,
+    #[cfg(all(feature = "servo-engine", windows))]
+    devtools_active_panel: crate::devtools::DevToolsPanel,
+    #[cfg(all(feature = "servo-engine", windows))]
+    devtools_drawer_open: bool,
+    #[cfg(all(feature = "servo-engine", windows))]
+    devtools_drawer_panel: crate::devtools::DevToolsDrawerPanel,
 }
 
 impl TonetApp {
+    #[cfg(all(feature = "servo-engine", windows))]
+    fn paint_devtools_pane(
+        &mut self,
+        ui: &mut egui::Ui,
+        loc: Locale,
+        tab_index: usize,
+        dt_rect: egui::Rect,
+        page_area: egui::Rect,
+    ) {
+        if self.devtools_active_panel == crate::devtools::DevToolsPanel::Elements
+            && self.tabs[tab_index].servo_dom_root.is_none()
+            && self.tabs[tab_index].servo_dom_error.is_none()
+            && !self.servo_viewport.dom_snapshot_inflight()
+        {
+            self.servo_viewport.request_dom_snapshot();
+        }
+        let dom_loading = self.servo_viewport.dom_snapshot_inflight();
+        let dom_root = self.tabs[tab_index].servo_dom_root.as_ref();
+        let dom_error = self.tabs[tab_index].servo_dom_error.as_deref();
+        let network = self.tabs[tab_index].servo_network_log.as_slice();
+        let console = self.tabs[tab_index].servo_console.as_slice();
+        let mut clear_console = false;
+        let mut clear_network = false;
+        let mut refresh_dom = false;
+        let resp = crate::devtools::show_devtools(
+            ui,
+            loc,
+            dt_rect,
+            &mut self.devtools_dock,
+            &mut self.devtools_split,
+            &mut self.devtools_active_panel,
+            &mut self.devtools_drawer_open,
+            &mut self.devtools_drawer_panel,
+            console,
+            network,
+            dom_root,
+            dom_error,
+            dom_loading,
+            &mut || clear_console = true,
+            &mut || clear_network = true,
+            &mut || refresh_dom = true,
+        );
+        if clear_console {
+            self.tabs[tab_index].servo_console.clear();
+        }
+        if clear_network {
+            self.tabs[tab_index].servo_network_log.clear();
+            self.servo_viewport.clear_network_log();
+        }
+        if refresh_dom {
+            self.tabs[tab_index].servo_dom_root = None;
+            self.tabs[tab_index].servo_dom_error = None;
+            self.servo_viewport.request_dom_snapshot();
+        }
+        if resp.close {
+            self.tabs[tab_index].dev_tools_open = false;
+        }
+        crate::devtools::paint_split_handle(
+            ui,
+            page_area,
+            dt_rect,
+            self.devtools_dock,
+            &mut self.devtools_split,
+        );
+    }
+
     fn apply_egui_visuals(
         ctx: &egui::Context,
         settings: &AppSettings,
@@ -324,6 +420,17 @@ impl TonetApp {
             servo_content_rect: None,
             #[cfg(all(feature = "servo-engine", windows))]
             servo_prev_content_rect: None,
+            closed_tabs: Vec::new(),
+            #[cfg(all(feature = "servo-engine", windows))]
+            devtools_dock: crate::devtools::DevToolsDock::Right,
+            #[cfg(all(feature = "servo-engine", windows))]
+            devtools_split: crate::devtools::default_split_ratio(crate::devtools::DevToolsDock::Right),
+            #[cfg(all(feature = "servo-engine", windows))]
+            devtools_active_panel: crate::devtools::DevToolsPanel::Console,
+            #[cfg(all(feature = "servo-engine", windows))]
+            devtools_drawer_open: false,
+            #[cfg(all(feature = "servo-engine", windows))]
+            devtools_drawer_panel: crate::devtools::DevToolsDrawerPanel::Console,
         };
         this.sync_window_title(&cc.egui_ctx);
         this
@@ -414,6 +521,8 @@ impl TonetApp {
         }
         // Keep background fetches running; `poll_fetch` delivers results per tab.
         self.active_tab = idx;
+        #[cfg(all(feature = "servo-engine", windows))]
+        self.servo_viewport.set_active_tab_id(self.tabs[idx].id);
         self.sync_window_title(ctx);
         self.ensure_http_tab_loaded(ctx);
     }
@@ -430,6 +539,9 @@ impl TonetApp {
         }
         self.tabs.push(Tab::new(DEFAULT_HOME_URL));
         self.active_tab = self.tabs.len() - 1;
+        #[cfg(all(feature = "servo-engine", windows))]
+        self.servo_viewport
+            .set_active_tab_id(self.tabs[self.active_tab].id);
         self.sync_window_title(ctx);
     }
 
@@ -447,11 +559,24 @@ impl TonetApp {
         }
         self.tabs.push(Tab::new(url));
         self.active_tab = self.tabs.len() - 1;
+        #[cfg(all(feature = "servo-engine", windows))]
+        self.servo_viewport
+            .set_active_tab_id(self.tabs[self.active_tab].id);
         self.sync_window_title(ctx);
         self.start_fetch_with_intent(NavigateIntent::NewPage, ctx);
     }
 
     fn close_tab_at(&mut self, index: usize, ctx: &egui::Context) {
+        let closed = &self.tabs[index];
+        let url = closed.url_input.trim();
+        if !url.is_empty() && !closed.is_new_tab() {
+            self.closed_tabs.push(url.to_string());
+            if self.closed_tabs.len() > 25 {
+                self.closed_tabs.remove(0);
+            }
+        }
+        #[cfg(all(feature = "servo-engine", windows))]
+        self.servo_viewport.close_tab_session(self.tabs[index].id);
         self.tabs[index].cancel_in_flight();
         if self.tabs.len() <= 1 {
             ctx.send_viewport_cmd(ViewportCommand::Close);
@@ -533,7 +658,7 @@ impl TonetApp {
         {
             if crate::servo_engine::servo_supersedes_dom_paint(servo_viewport, tab.url_input.trim()) {
                 tab.cancel_in_flight();
-                tab.loading = true;
+                tab.loading = false;
                 tab.error_message = None;
                 tab.favicon_uri.clear();
                 tab.favicon_fetch_rx = None;
@@ -549,9 +674,10 @@ impl TonetApp {
                 tab.pending_nav = Some((resolved.clone(), intent));
                 tab.apply_successful_navigation(Vec::new());
                 tab.fetch_rx = None;
-                if matches!(intent, NavigateIntent::Reload) {
-                    self.servo_viewport.webview_reload();
-                }
+                tab.servo_pending_load = Some((
+                    resolved.clone(),
+                    matches!(intent, NavigateIntent::Reload),
+                ));
                 self.sync_window_title(ctx);
                 ctx.request_repaint();
                 return;
@@ -607,8 +733,11 @@ impl TonetApp {
             let t = self.active_tab().url_input.trim();
             if crate::servo_engine::servo_supersedes_dom_paint(self.settings.system.experimental_servo_viewport, t)
             {
-                self.active_tab_mut().loading = true;
-                self.servo_viewport.webview_reload();
+                self.active_tab_mut().loading = false;
+                self.active_tab_mut().servo_pending_load = Some((
+                    self.active_tab().url_input.clone(),
+                    true,
+                ));
                 self.sync_window_title(ctx);
                 ctx.request_repaint();
                 return;
@@ -1023,6 +1152,12 @@ impl eframe::App for TonetApp {
         self.maybe_schedule_update_checks(ctx);
 
         #[cfg(all(feature = "servo-engine", windows))]
+        if consume_devtools_toggle(ctx) {
+            let open = self.active_tab_mut().dev_tools_open;
+            self.active_tab_mut().dev_tools_open = !open;
+        }
+
+        #[cfg(all(feature = "servo-engine", windows))]
         {
             self.servo_viewport
                 .release_servo_keyboard_capture(ctx, self.servo_prev_content_rect);
@@ -1041,19 +1176,53 @@ impl eframe::App for TonetApp {
             self.reload_page(ctx);
         }
 
-        if consume_non_repeat(ctx, egui::Key::T, true) {
+        if ctx.input(|i| i.modifiers.command && i.modifiers.shift && i.key_pressed(egui::Key::T)) {
+            if let Some(url) = self.closed_tabs.pop() {
+                if self.tabs.len() >= MAX_TABS {
+                    self.closed_tabs.push(url);
+                } else {
+                    self.tabs.push(Tab::new(url));
+                    self.active_tab = self.tabs.len() - 1;
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    self.servo_viewport
+                        .set_active_tab_id(self.tabs[self.active_tab].id);
+                    self.sync_window_title(ctx);
+                    self.start_fetch_new(ctx);
+                }
+            }
+            ctx.input_mut(|i| {
+                i.events.retain(|e| {
+                    !matches!(
+                        e,
+                        egui::Event::Key {
+                            key: egui::Key::T,
+                            ..
+                        }
+                    )
+                })
+            });
+        } else if consume_non_repeat(ctx, egui::Key::T, true) {
             self.open_new_tab(ctx);
+        }
+        if consume_non_repeat(ctx, egui::Key::N, true) {
+            if let Ok(exe) = std::env::current_exe() {
+                let _ = std::process::Command::new(exe).spawn();
+            }
         }
         if consume_non_repeat(ctx, egui::Key::W, true) {
             self.close_tab_at(self.active_tab, ctx);
         }
 
         if consume_non_repeat(ctx, egui::Key::H, true) {
-            self.active_tab_mut().url_input = InternalRoute::History.canonical_url().to_string();
+            self.open_new_tab(ctx);
+            self.active_tab_mut().url_input =
+                InternalRoute::History.canonical_url().to_string();
             self.start_fetch_new(ctx);
         }
         if consume_non_repeat(ctx, egui::Key::J, true) {
-            self.active_tab_mut().url_input = InternalRoute::Downloads.canonical_url().to_string();
+            self.open_new_tab(ctx);
+            self.active_tab_mut().url_input =
+                InternalRoute::Downloads.canonical_url().to_string();
             self.start_fetch_new(ctx);
         }
 
@@ -1343,8 +1512,8 @@ impl eframe::App for TonetApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             self.servo_content_rect = None;
-            let tab = &mut self.tabs[active_i];
             if is_new_tab {
+                let tab = &mut self.tabs[active_i];
                 let nta = crate::new_tab::show_new_tab_page(
                     ui,
                     ctx,
@@ -1361,6 +1530,7 @@ impl eframe::App for TonetApp {
                     let _ = self.settings.save();
                 }
             } else if let Some(parsed) = internal_route {
+                let tab = &mut self.tabs[active_i];
                 let route = parsed.route;
                 let settings_url = tab.url_input.clone();
                 let out = match route {
@@ -1411,7 +1581,7 @@ impl eframe::App for TonetApp {
                     self.servo_viewport.clear_servo_permission_memory();
                 }
             } else {
-                let url_trim = tab.url_input.trim();
+                let url_trim = self.tabs[active_i].url_input.trim();
                 #[cfg(all(feature = "servo-engine", windows))]
                 let tonet_servo_paint = internal_pages::parse_tonet_url(url_trim).is_some()
                     && crate::servo_engine::servo_supersedes_dom_paint(
@@ -1426,12 +1596,17 @@ impl eframe::App for TonetApp {
                 {
                     self.servo_content_rect = Some(ui.max_rect());
                 }
-                if let Some(err) = &tab.error_message {
+                if let Some(err) = &self.tabs[active_i].error_message {
                     show_error_panel(ui, loc, err);
                     ui.add_space(8.0);
                 }
 
-                if tab.loading {
+                let servo_dom_early = crate::servo_engine::servo_supersedes_dom_paint(
+                    self.settings.system.experimental_servo_viewport,
+                    self.tabs[active_i].url_input.as_str(),
+                ) && !self.tabs[active_i].is_new_tab()
+                    && self.tabs[active_i].error_message.is_none();
+                if self.tabs[active_i].loading && !servo_dom_early {
                     show_loading(ui, loc);
                 }
 
@@ -1439,7 +1614,11 @@ impl eframe::App for TonetApp {
                 {
                     let http = url_trim.starts_with("http://") || url_trim.starts_with("https://");
                     #[cfg(all(feature = "servo-engine", windows))]
-                    if http && !crate::servo_engine::servo_supersedes_dom_paint(false, tab.url_input.trim())
+                    if http
+                        && !crate::servo_engine::servo_supersedes_dom_paint(
+                            false,
+                            self.tabs[active_i].url_input.trim(),
+                        )
                     {
                         ui.horizontal_wrapped(|ui| {
                             ui.label(
@@ -1468,131 +1647,120 @@ impl eframe::App for TonetApp {
                     }
                 }
 
-                let servo_dom = crate::servo_engine::servo_supersedes_dom_paint(
-                    self.settings.system.experimental_servo_viewport,
-                    tab.url_input.as_str(),
-                ) && !tab.loading
-                    && tab.error_message.is_none();
+                let servo_dom = servo_dom_early;
 
                 if servo_dom {
-                    // Leave a right gutter for a visible scrollbar strip; Win32 popup matches `inner` only.
-                    const SERVO_SCROLL_GUTTER: f32 = 14.0;
-                    #[cfg(all(feature = "servo-engine", windows))]
-                    const SERVO_CONSOLE_STRIP_H: f32 = 120.0;
                     let full = ui.max_rect();
                     #[cfg(all(feature = "servo-engine", windows))]
-                    let console_h = if tab.servo_console.is_empty() {
-                        0.0
-                    } else {
-                        SERVO_CONSOLE_STRIP_H
-                    };
+                    let dev_open = self.tabs[active_i].dev_tools_open;
                     #[cfg(not(all(feature = "servo-engine", windows)))]
-                    let console_h = 0.0_f32;
+                    let dev_open = false;
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    let (page_area, devtools_rect) = crate::devtools::split_page_and_devtools(
+                        full,
+                        dev_open,
+                        self.devtools_dock,
+                        self.devtools_split,
+                    );
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    let (page_area, devtools_rect) = (full, None);
                     let inner = egui::Rect::from_min_max(
-                        full.min,
-                        full.max - egui::vec2(SERVO_SCROLL_GUTTER, console_h),
+                        page_area.min,
+                        page_area.max - egui::vec2(theme::SERVO_SCROLL_GUTTER, 0.0),
                     );
                     self.servo_content_rect = Some(inner);
-                    ui.allocate_rect(inner, egui::Sense::click_and_drag());
+                    let viewport_interact = ui.interact(
+                        inner,
+                        crate::servo_engine::embedder_ids::page_viewport_input(),
+                        egui::Sense::click_and_drag(),
+                    );
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    let ppp = ui.ctx().pixels_per_point();
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    let ppp = 1.0_f32;
                     #[cfg(all(feature = "servo-engine", windows))]
                     {
-                        let ppp = ui.ctx().pixels_per_point();
-                        self.servo_viewport
-                            .feed_servo_slint_egui_pointer(ctx, inner, ppp);
+                        let pointer_hint = viewport_interact
+                            .hovered()
+                            .then(|| viewport_interact.hover_pos())
+                            .flatten();
+                        self.servo_viewport.feed_servo_slint_egui_pointer(
+                            ctx,
+                            inner,
+                            ppp,
+                            pointer_hint,
+                        );
                         self.servo_viewport
                             .paint_servo_slint_embed_in_rect(ctx, ui, inner);
                     }
-                    let track = egui::Rect::from_min_max(
-                        egui::pos2(inner.right(), inner.top()),
-                        egui::pos2(full.max.x, inner.max.y),
-                    );
-                    let p = ui.painter();
-                    p.rect_filled(track, 3.0, theme::servo_scroll_gutter_fill());
-                    p.rect_stroke(
-                        track,
-                        3.0,
-                        egui::Stroke::new(1.0, theme::separator()),
-                    );
-                    let cx = track.center().x;
-                    p.line_segment(
-                        [
-                            egui::pos2(cx, track.top() + 5.0),
-                            egui::pos2(cx, track.bottom() - 5.0),
-                        ],
-                        egui::Stroke::new(3.5, theme::servo_scroll_thumb()),
-                    );
                     #[cfg(all(feature = "servo-engine", windows))]
-                    if console_h > 0.0 {
-                        let console_rect = egui::Rect::from_min_max(
-                            egui::pos2(full.min.x, inner.max.y),
-                            egui::pos2(full.max.x - SERVO_SCROLL_GUTTER, full.max.y),
-                        );
-                        ui.allocate_new_ui(
-                            egui::UiBuilder::new()
-                                .id_salt(crate::servo_engine::embedder_ids::page_console_strip())
-                                .max_rect(console_rect)
-                                .layout(egui::Layout::top_down(egui::Align::Min)),
-                            |ui| {
-                            ui.set_min_size(console_rect.size());
-                            egui::Frame::default()
-                                .fill(theme::content_bg())
-                                .stroke(egui::Stroke::new(1.0, theme::separator()))
-                                .show(ui, |ui| {
-                                    ui.horizontal(|ui| {
-                                        ui.label(
-                                            egui::RichText::new(i18n::servo_page_console_header(loc))
-                                                .strong(),
-                                        );
-                                        if ui
-                                            .small_button(i18n::servo_page_console_clear(loc))
-                                            .clicked()
-                                        {
-                                            tab.servo_console.clear();
-                                        }
-                                    });
-                                    egui::ScrollArea::vertical()
-                                        .max_height(console_h - 28.0)
-                                        .stick_to_bottom(true)
-                                        .show(ui, |ui| {
-                                            ui.style_mut().override_font_id = Some(
-                                                egui::FontId::monospace(11.0),
-                                            );
-                                            for (lvl, text) in &tab.servo_console {
-                                                let c = servo_console_line_color(*lvl);
-                                                let line = format!("[{}] {}", lvl.as_label(), text);
-                                                ui.label(
-                                                    egui::RichText::new(line)
-                                                        .small()
-                                                        .color(c),
-                                                );
-                                            }
-                                        });
-                                });
+                    {
+                        crate::devtools::paint_servo_scrollbar(
+                            ui,
+                            crate::devtools::ServoScrollbarParams {
+                                viewport: &self.servo_viewport,
+                                inner,
+                                full_max_x: page_area.max.x,
+                                ppp,
                             },
                         );
                     }
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    if let Some(dt_rect) = devtools_rect {
+                        Self::paint_devtools_pane(self, ui, loc, active_i, dt_rect, page_area);
+                    }
                 } else {
-                    egui::ScrollArea::vertical()
-                        .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            if !tab.loading && tab.error_message.is_none() {
-                                let author_hints =
-                                    compute_dom_paint_hints(&tab.dom, &tab.loaded_stylesheet_parsed);
-                                render_nodes(
-                                    ui,
-                                    loc,
-                                    &tab.dom,
-                                    Some(&author_hints),
-                                    &mut tab.pending_link_navigation,
-                                );
-                            } else if !tab.loading && tab.error_message.is_some() {
-                                ui.label(
-                                    egui::RichText::new(i18n::suggestion_fix_url(loc))
-                                        .italics()
-                                        .color(theme::loading_muted()),
-                                );
-                            }
-                        });
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    let dev_open = self.tabs[active_i].dev_tools_open;
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    let dev_open = false;
+                    let full = ui.max_rect();
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    let (page_area, devtools_rect) = crate::devtools::split_page_and_devtools(
+                        full,
+                        dev_open,
+                        self.devtools_dock,
+                        self.devtools_split,
+                    );
+                    #[cfg(not(all(feature = "servo-engine", windows)))]
+                    let (page_area, devtools_rect) = (full, None);
+                    {
+                        let tab = &mut self.tabs[active_i];
+                        ui.allocate_new_ui(
+                            egui::UiBuilder::new()
+                                .max_rect(page_area)
+                                .layout(egui::Layout::top_down(egui::Align::Min)),
+                            |ui| {
+                                egui::ScrollArea::vertical()
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        if !tab.loading && tab.error_message.is_none() {
+                                            let author_hints = compute_dom_paint_hints(
+                                                &tab.dom,
+                                                &tab.loaded_stylesheet_parsed,
+                                            );
+                                            render_nodes(
+                                                ui,
+                                                loc,
+                                                &tab.dom,
+                                                Some(&author_hints),
+                                                &mut tab.pending_link_navigation,
+                                            );
+                                        } else if !tab.loading && tab.error_message.is_some() {
+                                            ui.label(
+                                                egui::RichText::new(i18n::suggestion_fix_url(loc))
+                                                    .italics()
+                                                    .color(theme::loading_muted()),
+                                            );
+                                        }
+                                    });
+                            },
+                        );
+                    }
+                    #[cfg(all(feature = "servo-engine", windows))]
+                    if let Some(dt_rect) = devtools_rect {
+                        Self::paint_devtools_pane(self, ui, loc, active_i, dt_rect, page_area);
+                    }
                 }
             }
         });
@@ -1693,19 +1861,25 @@ impl eframe::App for TonetApp {
             self.persist_last_session();
         }
 
-        let tab_url = self.active_tab().url_input.clone();
+        let active_i = self.active_tab;
+        let tab_url = self.tabs[active_i].url_input.clone();
+        #[cfg(all(feature = "servo-engine", windows))]
+        let servo_pending = self.tabs[active_i].servo_pending_load.take();
         #[cfg(all(feature = "servo-engine", windows))]
         self.servo_viewport.sync_tonet_scheme_snapshot(
             self.loc(),
             &self.settings,
             &self.browser_log,
         );
+        #[cfg(all(feature = "servo-engine", windows))]
         self.servo_viewport.tick(
             ctx,
             frame,
             self.settings.system.experimental_servo_viewport,
+            self.tabs[active_i].id,
             tab_url.as_str(),
             self.servo_content_rect,
+            servo_pending,
         );
 
         #[cfg(all(feature = "servo-engine", windows))]

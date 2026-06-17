@@ -47,6 +47,8 @@ mod content_disposition;
 #[cfg(all(feature = "servo-engine", windows))]
 mod download_heuristic;
 #[cfg(all(feature = "servo-engine", windows))]
+pub mod embedder_devtools;
+#[cfg(all(feature = "servo-engine", windows))]
 pub mod embedder_ids;
 #[cfg(all(feature = "servo-engine", windows))]
 mod runtime_win;
@@ -134,12 +136,17 @@ pub fn servo_supersedes_dom_paint(user_setting: bool, tab_url_trim: &str) -> boo
 /// Owns optional Servo runtime (Windows popup). Always present on `TonetApp` via [`Default`].
 pub struct ServoViewportRuntime {
     #[cfg(all(feature = "servo-engine", windows))]
-    win: Option<runtime_win::ServoWinHost>,
+    sessions: std::collections::HashMap<u32, runtime_win::ServoWinHost>,
     #[cfg(all(feature = "servo-engine", windows))]
-    slint_embed_tex: std::cell::RefCell<Option<egui::TextureHandle>>,
+    active_tab_id: Option<u32>,
+    #[cfg(all(feature = "servo-engine", windows))]
+    slint_embed_tex: std::cell::RefCell<std::collections::HashMap<u32, egui::TextureHandle>>,
     /// Shared snapshot for `tonet://` HTML served inside Servo (`load_web_resource` intercept).
     #[cfg(all(feature = "servo-engine", windows))]
     tonet_scheme_state: std::sync::Arc<std::sync::Mutex<tonet_scheme_html::TonetSchemeSharedState>>,
+    /// One [`servo::Servo`] per process (`servo-config` [`Opts`] may only be initialized once).
+    #[cfg(all(feature = "servo-engine", windows))]
+    shared_servo: Option<std::rc::Rc<servo::Servo>>,
     #[cfg(not(all(feature = "servo-engine", windows)))]
     _marker: std::marker::PhantomData<()>,
 }
@@ -148,17 +155,62 @@ impl Default for ServoViewportRuntime {
     fn default() -> Self {
         Self {
             #[cfg(all(feature = "servo-engine", windows))]
-            win: None,
+            sessions: std::collections::HashMap::new(),
             #[cfg(all(feature = "servo-engine", windows))]
-            slint_embed_tex: std::cell::RefCell::new(None),
+            active_tab_id: None,
+            #[cfg(all(feature = "servo-engine", windows))]
+            slint_embed_tex: std::cell::RefCell::new(std::collections::HashMap::new()),
             #[cfg(all(feature = "servo-engine", windows))]
             tonet_scheme_state: std::sync::Arc::new(std::sync::Mutex::new(
                 tonet_scheme_html::TonetSchemeSharedState::default(),
             )),
+            shared_servo: None,
             #[cfg(not(all(feature = "servo-engine", windows)))]
             _marker: std::marker::PhantomData,
         }
     }
+}
+
+#[cfg(all(feature = "servo-engine", windows))]
+impl ServoViewportRuntime {
+    fn ensure_shared_servo(&mut self, ctx: &egui::Context) -> std::rc::Rc<servo::Servo> {
+        if let Some(s) = self.shared_servo.as_ref() {
+            return std::rc::Rc::clone(s);
+        }
+        let servo = std::rc::Rc::new(
+            runtime_win::build_shared_servo(ctx),
+        );
+        self.shared_servo = Some(std::rc::Rc::clone(&servo));
+        servo
+    }
+
+    fn spin_shared_servo(&self) {
+        if let Some(servo) = self.shared_servo.as_ref() {
+            servo.spin_event_loop();
+        }
+    }
+    fn active_host(&self) -> Option<&runtime_win::ServoWinHost> {
+        let id = self.active_tab_id?;
+        self.sessions.get(&id)
+    }
+
+    fn active_host_mut(&mut self) -> Option<&mut runtime_win::ServoWinHost> {
+        let id = self.active_tab_id?;
+        self.sessions.get_mut(&id)
+    }
+
+    pub fn set_active_tab_id(&mut self, tab_id: u32) {
+        self.active_tab_id = Some(tab_id);
+    }
+
+    pub fn close_tab_session(&mut self, tab_id: u32) {
+        self.sessions.remove(&tab_id);
+        self.slint_embed_tex.borrow_mut().remove(&tab_id);
+        if self.active_tab_id == Some(tab_id) {
+            self.active_tab_id = None;
+        }
+    }
+
 }
 
 impl ServoViewportRuntime {
@@ -191,7 +243,7 @@ impl ServoViewportRuntime {
     /// reloading policy without restarting the process).
     #[cfg(all(feature = "servo-engine", windows))]
     pub fn clear_servo_permission_memory(&mut self) {
-        if let Some(host) = self.win.as_mut() {
+        for host in self.sessions.values_mut() {
             host.clear_servo_permission_memory();
         }
     }
@@ -203,7 +255,7 @@ impl ServoViewportRuntime {
     /// Clear Servo embedder queues that mirror or feed the downloads / console UI (`ServoWinHost::clear_ephemeral_embedder_queues`).
     #[cfg(all(feature = "servo-engine", windows))]
     pub fn clear_servo_ephemeral_queues(&self) {
-        if let Some(host) = self.win.as_ref() {
+        for host in self.sessions.values() {
             host.clear_ephemeral_embedder_queues();
         }
     }
@@ -220,13 +272,15 @@ impl ServoViewportRuntime {
         ctx: &egui::Context,
         prev_content_rect: Option<egui::Rect>,
     ) {
-        let Some(host) = self.win.as_ref() else {
-            return;
-        };
         if ctx.memory(|m| m.has_focus(crate::ui::omnibox_id())) {
-            host.clear_page_keyboard_capture();
+            for host in self.sessions.values() {
+                host.clear_page_keyboard_capture();
+            }
             return;
         }
+        let Some(host) = self.active_host() else {
+            return;
+        };
         let Some(rect) = prev_content_rect else {
             return;
         };
@@ -260,22 +314,27 @@ impl ServoViewportRuntime {
             return;
         }
         if ctx.memory(|m| m.has_focus(crate::ui::omnibox_id())) {
-            if let Some(host) = self.win.as_ref() {
+            for host in self.sessions.values() {
                 host.clear_page_keyboard_capture();
             }
             return;
         }
-        let Some(host) = self.win.as_ref() else {
+        let Some(host) = self.active_host() else {
             return;
         };
-        if !host.page_captures_keyboard() {
-            return;
-        }
-        let any = host.forward_egui_keyboard(ctx);
-        if any {
-            if let Some(host) = self.win.as_mut() {
-                host.spin_event_loop();
+        let mut any = false;
+        if host.page_captures_keyboard() {
+            any = host.forward_egui_keyboard(ctx);
+        } else if let Some(rect) = host.last_content_rect_egui() {
+            let over_page = ctx.input(|i| {
+                runtime_win::servo_embed_pointer_over_rect(&i.pointer, rect)
+            });
+            if over_page {
+                any = host.forward_egui_keyboard_navigation_hover(ctx);
             }
+        }
+        if any {
+            self.spin_shared_servo();
         }
     }
 
@@ -288,37 +347,62 @@ impl ServoViewportRuntime {
         ctx: &egui::Context,
         frame: &eframe::Frame,
         user_setting: bool,
+        active_tab_id: u32,
         tab_url: &str,
         content_rect: Option<egui::Rect>,
+        pending_load: Option<(String, bool)>,
     ) {
         #[cfg(all(feature = "servo-engine", windows))]
         {
             if !viewport_runtime_requested(user_setting) {
-                self.win.take();
-                *self.slint_embed_tex.borrow_mut() = None;
+                self.sessions.clear();
+                self.slint_embed_tex.borrow_mut().clear();
+                self.active_tab_id = None;
                 return;
             }
+            self.active_tab_id = Some(active_tab_id);
             let ppp = ctx.pixels_per_point();
-            if self.win.is_none() {
-                self.win = runtime_win::ServoWinHost::try_new(
+            let shared_servo = self.ensure_shared_servo(ctx);
+            let servo_page = servo_supersedes_dom_paint(user_setting, tab_url);
+            if servo_page && !self.sessions.contains_key(&active_tab_id) {
+                if let Ok(host) = runtime_win::ServoWinHost::try_new(
                     ctx,
                     frame,
                     tab_url,
                     content_rect,
                     ppp,
                     std::sync::Arc::clone(&self.tonet_scheme_state),
-                )
-                .ok();
+                    shared_servo,
+                ) {
+                    self.sessions.insert(active_tab_id, host);
+                }
             }
-            if let Some(host) = self.win.as_mut() {
-                let throttle_servo_spin = viewport_runtime_requested(user_setting)
-                    && !servo_supersedes_dom_paint(user_setting, tab_url);
-                host.tick(tab_url, content_rect, ppp, ctx, throttle_servo_spin);
+            if let Some((url, reload)) = pending_load {
+                if let Some(host) = self.sessions.get_mut(&active_tab_id) {
+                    host.navigate_url(url.as_str(), reload);
+                }
+            }
+            let active = active_tab_id;
+            if !self.sessions.is_empty() {
+                self.spin_shared_servo();
+            }
+            for (tab_id, host) in self.sessions.iter_mut() {
+                if *tab_id == active && servo_page {
+                    host.tick(tab_url, content_rect, ppp, ctx, false);
+                }
             }
         }
         #[cfg(not(all(feature = "servo-engine", windows)))]
         {
-            let _ = (ctx, frame, user_setting, tab_url, content_rect);
+            let _ = (
+                ctx,
+                frame,
+                user_setting,
+                active_tab_id,
+                tab_url,
+                content_rect,
+                pending_load,
+            );
         }
     }
 
@@ -329,10 +413,57 @@ impl ServoViewportRuntime {
         ctx: &egui::Context,
         content_rect: egui::Rect,
         ppp: f32,
+        pointer_hint: Option<egui::Pos2>,
     ) {
-        if let Some(host) = self.win.as_ref() {
-            host.feed_egui_servo_embed_input(ctx, content_rect, ppp);
+        if let Some(host) = self.active_host() {
+            host.feed_egui_servo_embed_input(ctx, content_rect, ppp, pointer_hint);
         }
+    }
+
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub fn scroll_thumb_ratio(&self) -> f32 {
+        self.active_host()
+            .map(|h| h.scroll_thumb_ratio())
+            .unwrap_or(0.0)
+    }
+
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub fn set_scroll_thumb_ratio(&self, ratio: f32) {
+        if let Some(host) = self.active_host() {
+            host.set_scroll_thumb_ratio(ratio);
+        }
+    }
+
+    pub fn request_dom_snapshot(&self) {
+        if let Some(host) = self.active_host() {
+            host.request_dom_snapshot();
+        }
+    }
+
+    pub fn clear_network_log(&self) {
+        if let Some(host) = self.active_host() {
+            host.clear_network_log();
+        }
+    }
+
+    pub fn dom_snapshot_inflight(&self) -> bool {
+        self.active_host()
+            .is_some_and(|h| h.dom_snapshot_inflight())
+    }
+
+    #[cfg(all(feature = "servo-engine", windows))]
+    pub fn scroll_by_pixels(
+        &self,
+        dx_px: f32,
+        dy_px: f32,
+        content: egui::Rect,
+        ppp: f32,
+        pointer_hint: Option<egui::Pos2>,
+    ) {
+        let Some(host) = self.active_host() else {
+            return;
+        };
+        host.scroll_by_pixels(dx_px, dy_px, content, ppp, pointer_hint);
     }
 
     /// Draw the latest Servo framebuffer (GPU readback) into `rect`; clears the texture cache when there is no frame yet.
@@ -343,24 +474,33 @@ impl ServoViewportRuntime {
         ui: &mut egui::Ui,
         rect: egui::Rect,
     ) {
-        let Some(host) = self.win.as_ref() else {
+        let Some(tab_id) = self.active_tab_id else {
+            return;
+        };
+        let Some(host) = self.sessions.get(&tab_id) else {
             return;
         };
         let Some(img) = host.slint_egui_frame_snapshot() else {
-            *self.slint_embed_tex.borrow_mut() = None;
+            self.slint_embed_tex.borrow_mut().remove(&tab_id);
             ui.allocate_rect(rect, egui::Sense::hover());
             return;
         };
         let opts = egui::TextureOptions::LINEAR;
+        let tex_name = format!("tonet_servo_frame_{tab_id}");
         {
-            let mut slot = self.slint_embed_tex.borrow_mut();
-            match &mut *slot {
+            let mut map = self.slint_embed_tex.borrow_mut();
+            match map.get_mut(&tab_id) {
                 Some(tex) => tex.set(img, opts),
-                None => *slot = Some(ctx.load_texture("tonet_servo_slint_frame", img, opts)),
+                None => {
+                    map.insert(
+                        tab_id,
+                        ctx.load_texture(tex_name, img, opts),
+                    );
+                }
             }
         }
-        let tex = self.slint_embed_tex.borrow();
-        let Some(texture) = tex.as_ref() else {
+        let map = self.slint_embed_tex.borrow();
+        let Some(texture) = map.get(&tab_id) else {
             return;
         };
         ui.allocate_new_ui(egui::UiBuilder::new().max_rect(rect), |ui| {
@@ -396,7 +536,7 @@ impl ServoViewportRuntime {
             tab.servo_console.clear();
             return;
         }
-        let Some(host) = self.win.as_ref() else {
+        let Some(host) = self.active_host() else {
             return;
         };
         host.sync_into_tab(tab, ctx, browser_log);
@@ -417,7 +557,7 @@ impl ServoViewportRuntime {
         if !servo_supersedes_dom_paint(user_setting, tab_url) {
             return;
         }
-        let Some(host) = self.win.as_mut() else {
+        let Some(host) = self.active_host_mut() else {
             return;
         };
         let spin = host.show_simple_dialog_if_pending(ctx, loc)
@@ -428,32 +568,31 @@ impl ServoViewportRuntime {
             || host.show_color_picker_if_pending(ctx, loc)
             || host.poll_file_picker_completion(ctx);
         if spin {
-            host.spin_event_loop();
+            self.spin_shared_servo();
         }
     }
 
     #[cfg(all(feature = "servo-engine", windows))]
     pub fn webview_reload(&self) {
-        if let Some(host) = self.win.as_ref() {
+        if let Some(host) = self.active_host() {
             host.webview_reload();
         }
     }
 
     #[cfg(all(feature = "servo-engine", windows))]
     pub fn webview_go_back(&self) -> bool {
-        self.win.as_ref().is_some_and(|h| h.webview_go_back())
+        self.active_host().is_some_and(|h| h.webview_go_back())
     }
 
     #[cfg(all(feature = "servo-engine", windows))]
     pub fn webview_go_forward(&self) -> bool {
-        self.win.as_ref().is_some_and(|h| h.webview_go_forward())
+        self.active_host().is_some_and(|h| h.webview_go_forward())
     }
 
     /// URL from the Servo page context menu (“Open link in new Tonet tab”), if the user chose it this frame.
     #[cfg(all(feature = "servo-engine", windows))]
     pub fn take_pending_open_link_new_tonet_tab(&self) -> Option<String> {
-        self.win
-            .as_ref()
+        self.active_host()
             .and_then(|h| h.take_pending_open_link_new_tonet_tab())
     }
 
@@ -466,7 +605,7 @@ impl ServoViewportRuntime {
     /// Web Notification API from Servo: egui toast in the top chrome when the experimental viewport is active.
     #[cfg(all(feature = "servo-engine", windows))]
     pub fn show_web_notification_toast(&self, ctx: &egui::Context, loc: crate::i18n::Locale) {
-        if let Some(host) = self.win.as_ref() {
+        if let Some(host) = self.active_host() {
             host.show_web_notification_toast(ctx, loc);
         }
     }

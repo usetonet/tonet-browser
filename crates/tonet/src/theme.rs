@@ -36,8 +36,12 @@ pub const SP2: f32 = 8.0;
 pub const SP3: f32 = 12.0;
 
 // ── Chrome button hit-area / rounding ───────────────────────────────
-pub const CHROME_BTN: f32 = 32.0;
-pub const CHROME_BTN_ROUNDING: f32 = 6.0;
+pub const CHROME_BTN: f32 = 36.0;
+pub const CHROME_BTN_ROUNDING: f32 = 7.0;
+
+/// Servo viewport right gutter (scrollbar track + arrows).
+pub const SERVO_SCROLL_GUTTER: f32 = 16.0;
+pub const SERVO_SCROLL_ARROW_H: f32 = 11.0;
 
 // ── Chrome / content ────────────────────────────────────────────────
 pub fn chrome_bg() -> Color32 {
@@ -64,8 +68,58 @@ pub fn servo_scroll_gutter_fill() -> Color32 {
 
 pub fn servo_scroll_thumb() -> Color32 {
     pick(
-        Color32::from_rgb(92, 98, 112),
+        Color32::from_rgb(118, 124, 138),
         Color32::from_rgb(140, 145, 158),
+    )
+}
+
+pub fn servo_scroll_arrow() -> Color32 {
+    pick(
+        Color32::from_rgb(88, 92, 104),
+        Color32::from_rgb(120, 125, 138),
+    )
+}
+
+// ── Developer tools ─────────────────────────────────────────────────
+pub fn devtools_bg() -> Color32 {
+    pick(
+        Color32::from_rgb(30, 31, 36),
+        Color32::from_rgb(242, 243, 247),
+    )
+}
+
+pub fn devtools_tab_active() -> Color32 {
+    pick(
+        Color32::from_rgb(42, 44, 52),
+        Color32::from_rgb(228, 230, 238),
+    )
+}
+
+pub fn devtools_tab_text_active() -> Color32 {
+    pick(
+        Color32::from_rgb(230, 232, 240),
+        Color32::from_rgb(28, 30, 36),
+    )
+}
+
+pub fn devtools_tab_text_idle() -> Color32 {
+    pick(
+        Color32::from_rgb(150, 154, 168),
+        Color32::from_rgb(90, 95, 108),
+    )
+}
+
+pub fn devtools_toolbar_icon() -> Color32 {
+    pick(
+        Color32::from_rgb(190, 194, 208),
+        Color32::from_rgb(70, 75, 88),
+    )
+}
+
+pub fn devtools_split_handle() -> Color32 {
+    pick(
+        Color32::from_rgb(55, 58, 68),
+        Color32::from_rgb(200, 204, 214),
     )
 }
 

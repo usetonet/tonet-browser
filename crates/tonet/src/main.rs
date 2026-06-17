@@ -7,6 +7,8 @@ mod app;
 mod branding;
 mod browser_log;
 mod chrome;
+#[cfg(all(feature = "servo-engine", windows))]
+mod devtools;
 mod css_resolve;
 #[allow(dead_code, unused_imports)]
 mod css;

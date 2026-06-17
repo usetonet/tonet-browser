@@ -5,7 +5,7 @@ use egui::{Align2, Color32, Context, FontId, RichText, Shape, Stroke, Ui, Vec2, 
 use crate::i18n::{self, Locale};
 use crate::theme;
 
-pub const CAPTION_BTN: Vec2 = Vec2::new(46.0, 36.0);
+pub const CAPTION_BTN: Vec2 = Vec2::new(48.0, 38.0);
 
 pub fn show_window_caption_controls(ui: &mut Ui, ctx: &Context, loc: Locale) {
     ui.spacing_mut().item_spacing.x = 0.0;
