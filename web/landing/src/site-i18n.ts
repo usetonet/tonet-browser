@@ -236,6 +236,9 @@ interface LandingStrings {
   downloadModalRetryPrefix: string;
   downloadModalRetryLink: string;
   downloadModalHelp: string;
+  downloadAlphaBadge: string;
+  downloadAlphaNotice: string;
+  heroAlphaNote: string;
   modalCloseLabel: string;
   channelLabel: string;
   channelStable: string;
@@ -290,10 +293,10 @@ const landing: Record<SiteLang, LandingStrings> = {
     c4p: "Full transparency on GitHub. Signed installers and documented pipelines for operators.",
     downloadTitle: "Download Tonet",
     downloadLead:
-      "We highlight the option that matches your system. You can always switch OS tabs manually.",
+      "We highlight the option that matches your system. Current builds are in **alpha**—early testers welcome; expect rough edges.",
     panelWinTitle: "Windows",
     panelWinP1:
-      "Primary download is the CI-built Inno Setup installer (EXE) for the version embedded on this site. MSI and other formats are linked below.",
+      "Primary download is <code>TonetSetup.exe</code>: a small online installer (Chrome-style) that fetches the latest portable build, adds desktop and Start menu shortcuts, and registers uninstall. MSI and offline Inno EXE are linked below.",
     panelWinFoot:
       "On the CDN, stable builds use short names (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) that always point to the latest stable release. Choose <strong>Specific version</strong> to download a particular build.",
     winSetup: "Download Tonet (Windows)",
@@ -403,10 +406,14 @@ const landing: Record<SiteLang, LandingStrings> = {
     downloadModalLead: "You’re seconds away from running Tonet. Follow the steps while the installer downloads.",
     downloadModalStep1: "Download Tonet",
     downloadModalStep2: "Run the installer",
-    downloadModalStep3: "Open Tonet from the shortcut",
+    downloadModalStep3: "Open Tonet from the desktop or Start menu shortcut",
     downloadModalRetryPrefix: "If the download didn’t start,",
     downloadModalRetryLink: "click here to try again",
     downloadModalHelp: "Need help getting started?",
+    downloadAlphaBadge: "Alpha",
+    downloadAlphaNotice:
+      "Tonet is in an early alpha phase: browsing works for real sites, but features, stability, and installers are still evolving. Report issues on GitHub—your feedback shapes what ships next.",
+    heroAlphaNote: "Now in alpha — help us test on Windows, Linux, and macOS.",
     modalCloseLabel: "Close dialog",
     channelLabel: "Release channel",
     channelStable: "Latest stable (recommended)",
@@ -462,10 +469,10 @@ const landing: Record<SiteLang, LandingStrings> = {
     c4p: "Transparencia total en GitHub. Instaladores firmados y pipelines documentados para quien despliega.",
     downloadTitle: "Descargar Tonet",
     downloadLead:
-      "Detectamos tu sistema para resaltar la opción adecuada. Siempre puedes cambiar de pestaña de SO manualmente.",
+      "Detectamos tu sistema para resaltar la opción adecuada. Las builds actuales están en **alfa**—bienvenidos los primeros probadores; puede haber asperezas.",
     panelWinTitle: "Windows",
     panelWinP1:
-      "La descarga principal es el instalador Inno Setup (EXE) generado en CI para la versión incrustada en esta web. El MSI y otros formatos están enlazados abajo.",
+      "La descarga principal es <code>TonetSetup.exe</code>: un instalador en línea (estilo Chrome) que descarga el portable más reciente, crea accesos en escritorio y menú Inicio y registra la desinstalación. MSI y EXE Inno offline están abajo.",
     panelWinFoot:
       "En el CDN, la rama estable usa nombres cortos (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) que siempre apuntan a la última versión estable. Elige <strong>Versión concreta</strong> para bajar un build exacto.",
     winSetup: "Descargar Tonet (Windows)",
@@ -575,10 +582,14 @@ const landing: Record<SiteLang, LandingStrings> = {
     downloadModalLead: "Faltan segundos para usar Tonet. Sigue los pasos mientras se descarga el instalador.",
     downloadModalStep1: "Descargar Tonet",
     downloadModalStep2: "Ejecutar el instalador",
-    downloadModalStep3: "Abrir Tonet desde el acceso directo",
+    downloadModalStep3: "Abre Tonet desde el escritorio o el menú Inicio",
     downloadModalRetryPrefix: "Si la descarga no empezó,",
     downloadModalRetryLink: "pulsa aquí para reintentar",
     downloadModalHelp: "¿Necesitas ayuda para empezar?",
+    downloadAlphaBadge: "Alfa",
+    downloadAlphaNotice:
+      "Tonet está en fase alfa temprana: la navegación real funciona, pero funciones, estabilidad e instaladores siguen evolucionando. Reporta problemas en GitHub—tu feedback define lo que llegará después.",
+    heroAlphaNote: "Ahora en alfa — ayúdanos a probar en Windows, Linux y macOS.",
     modalCloseLabel: "Cerrar",
     channelLabel: "Canal de release",
     channelStable: "Última estable (recomendado)",
@@ -634,10 +645,10 @@ const landing: Record<SiteLang, LandingStrings> = {
     c4p: "Volle Transparenz auf GitHub. Signierte Installer und dokumentierte Pipelines für Betreiber.",
     downloadTitle: "Tonet herunterladen",
     downloadLead:
-      "Wir heben die passende Option für Ihr System hervor. Sie können die Registerkarten jederzeit manuell wechseln.",
+      "Wir heben die passende Option für Ihr System hervor. Aktuelle Builds sind **Alpha**—frühe Tester willkommen; mit Ecken und Kanten rechnen.",
     panelWinTitle: "Windows",
     panelWinP1:
-      "Haupt-Download: Inno-Setup-Installer (EXE) aus der CI-Pipeline für die auf dieser Seite eingebettete Version. MSI und weitere Formate sind unten verlinkt.",
+      "Haupt-Download: <code>TonetSetup.exe</code> — ein kleiner Online-Installer (Chrome-Stil), der das portable Build lädt, Desktop- und Startmenü-Verknüpfungen anlegt und die Deinstallation registriert. MSI und offline Inno-EXE unten.",
     panelWinFoot:
       "Im CDN nutzen stabile Builds kurze Dateinamen (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>), die stets die aktuelle stabile Version referenzieren. Wähle <strong>Bestimmte Version</strong> für einen konkreten Build.",
     winSetup: "Tonet herunterladen (Windows)",
@@ -747,10 +758,14 @@ const landing: Record<SiteLang, LandingStrings> = {
     downloadModalLead: "Nur noch wenige Schritte. Folgen Sie der Anleitung, während der Installer lädt.",
     downloadModalStep1: "Tonet herunterladen",
     downloadModalStep2: "Installer ausführen",
-    downloadModalStep3: "Tonet über die Verknüpfung starten",
+    downloadModalStep3: "Tonet über Desktop oder Startmenü starten",
     downloadModalRetryPrefix: "Wenn der Download nicht startet,",
     downloadModalRetryLink: "hier erneut versuchen",
     downloadModalHelp: "Hilfe beim Einstieg?",
+    downloadAlphaBadge: "Alpha",
+    downloadAlphaNotice:
+      "Tonet ist in einer frühen Alpha-Phase: echtes Surfen funktioniert, aber Features, Stabilität und Installer entwickeln sich noch. Melden Sie Probleme auf GitHub—Ihr Feedback prägt die nächsten Releases.",
+    heroAlphaNote: "Jetzt in Alpha — hilf uns beim Testen unter Windows, Linux und macOS.",
     modalCloseLabel: "Schließen",
     channelLabel: "Release-Kanal",
     channelStable: "Letzte stabile Version (empfohlen)",
@@ -806,10 +821,10 @@ const landing: Record<SiteLang, LandingStrings> = {
     c4p: "Transparence sur GitHub. Installateurs signés et pipelines documentés pour les opérateurs.",
     downloadTitle: "Télécharger Tonet",
     downloadLead:
-      "Nous mettons en avant l’option adaptée à votre système. Vous pouvez toujours changer d’onglet manuellement.",
+      "Nous mettons en avant l’option adaptée à votre système. Les builds actuels sont en **alpha**—testeurs bienvenus ; attendez-vous à des imperfections.",
     panelWinTitle: "Windows",
     panelWinP1:
-      "Téléchargement principal : installateur Inno Setup (EXE) produit en CI pour la version intégrée sur ce site. Le MSI et d’autres formats sont liés ci-dessous.",
+      "Téléchargement principal : <code>TonetSetup.exe</code> — petit installateur en ligne (style Chrome) qui récupère le portable, crée les raccourcis Bureau et menu Démarrer et enregistre la désinstallation. MSI et EXE Inno hors ligne ci-dessous.",
     panelWinFoot:
       "Sur le CDN, les builds stables utilisent des noms courts (<code>Tonet-Setup.exe</code>, <code>Tonet-x64.msi</code>) vers la dernière version stable. Choisissez <strong>Version spécifique</strong> pour un build précis.",
     winSetup: "Télécharger Tonet (Windows)",
@@ -920,10 +935,14 @@ const landing: Record<SiteLang, LandingStrings> = {
       "Encore quelques secondes pour lancer Tonet. Suivez les étapes pendant le téléchargement de l’installeur.",
     downloadModalStep1: "Télécharger Tonet",
     downloadModalStep2: "Lancer l’installeur",
-    downloadModalStep3: "Ouvrir Tonet depuis le raccourci",
+    downloadModalStep3: "Ouvrir Tonet depuis le Bureau ou le menu Démarrer",
     downloadModalRetryPrefix: "Si le téléchargement n’a pas démarré,",
     downloadModalRetryLink: "cliquez ici pour réessayer",
     downloadModalHelp: "Besoin d’aide pour commencer ?",
+    downloadAlphaBadge: "Alpha",
+    downloadAlphaNotice:
+      "Tonet est en phase alpha précoce : la navigation réelle fonctionne, mais fonctionnalités, stabilité et installateurs évoluent encore. Signalez les problèmes sur GitHub—vos retours façonnent la suite.",
+    heroAlphaNote: "En alpha — aidez-nous à tester sur Windows, Linux et macOS.",
     modalCloseLabel: "Fermer",
     channelLabel: "Canal de publication",
     channelStable: "Dernière stable (recommandé)",
@@ -1083,7 +1102,12 @@ export function applyLandingLocale(lang: SiteLang, opts?: { page?: "home" | "dow
   setText("diff-3-t", L.d3t);
   setText("diff-3-p", L.d3p);
   setText("download-title", L.downloadTitle);
-  setText("download-lead", L.downloadLead);
+  setHtml("download-lead", L.downloadLead);
+  setText("alpha-pill", L.downloadAlphaBadge);
+  const alphaNotice = document.getElementById("alpha-notice");
+  if (alphaNotice) alphaNotice.textContent = L.downloadAlphaNotice;
+  const heroAlpha = document.getElementById("hero-alpha-note");
+  if (heroAlpha) heroAlpha.textContent = L.heroAlphaNote;
   setText("panel-win-h3", L.panelWinTitle);
   setText("panel-win-p1", L.panelWinP1);
   setHtml("panel-win-foot", L.panelWinFoot);

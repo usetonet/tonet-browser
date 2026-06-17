@@ -11,11 +11,15 @@ import { DownloadBoot } from "../components/DownloadBoot";
   <main>
     <section class="section download-page-hero">
       <span class="hero-watermark" aria-hidden="true">tonet</span>
-      <span class="pill" id="version-pill">Current project version: …</span>
+      <div class="download-hero-pills">
+        <span class="pill pill-alpha" id="alpha-pill">Alpha</span>
+        <span class="pill" id="version-pill">Current project version: …</span>
+      </div>
       <h1 class="text-balance" id="download-title">Download Tonet</h1>
       <p class="lead" id="download-lead">
         We highlight the option that matches your system. Use the big button to fetch the installer from our CDN—you stay on this page while it downloads.
       </p>
+      <p class="alpha-notice" id="alpha-notice"></p>
       <div class="hero-actions">
         <a class="btn btn-primary" id="download-primary" href="#">Get Tonet</a>
       </div>
